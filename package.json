@@ -30,9 +30,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mikesheehan/talktocursor"
+    "url": "https://github.com/MindSyncTech/talktocursor"
   },
-  "homepage": "https://github.com/mikesheehan/talktocursor#readme",
+  "homepage": "https://github.com/MindSyncTech/talktocursor#readme",
   "files": [
     "build/",
     "public/",
