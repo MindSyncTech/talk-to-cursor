@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cursor TTS Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --surface-hover: #22222e;
+      --border: #2a2a3a;
+      --border-focus: #6366f1;
+      --text: #e4e4ed;
+      --text-muted: #8888a0;
+      --primary: #6366f1;
+      --primary-hover: #818cf8;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header .icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title .badge {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 99px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-set {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .badge-missing {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--error);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238888a0' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6l3.5 4 3.5-4z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .toggle-visibility {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 13px;
+    }
+
+    .toggle-visibility:hover {
+      color: var(--text);
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .help-text a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .help-text a:hover {
+      text-decoration: underline;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      flex: 1;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--surface-hover);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast-success {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .toast-error {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--error);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .voices-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 12px;
+      padding-right: 4px;
+    }
+
+    .voices-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .voices-grid::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .voices-grid::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .voice-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .voice-item:hover {
+      border-color: var(--border-focus);
+      background: var(--surface-hover);
+    }
+
+    .voice-item.selected {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    .voice-item .voice-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .voice-item .voice-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .voice-item .voice-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .voice-item .voice-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 16px;
+    }
+
+    .btn-icon:hover {
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 32px 0;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .env-notice {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-top: 16px;
+      line-height: 1.5;
+    }
+
+    .env-notice strong {
+      color: var(--warning);
+    }
+
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .preset-btn {
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      text-align: left;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--border-focus);
+      background: var(--surface-hover);
+    }
+
+    .preset-btn.active {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    .preset-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .preset-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .slider-group {
+      margin-bottom: 20px;
+    }
+
+    .slider-group:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .slider-label label {
+      margin-bottom: 0;
+    }
+
+    .slider-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--primary);
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid var(--surface);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: var(--primary-hover);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid var(--surface);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+    }
+
+    .slider-range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .toggle-row:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .toggle-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .toggle-title {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .toggle-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: var(--border);
+      border-radius: 24px;
+      transition: background 0.2s;
+    }
+
+    .switch-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: var(--text);
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .switch input:checked + .switch-slider {
+      background: var(--primary);
+    }
+
+    .switch input:checked + .switch-slider::before {
+      transform: translateX(20px);
+    }
+
+    .auto-submit-details {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      max-height: 0;
+      opacity: 0;
+    }
+
+    .auto-submit-details.open {
+      max-height: 1000px;
+      opacity: 1;
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-weight: 500;
+    }
+
+    .status-running {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .status-stopped {
+      background: rgba(136, 136, 160, 0.15);
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .copy-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      transition: all 0.15s;
+    }
+
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .copy-btn:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    .reset-link {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      display: inline;
+      font-weight: 400;
+    }
+
+    .reset-link:hover {
+      color: var(--text);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="icon">🔊</div>
+      <h1>Cursor TTS Settings</h1>
+      <p>Configure your text-to-speech MCP server</p>
+    </header>
+
+    <!-- API Key Card -->
+    <div class="card">
+      <div class="card-title">
+        API Key
+        <span id="apiKeyBadge" class="badge badge-missing">Not Set</span>
+      </div>
+
+      <div class="form-group">
+        <label for="apiKey">ElevenLabs API Key</label>
+        <div class="input-wrapper">
+          <input type="password" id="apiKey" placeholder="sk_xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+          <button class="toggle-visibility" id="toggleKey" type="button">Show</button>
+        </div>
+        <div class="help-text">
+          Get your key from <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io/app/settings/api-keys</a>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" id="testBtn" type="button">
+          Test Key
+        </button>
+        <button class="btn-primary" id="saveKeyBtn" type="button">
+          Save API Key
+        </button>
+      </div>
+    </div>
+
+    <!-- Voice Card -->
+    <div class="card">
+      <div class="card-title">Voice</div>
+
+      <div class="form-group">
+        <label for="voiceId">Voice ID</label>
+        <input type="text" id="voiceId" placeholder="21m00Tcm4TlvDq8ikWAM" spellcheck="false">
+        <div class="help-text">
+          Browse voices at <a href="https://elevenlabs.io/app/voice-library" target="_blank">elevenlabs.io/app/voice-library</a>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" id="loadVoicesBtn" type="button">
+          Load My Voices
+        </button>
+        <button class="btn-primary" id="saveVoiceBtn" type="button">
+          Save Voice
+        </button>
+      </div>
+
+      <div id="voicesList" style="display: none;">
+        <div class="voices-grid" id="voicesGrid"></div>
+      </div>
+    </div>
+
+    <!-- Model Card -->
+    <div class="card">
+      <div class="card-title">Model</div>
+
+      <div class="form-group">
+        <label for="model">TTS Model</label>
+        <select id="model">
+          <option value="eleven_flash_v2_5">Flash v2.5 (fastest, recommended)</option>
+          <option value="eleven_flash_v2">Flash v2</option>
+          <option value="eleven_multilingual_v2">Multilingual v2 (best quality)</option>
+          <option value="eleven_turbo_v2_5">Turbo v2.5</option>
+          <option value="eleven_turbo_v2">Turbo v2</option>
+          <option value="eleven_monolingual_v1">Monolingual v1</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="saveModelBtn" type="button" style="flex: none;">
+          Save Model
+        </button>
+      </div>
+    </div>
+
+    <!-- Voice Settings Card -->
+    <div class="card">
+      <div class="card-title">
+        Voice Settings
+        <button class="reset-link" id="resetSettingsBtn" type="button">Reset to defaults</button>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label style="margin-bottom: 10px;">Quick Presets</label>
+        <div class="presets-grid">
+          <button class="preset-btn" data-preset="default" type="button">
+            <span class="preset-name">Default</span>
+            <span class="preset-desc">Balanced</span>
+          </button>
+          <button class="preset-btn" data-preset="fast" type="button">
+            <span class="preset-name">Fast</span>
+            <span class="preset-desc">Quick & energetic</span>
+          </button>
+          <button class="preset-btn" data-preset="slow" type="button">
+            <span class="preset-name">Slow</span>
+            <span class="preset-desc">Clear & measured</span>
+          </button>
+          <button class="preset-btn" data-preset="expressive" type="button">
+            <span class="preset-name">Expressive</span>
+            <span class="preset-desc">Dynamic & varied</span>
+          </button>
+          <button class="preset-btn" data-preset="stable" type="button">
+            <span class="preset-name">Stable</span>
+            <span class="preset-desc">Consistent tone</span>
+          </button>
+          <button class="preset-btn" data-preset="dramatic" type="button">
+            <span class="preset-name">Dramatic</span>
+            <span class="preset-desc">Maximum style</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <label for="speed">Speed</label>
+          <span class="slider-value" id="speedValue">1.00</span>
+        </div>
+        <input type="range" id="speed" min="0.7" max="1.2" step="0.05" value="1.0">
+        <div class="slider-range-labels">
+          <span>0.7x (slow)</span>
+          <span>1.2x (fast)</span>
+        </div>
+        <div class="help-text">Controls how fast the speech is delivered. 1.0 is normal speed.</div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <label for="stability">Stability</label>
+          <span class="slider-value" id="stabilityValue">0.50</span>
+        </div>
+        <input type="range" id="stability" min="0" max="1" step="0.05" value="0.5">
+        <div class="slider-range-labels">
+          <span>More variable</span>
+          <span>More stable</span>
+        </div>
+        <div class="help-text">Higher values make the voice more consistent; lower adds more expressiveness.</div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <label for="similarityBoost">Similarity Boost</label>
+          <span class="slider-value" id="similarityBoostValue">0.75</span>
+        </div>
+        <input type="range" id="similarityBoost" min="0" max="1" step="0.05" value="0.75">
+        <div class="slider-range-labels">
+          <span>Low</span>
+          <span>High</span>
+        </div>
+        <div class="help-text">Boosts similarity to the original voice. Higher values use more compute and may increase latency.</div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <label for="style">Style Exaggeration</label>
+          <span class="slider-value" id="styleValue">0.00</span>
+        </div>
+        <input type="range" id="style" min="0" max="1" step="0.05" value="0">
+        <div class="slider-range-labels">
+          <span>None</span>
+          <span>Exaggerated</span>
+        </div>
+        <div class="help-text">Amplifies the style of the original speaker. Only works with V2+ models. May increase latency.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="saveSettingsBtn" type="button" style="flex: none;">
+          Save Voice Settings
+        </button>
+      </div>
+    </div>
+
+    <!-- Auto-Listen Card -->
+    <div class="card">
+      <div class="card-title">Auto-Listen</div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Enable Auto-Listen</span>
+          <span class="toggle-desc">Automatically start listening for voice input after task completion</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="autoListenEnabled">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 16px; line-height: 1.5;">
+        When enabled, I'll automatically call the listen tool after completing tasks to trigger the Wispr voice loop. 
+        Disable this if you prefer to manually start dictation.
+      </p>
+    </div>
+
+    <!-- Auto-Submit Card -->
+    <div class="card">
+      <div class="card-title">Auto-Submit</div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Enable Auto-Submit</span>
+          <span class="toggle-desc">Automatically press Enter when dictation ends</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="autoSubmitEnabled">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="auto-submit-details" id="autoSubmitDetails">
+        <div class="slider-group">
+          <div class="slider-label">
+            <label for="silenceDelay">Silence Delay</label>
+            <span class="slider-value" id="silenceDelayValue">3.0s</span>
+          </div>
+          <input type="range" id="silenceDelay" min="0.5" max="5" step="0.25" value="3.0">
+          <div class="slider-range-labels">
+            <span>0.5s (instant)</span>
+            <span>5s (patient)</span>
+          </div>
+          <div class="help-text">How long to wait after typing stops before pressing Enter. Increase if prompts are getting cut off.</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <label for="minTextLength">Min Text Length</label>
+            <span class="slider-value" id="minTextLengthValue">15</span>
+          </div>
+          <input type="range" id="minTextLength" min="5" max="50" step="5" value="15">
+          <div class="slider-range-labels">
+            <span>5 chars (sensitive)</span>
+            <span>50 chars (strict)</span>
+          </div>
+          <div class="help-text">Minimum characters in clipboard to count as dictation. Prevents accidental submits from short copy-paste actions.</div>
+        </div>
+
+        <div class="btn-row" style="margin-bottom: 16px;">
+          <button class="btn-primary" id="saveAutoSubmitBtn" type="button" style="flex: none;">
+            Save Auto-Submit Settings
+          </button>
+        </div>
+
+        <div class="env-notice" style="margin-top: 0;">
+          <strong>How it works:</strong> Monitors the text field via Accessibility API. Detects text from dictation, typing, or paste. Auto-submits when Cursor is active.
+          <br><br>
+          <strong>Setup:</strong> After enabling and saving, run in a terminal:
+          <div style="position: relative; margin-top: 6px;">
+            <code style="display: block; padding: 6px 10px 6px 10px; background: var(--bg); border-radius: 4px; font-size: 13px; padding-right: 45px;">npm run auto-submit</code>
+            <button class="copy-btn" onclick="copyCommand()" title="Copy command">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+          <span style="display: block; margin-top: 6px;">Requires macOS Accessibility permissions (System Settings &gt; Privacy &gt; Accessibility).</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wispr Voice Loop Card -->
+    <div class="card">
+      <div class="card-title">Wispr Voice Loop</div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Enable Wispr Voice Loop</span>
+          <span class="toggle-desc">Hands-free conversational loop with automatic Wispr control</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="wisprLoopEnabled">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="auto-submit-details" id="wisprLoopDetails">
+        <div class="slider-group">
+          <div class="slider-label">
+            <label for="ttsDelay">TTS Delay</label>
+            <span class="slider-value" id="ttsDelayValue">4.0s</span>
+          </div>
+          <input type="range" id="ttsDelay" min="1" max="8" step="0.5" value="4.0">
+          <div class="slider-range-labels">
+            <span>1s (quick)</span>
+            <span>8s (patient)</span>
+          </div>
+          <div class="help-text">How long to wait for TTS to finish before starting Wispr. Increase if TTS gets cut off.</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <label for="silenceThreshold">Silence Threshold</label>
+            <span class="slider-value" id="silenceThresholdValue">0.020</span>
+          </div>
+          <input type="range" id="silenceThreshold" min="0.005" max="0.1" step="0.005" value="0.02">
+          <div class="slider-range-labels">
+            <span>0.005 (sensitive)</span>
+            <span>0.1 (strict)</span>
+          </div>
+          <div class="help-text">RMS amplitude threshold for speech detection. Lower = more sensitive to quiet speech.</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <label for="silenceDuration">Silence Duration</label>
+            <span class="slider-value" id="silenceDurationValue">2.0s</span>
+          </div>
+          <input type="range" id="silenceDuration" min="0.5" max="5" step="0.25" value="2.0">
+          <div class="slider-range-labels">
+            <span>0.5s (quick)</span>
+            <span>5s (patient)</span>
+          </div>
+          <div class="help-text">How long of silence confirms you're done speaking. Increase if it cuts you off mid-sentence.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="wisprHotkey">Wispr Hotkey</label>
+          <input type="text" id="wisprHotkey" value="shift+ctrl" spellcheck="false">
+          <div class="help-text">Hotkey combo that toggles Wispr recording (start/stop). Default: shift+ctrl</div>
+        </div>
+
+        <div class="form-group">
+          <label for="manualTriggerHotkey">Manual Trigger Hotkey</label>
+          <input type="text" id="manualTriggerHotkey" value="ctrl+shift+l" spellcheck="false">
+          <div class="help-text">Global hotkey to manually start the voice loop anytime. Default: ctrl+shift+l</div>
+        </div>
+
+        <div class="btn-row" style="margin-bottom: 16px;">
+          <button class="btn-primary" id="saveWisprLoopBtn" type="button" style="flex: none;">
+            Save Wispr Loop Settings
+          </button>
+        </div>
+
+        <div class="env-notice" style="margin-top: 0;">
+          <strong>How it works:</strong>
+          <ol style="margin: 8px 0 0 20px; padding: 0;">
+            <li>Agent finishes task and calls listen() tool</li>
+            <li>Script waits for TTS to finish, then triggers Wispr</li>
+            <li>Your mic is monitored for speech and silence</li>
+            <li>When silence is detected, Wispr stops and pastes</li>
+            <li>Auto-submit presses Enter, cycle repeats</li>
+          </ol>
+          <span style="display: block; margin-top: 8px;">Requires sounddevice Python package and PortAudio. See terminal for setup commands.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Notice -->
+    <div class="env-notice">
+      <strong>Note:</strong> Environment variables (<code>ELEVENLABS_API_KEY</code>, <code>ELEVENLABS_VOICE_ID</code>) take priority over these settings.
+      After saving, restart Cursor for the MCP server to pick up the new config.
+    </div>
+
+    <footer>
+      cursor-tts-mcp &middot; <a href="https://github.com" target="_blank">Documentation</a>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Elements
+    const apiKeyInput = document.getElementById('apiKey');
+    const toggleKeyBtn = document.getElementById('toggleKey');
+    const testBtn = document.getElementById('testBtn');
+    const saveKeyBtn = document.getElementById('saveKeyBtn');
+    const apiKeyBadge = document.getElementById('apiKeyBadge');
+    const voiceIdInput = document.getElementById('voiceId');
+    const loadVoicesBtn = document.getElementById('loadVoicesBtn');
+    const saveVoiceBtn = document.getElementById('saveVoiceBtn');
+    const voicesList = document.getElementById('voicesList');
+    const voicesGrid = document.getElementById('voicesGrid');
+    const modelSelect = document.getElementById('model');
+    const saveModelBtn = document.getElementById('saveModelBtn');
+    const speedSlider = document.getElementById('speed');
+    const speedValue = document.getElementById('speedValue');
+    const stabilitySlider = document.getElementById('stability');
+    const stabilityValue = document.getElementById('stabilityValue');
+    const similarityBoostSlider = document.getElementById('similarityBoost');
+    const similarityBoostValue = document.getElementById('similarityBoostValue');
+    const styleSlider = document.getElementById('style');
+    const styleValue = document.getElementById('styleValue');
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+    const autoListenEnabled = document.getElementById('autoListenEnabled');
+    const autoSubmitEnabled = document.getElementById('autoSubmitEnabled');
+    const autoSubmitDetails = document.getElementById('autoSubmitDetails');
+    const silenceDelaySlider = document.getElementById('silenceDelay');
+    const silenceDelayValue = document.getElementById('silenceDelayValue');
+    const minTextLengthSlider = document.getElementById('minTextLength');
+    const minTextLengthValue = document.getElementById('minTextLengthValue');
+    const saveAutoSubmitBtn = document.getElementById('saveAutoSubmitBtn');
+    const wisprLoopEnabled = document.getElementById('wisprLoopEnabled');
+    const wisprLoopDetails = document.getElementById('wisprLoopDetails');
+    const ttsDelaySlider = document.getElementById('ttsDelay');
+    const ttsDelayValue = document.getElementById('ttsDelayValue');
+    const silenceThresholdSlider = document.getElementById('silenceThreshold');
+    const silenceThresholdValue = document.getElementById('silenceThresholdValue');
+    const silenceDurationSlider = document.getElementById('silenceDuration');
+    const silenceDurationValue = document.getElementById('silenceDurationValue');
+    const wisprHotkeyInput = document.getElementById('wisprHotkey');
+    const manualTriggerHotkeyInput = document.getElementById('manualTriggerHotkey');
+    const saveWisprLoopBtn = document.getElementById('saveWisprLoopBtn');
+    const toastEl = document.getElementById('toast');
+
+    let currentPreviewAudio = null;
+
+    // Wire up slider value displays
+    const sliders = [
+      { slider: speedSlider, display: speedValue },
+      { slider: stabilitySlider, display: stabilityValue },
+      { slider: similarityBoostSlider, display: similarityBoostValue },
+      { slider: styleSlider, display: styleValue },
+    ];
+    sliders.forEach(({ slider, display }) => {
+      slider.addEventListener('input', () => {
+        display.textContent = parseFloat(slider.value).toFixed(2);
+      });
+    });
+
+    // Auto-submit toggle and sliders
+    // Auto-listen toggle - save immediately on change
+    autoListenEnabled.addEventListener('change', async () => {
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ autoListen: autoListenEnabled.checked }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast(autoListenEnabled.checked ? 'Auto-listen enabled' : 'Auto-listen disabled', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save auto-listen setting', 'error');
+      }
+    });
+
+    autoSubmitEnabled.addEventListener('change', () => {
+      autoSubmitDetails.classList.toggle('open', autoSubmitEnabled.checked);
+    });
+
+    silenceDelaySlider.addEventListener('input', () => {
+      silenceDelayValue.textContent = parseFloat(silenceDelaySlider.value).toFixed(1) + 's';
+    });
+
+    minTextLengthSlider.addEventListener('input', () => {
+      minTextLengthValue.textContent = parseInt(minTextLengthSlider.value);
+    });
+
+    // Wispr loop toggle and sliders
+    wisprLoopEnabled.addEventListener('change', () => {
+      wisprLoopDetails.classList.toggle('open', wisprLoopEnabled.checked);
+    });
+
+    ttsDelaySlider.addEventListener('input', () => {
+      ttsDelayValue.textContent = parseFloat(ttsDelaySlider.value).toFixed(1) + 's';
+    });
+
+    silenceThresholdSlider.addEventListener('input', () => {
+      silenceThresholdValue.textContent = parseFloat(silenceThresholdSlider.value).toFixed(3);
+    });
+
+    silenceDurationSlider.addEventListener('input', () => {
+      silenceDurationValue.textContent = parseFloat(silenceDurationSlider.value).toFixed(1) + 's';
+    });
+
+    // Voice settings presets
+    const presets = {
+      default: { speed: 1.0, stability: 0.5, similarityBoost: 0.75, style: 0.0 },
+      fast: { speed: 1.15, stability: 0.6, similarityBoost: 0.75, style: 0.1 },
+      slow: { speed: 0.85, stability: 0.7, similarityBoost: 0.8, style: 0.0 },
+      expressive: { speed: 1.0, stability: 0.3, similarityBoost: 0.7, style: 0.3 },
+      stable: { speed: 1.0, stability: 0.8, similarityBoost: 0.85, style: 0.0 },
+      dramatic: { speed: 0.95, stability: 0.2, similarityBoost: 0.7, style: 0.6 },
+    };
+
+    function applyPreset(presetName) {
+      const preset = presets[presetName];
+      if (!preset) return;
+
+      speedSlider.value = preset.speed;
+      speedValue.textContent = preset.speed.toFixed(2);
+      stabilitySlider.value = preset.stability;
+      stabilityValue.textContent = preset.stability.toFixed(2);
+      similarityBoostSlider.value = preset.similarityBoost;
+      similarityBoostValue.textContent = preset.similarityBoost.toFixed(2);
+      styleSlider.value = preset.style;
+      styleValue.textContent = preset.style.toFixed(2);
+
+      // Update active state
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.preset === presetName);
+      });
+
+      showToast(`Applied ${presetName} preset - click Save to apply`, 'success');
+    }
+
+    // Preset button click handlers
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+    });
+
+    // Toggle API key visibility
+    toggleKeyBtn.addEventListener('click', () => {
+      const isPassword = apiKeyInput.type === 'password';
+      apiKeyInput.type = isPassword ? 'text' : 'password';
+      toggleKeyBtn.textContent = isPassword ? 'Hide' : 'Show';
+    });
+
+    // Load current config on page load
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+
+        if (data.apiKeySet) {
+          apiKeyInput.placeholder = data.apiKey;
+          apiKeyBadge.textContent = 'Set';
+          apiKeyBadge.className = 'badge badge-set';
+        } else {
+          apiKeyBadge.textContent = 'Not Set';
+          apiKeyBadge.className = 'badge badge-missing';
+        }
+
+        voiceIdInput.value = data.voiceId || '';
+        modelSelect.value = data.model || 'eleven_flash_v2_5';
+
+        // Auto-listen setting
+        if (data.autoListen !== undefined) {
+          autoListenEnabled.checked = data.autoListen;
+        }
+
+        // Auto-submit settings
+        if (data.autoSubmit) {
+          const as = data.autoSubmit;
+          autoSubmitEnabled.checked = !!as.enabled;
+          autoSubmitDetails.classList.toggle('open', !!as.enabled);
+          silenceDelaySlider.value = as.silenceDelay ?? 2.0;
+          silenceDelayValue.textContent = parseFloat(silenceDelaySlider.value).toFixed(1) + 's';
+          minTextLengthSlider.value = as.minTextLength ?? 10;
+          minTextLengthValue.textContent = parseInt(minTextLengthSlider.value);
+        }
+
+        // Voice settings sliders
+        if (data.voiceSettings) {
+          const vs = data.voiceSettings;
+          speedSlider.value = vs.speed ?? 1.0;
+          speedValue.textContent = parseFloat(speedSlider.value).toFixed(2);
+          stabilitySlider.value = vs.stability ?? 0.5;
+          stabilityValue.textContent = parseFloat(stabilitySlider.value).toFixed(2);
+          similarityBoostSlider.value = vs.similarityBoost ?? 0.75;
+          similarityBoostValue.textContent = parseFloat(similarityBoostSlider.value).toFixed(2);
+          styleSlider.value = vs.style ?? 0.0;
+          styleValue.textContent = parseFloat(styleSlider.value).toFixed(2);
+        }
+      } catch (error) {
+        showToast('Failed to load config', 'error');
+      }
+    }
+
+    // Save API key
+    saveKeyBtn.addEventListener('click', async () => {
+      const apiKey = apiKeyInput.value.trim();
+      if (!apiKey) {
+        showToast('Please enter an API key', 'error');
+        return;
+      }
+
+      saveKeyBtn.disabled = true;
+      saveKeyBtn.innerHTML = '<span class="spinner"></span> Saving...';
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          apiKeyInput.value = '';
+          apiKeyInput.placeholder = data.config.apiKey;
+          apiKeyBadge.textContent = 'Set';
+          apiKeyBadge.className = 'badge badge-set';
+          showToast('API key saved successfully', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save API key', 'error');
+      } finally {
+        saveKeyBtn.disabled = false;
+        saveKeyBtn.innerHTML = 'Save API Key';
+      }
+    });
+
+    // Test API key
+    testBtn.addEventListener('click', async () => {
+      const apiKey = apiKeyInput.value.trim();
+
+      testBtn.disabled = true;
+      testBtn.innerHTML = '<span class="spinner"></span> Testing...';
+
+      try {
+        const res = await fetch('/api/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey: apiKey || undefined }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast(data.message, 'success');
+        } else {
+          showToast(data.error, 'error');
+        }
+      } catch (error) {
+        showToast('Test request failed', 'error');
+      } finally {
+        testBtn.disabled = false;
+        testBtn.innerHTML = 'Test Key';
+      }
+    });
+
+    // Save voice
+    saveVoiceBtn.addEventListener('click', async () => {
+      const voiceId = voiceIdInput.value.trim();
+      if (!voiceId) {
+        showToast('Please enter a voice ID', 'error');
+        return;
+      }
+
+      saveVoiceBtn.disabled = true;
+      saveVoiceBtn.innerHTML = '<span class="spinner"></span> Saving...';
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ voiceId }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('Voice saved successfully', 'success');
+          // Update selection in voices list if visible
+          updateVoiceSelection(voiceId);
+        }
+      } catch (error) {
+        showToast('Failed to save voice', 'error');
+      } finally {
+        saveVoiceBtn.disabled = false;
+        saveVoiceBtn.innerHTML = 'Save Voice';
+      }
+    });
+
+    // Load voices
+    loadVoicesBtn.addEventListener('click', async () => {
+      loadVoicesBtn.disabled = true;
+      loadVoicesBtn.innerHTML = '<span class="spinner"></span> Loading...';
+
+      try {
+        const res = await fetch('/api/voices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          showToast(data.error, 'error');
+          return;
+        }
+
+        renderVoices(data.voices);
+        voicesList.style.display = 'block';
+      } catch (error) {
+        showToast('Failed to load voices', 'error');
+      } finally {
+        loadVoicesBtn.disabled = false;
+        loadVoicesBtn.innerHTML = 'Load My Voices';
+      }
+    });
+
+    function renderVoices(voices) {
+      const currentVoice = voiceIdInput.value.trim();
+
+      if (!voices.length) {
+        voicesGrid.innerHTML = '<div class="empty-state">No voices found. Add voices in your ElevenLabs dashboard.</div>';
+        return;
+      }
+
+      voicesGrid.innerHTML = voices.map(v => `
+        <div class="voice-item ${v.id === currentVoice ? 'selected' : ''}" data-id="${v.id}">
+          <div class="voice-info">
+            <span class="voice-name">${escapeHtml(v.name)}</span>
+            <span class="voice-meta">${escapeHtml(v.category || 'custom')} &middot; ${v.id.slice(0, 12)}...</span>
+          </div>
+          <div class="voice-actions">
+            ${v.preview_url ? `<button class="btn-icon" title="Preview" onclick="event.stopPropagation(); previewVoice('${v.preview_url}')">&#9654;</button>` : ''}
+            <button class="btn-icon" title="Select" onclick="event.stopPropagation(); selectVoice('${v.id}')">&#10003;</button>
+          </div>
+        </div>
+      `).join('');
+
+      // Click to select
+      voicesGrid.querySelectorAll('.voice-item').forEach(el => {
+        el.addEventListener('click', () => selectVoice(el.dataset.id));
+      });
+    }
+
+    function selectVoice(id) {
+      voiceIdInput.value = id;
+      updateVoiceSelection(id);
+      showToast('Voice selected - click Save Voice to apply', 'success');
+    }
+
+    function updateVoiceSelection(id) {
+      voicesGrid.querySelectorAll('.voice-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.id === id);
+      });
+    }
+
+    function previewVoice(url) {
+      if (currentPreviewAudio) {
+        currentPreviewAudio.pause();
+        currentPreviewAudio = null;
+      }
+      currentPreviewAudio = new Audio(url);
+      currentPreviewAudio.play().catch(() => {
+        showToast('Could not play preview', 'error');
+      });
+    }
+
+    // Save model
+    saveModelBtn.addEventListener('click', async () => {
+      saveModelBtn.disabled = true;
+      saveModelBtn.innerHTML = '<span class="spinner"></span> Saving...';
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: modelSelect.value }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('Model saved successfully', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save model', 'error');
+      } finally {
+        saveModelBtn.disabled = false;
+        saveModelBtn.innerHTML = 'Save Model';
+      }
+    });
+
+    // Save voice settings
+    saveSettingsBtn.addEventListener('click', async () => {
+      saveSettingsBtn.disabled = true;
+      saveSettingsBtn.innerHTML = '<span class="spinner"></span> Saving...';
+
+      const voiceSettings = {
+        speed: parseFloat(speedSlider.value),
+        stability: parseFloat(stabilitySlider.value),
+        similarityBoost: parseFloat(similarityBoostSlider.value),
+        style: parseFloat(styleSlider.value),
+      };
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ voiceSettings }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('Voice settings saved successfully', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save voice settings', 'error');
+      } finally {
+        saveSettingsBtn.disabled = false;
+        saveSettingsBtn.innerHTML = 'Save Voice Settings';
+      }
+    });
+
+    // Reset voice settings to defaults
+    resetSettingsBtn.addEventListener('click', () => {
+      applyPreset('default');
+    });
+
+    // Save auto-submit settings
+    saveAutoSubmitBtn.addEventListener('click', async () => {
+      saveAutoSubmitBtn.disabled = true;
+      saveAutoSubmitBtn.innerHTML = '<span class="spinner"></span> Saving...';
+
+      const autoSubmit = {
+        enabled: autoSubmitEnabled.checked,
+        silenceDelay: parseFloat(silenceDelaySlider.value),
+        minTextLength: parseInt(minTextLengthSlider.value),
+        targetApp: 'Cursor',
+      };
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ autoSubmit }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('Auto-submit settings saved', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save auto-submit settings', 'error');
+      } finally {
+        saveAutoSubmitBtn.disabled = false;
+        saveAutoSubmitBtn.innerHTML = 'Save Auto-Submit Settings';
+      }
+    });
+
+    // Toast notification
+    let toastTimeout;
+    function showToast(message, type = 'success') {
+      clearTimeout(toastTimeout);
+      toastEl.textContent = message;
+      toastEl.className = `toast toast-${type} show`;
+      toastTimeout = setTimeout(() => {
+        toastEl.classList.remove('show');
+      }, 3500);
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Save wispr loop settings
+    saveWisprLoopBtn.addEventListener('click', async () => {
+      saveWisprLoopBtn.disabled = true;
+      saveWisprLoopBtn.innerHTML = '<span class="spinner"></span> Saving...';
+
+      const wisprLoop = {
+        enabled: wisprLoopEnabled.checked,
+        ttsDelay: parseFloat(ttsDelaySlider.value),
+        silenceThreshold: parseFloat(silenceThresholdSlider.value),
+        silenceDuration: parseFloat(silenceDurationSlider.value),
+        wisprHotkey: wisprHotkeyInput.value.trim(),
+        manualTriggerHotkey: manualTriggerHotkeyInput.value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wisprLoop }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('Wispr loop settings saved', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save wispr loop settings', 'error');
+      } finally {
+        saveWisprLoopBtn.disabled = false;
+        saveWisprLoopBtn.innerHTML = 'Save Wispr Loop Settings';
+      }
+    });
+
+    // Copy command to clipboard
+    function copyCommand() {
+      const command = 'npm run auto-submit';
+      navigator.clipboard.writeText(command).then(() => {
+        showToast('Command copied to clipboard', 'success');
+      }).catch(() => {
+        showToast('Failed to copy command', 'error');
+      });
+    }
+
+    // Init
+    loadConfig();
+  </script>
+</body>
+</html>

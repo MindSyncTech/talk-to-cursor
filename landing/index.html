@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TalkToCursor — Hands-Free Voice Interface for Cursor AI | Text-to-Speech MCP</title>
+  <meta name="description" content="Add text-to-speech and voice commands to Cursor AI. Talk to your coding assistant hands-free with ElevenLabs TTS, voice dictation, and a fully automated conversational coding loop. Install in minutes via npm.">
+  <meta name="keywords" content="TalkToCursor, Cursor AI, text-to-speech, MCP, Model Context Protocol, ElevenLabs, voice coding, hands-free coding, AI assistant, voice commands, Wispr Flow, dictation, developer tools, coding productivity">
+  <meta name="author" content="Mike Sheehan">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://talktocursor.com">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://talktocursor.com">
+  <meta property="og:title" content="TalkToCursor — Hands-Free Voice Interface for Cursor AI">
+  <meta property="og:description" content="Add text-to-speech and voice commands to Cursor AI. Talk to your coding assistant hands-free with ElevenLabs TTS and voice dictation. Install in minutes.">
+  <meta property="og:site_name" content="TalkToCursor">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TalkToCursor — Hands-Free Voice Interface for Cursor AI">
+  <meta name="twitter:description" content="Add text-to-speech and voice commands to Cursor AI. Talk to your coding assistant hands-free with ElevenLabs TTS and voice dictation.">
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "TalkToCursor",
+    "description": "Hands-free voice interface for Cursor AI. Text-to-speech, voice commands, and conversational coding powered by ElevenLabs TTS.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS, Windows, Linux",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Mike Sheehan"
+    },
+    "license": "https://opensource.org/license/mit",
+    "url": "https://talktocursor.com",
+    "downloadUrl": "https://www.npmjs.com/package/talktocursor",
+    "softwareVersion": "1.0.0"
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #09090b;
+      --bg-subtle: #0f0f13;
+      --surface: #18181b;
+      --surface-hover: #1f1f25;
+      --border: #27272a;
+      --border-light: #3f3f46;
+      --text: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --primary: #818cf8;
+      --primary-dim: rgba(129, 140, 248, 0.12);
+      --primary-glow: rgba(129, 140, 248, 0.25);
+      --accent: #a78bfa;
+      --success: #34d399;
+      --success-dim: rgba(52, 211, 153, 0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      background: rgba(9, 9, 11, 0.8);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.3px;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--primary);
+      color: #fff !important;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 600 !important;
+      transition: opacity 0.2s !important;
+    }
+
+    .nav-cta:hover { opacity: 0.9; }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 160px 24px 100px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 600px;
+      background: radial-gradient(ellipse at center, var(--primary-glow) 0%, transparent 70%);
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: var(--primary-dim);
+      border: 1px solid rgba(129, 140, 248, 0.2);
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--primary);
+      margin-bottom: 28px;
+    }
+
+    .hero-badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 68px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-light);
+    }
+
+    /* ── Install command ── */
+    .install-block {
+      max-width: 520px;
+      margin: 48px auto 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 4px;
+    }
+
+    .install-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px 6px;
+    }
+
+    .install-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .install-dot:nth-child(1) { background: #ef4444; }
+    .install-dot:nth-child(2) { background: #f59e0b; }
+    .install-dot:nth-child(3) { background: #22c55e; }
+
+    .install-cmd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px 14px;
+    }
+
+    .install-cmd code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .install-cmd code span { color: var(--success); }
+
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .copy-btn:hover {
+      color: var(--text);
+      border-color: var(--border-light);
+    }
+
+    .copy-btn.copied {
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    /* ── Features ── */
+    .features {
+      padding: 80px 24px 100px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 56px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      transition: all 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--primary-dim);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ── How it works ── */
+    .how-it-works {
+      padding: 80px 24px 100px;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .how-inner {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 56px;
+      position: relative;
+    }
+
+    .step {
+      display: flex;
+      gap: 24px;
+      position: relative;
+    }
+
+    .step-line {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .step-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-dim);
+      border: 2px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .step-connector {
+      width: 2px;
+      flex: 1;
+      background: var(--border);
+      min-height: 32px;
+    }
+
+    .step-content {
+      padding-bottom: 40px;
+    }
+
+    .step:last-child .step-content { padding-bottom: 0; }
+    .step:last-child .step-connector { display: none; }
+
+    .step-content h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      padding-top: 7px;
+    }
+
+    .step-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .step-code {
+      margin-top: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--text-secondary);
+      overflow-x: auto;
+    }
+
+    .step-code .comment { color: var(--text-muted); }
+    .step-code .string { color: var(--success); }
+    .step-code .key { color: var(--primary); }
+
+    /* ── Config preview ── */
+    .config-section {
+      padding: 80px 24px 100px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      margin-top: 56px;
+    }
+
+    .config-text h3 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: -0.3px;
+    }
+
+    .config-text p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .config-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .config-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .config-list li::before {
+      content: '';
+      width: 20px;
+      height: 20px;
+      background: var(--success-dim);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .config-preview {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .config-preview-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .config-preview-body {
+      padding: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      overflow-x: auto;
+    }
+
+    .config-preview-body .key { color: var(--primary); }
+    .config-preview-body .string { color: var(--success); }
+    .config-preview-body .comment { color: var(--text-muted); }
+
+    /* ── CTA ── */
+    .cta {
+      padding: 100px 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .cta::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse at center, var(--primary-glow) 0%, transparent 70%);
+      pointer-events: none;
+      opacity: 0.3;
+    }
+
+    .cta h2 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .cta p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 480px;
+      margin: 0 auto 36px;
+    }
+
+    .cta-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+    }
+
+    .footer-bmac img {
+      height: 32px;
+      transition: opacity 0.2s;
+    }
+
+    .footer-bmac:hover img {
+      opacity: 0.85;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-inner p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text-secondary); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .config-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        gap: 16px;
+      }
+
+      .nav-links .hide-mobile {
+        display: none;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <a href="#features" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:999;">Skip to content</a>
+  <nav aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-icon">T</div>
+        TalkToCursor
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features" class="hide-mobile">Features</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="https://www.npmjs.com/package/talktocursor" target="_blank">npm</a></li>
+        <li><a href="#install" class="nav-cta">Get Started</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <main>
+  <section class="hero" aria-label="Introduction">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      v1.0 — Now available on npm
+    </div>
+    <h1>
+      Talk to <span class="gradient">Cursor</span>
+    </h1>
+    <p class="hero-sub">
+      A hands-free voice interface for Cursor AI. Your coding assistant speaks progress updates aloud and listens for voice commands.
+    </p>
+    <div class="hero-actions">
+      <a href="#install" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Install Now
+      </a>
+      <a href="INSTALL.md" download class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        Download Guide
+      </a>
+    </div>
+
+    <div class="install-block">
+      <div class="install-header">
+        <div class="install-dot"></div>
+        <div class="install-dot"></div>
+        <div class="install-dot"></div>
+      </div>
+      <div class="install-cmd">
+        <code>$ <span>npx</span> -y talktocursor</code>
+        <button class="copy-btn" onclick="copyInstall(this)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features" aria-label="Features">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything you need for voice-driven coding</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">&#x1f50a;</div>
+        <h3>Text-to-Speech</h3>
+        <p>Your AI assistant speaks task progress, completions, and errors aloud so you can follow along without staring at the screen.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x1f399;</div>
+        <h3>Voice Commands</h3>
+        <p>Dictate your instructions and have them automatically submitted. Works with macOS dictation and Wispr Flow for seamless hands-free control.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x1f504;</div>
+        <h3>Conversational Loop</h3>
+        <p>Full voice loop with automatic listening after task completion. Speak, code, speak - no keyboard needed.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x1f3a8;</div>
+        <h3>Voice Presets</h3>
+        <p>Choose from quick presets: fast, slow, expressive, stable, or dramatic - or fine tune speed, stability, and style yourself.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x1f6e0;</div>
+        <h3>Settings UI</h3>
+        <p>Beautiful web interface to configure your API key, choose voices, adjust speech parameters, and manage all features.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x26a1;</div>
+        <h3>Easy Setup</h3>
+        <p>One npm command to install. Add a few lines to your Cursor config. Paste your ElevenLabs key. You're done.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-it-works" id="install" aria-label="Installation guide">
+    <div class="how-inner">
+      <div class="section-label">Installation</div>
+      <h2 class="section-title">Up and running in 3 minutes</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-line">
+            <div class="step-num">1</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>Add to Cursor</h3>
+            <p>Add the MCP server to your Cursor configuration file at <code>~/.cursor/mcp.json</code>:</p>
+            <div class="step-code">
+              <pre>{
+  <span class="key">"mcpServers"</span>: {
+    <span class="key">"tts"</span>: {
+      <span class="key">"command"</span>: <span class="string">"npx"</span>,
+      <span class="key">"args"</span>: [<span class="string">"-y"</span>, <span class="string">"talktocursor"</span>]
+    }
+  }
+}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-line">
+            <div class="step-num">2</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>Get your ElevenLabs API key</h3>
+            <p>Sign up for a free account at <a href="https://elevenlabs.io" target="_blank" style="color: var(--primary); text-decoration: none;">elevenlabs.io</a> and create an API key. The free tier is sufficient for most cases.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-line">
+            <div class="step-num">3</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>Configure via Settings UI</h3>
+            <p>Run the settings server and open <code>http://localhost:3847</code> to paste your API key, pick a voice, and customize additional settings (optional).</p>
+            <div class="step-code">
+              <pre><span class="comment"># In the talktocursor directory:</span>
+npm run settings</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-line">
+            <div class="step-num">4</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>Restart Cursor and talk</h3>
+            <p>Fully quit and reopen Cursor. Open a chat and type <em>"Say hello using the speak tool"</em> - you should hear your assistant's voice. Then, just enable dictation or a transcription tool to start talking to your code.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-line">
+            <div class="step-num">5</div>
+            <div class="step-connector"></div>
+          </div>
+          <div class="step-content">
+            <h3>Install Wispr Flow <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">(recommended)</span></h3>
+            <p>For the full hands-free conversational loop, install <a href="https://www.wispr.com" target="_blank" style="color: var(--primary); text-decoration: none;">Wispr Flow</a> - a voice-to-text tool that lets you dictate anywhere on macOS. Once installed:</p>
+            <ul style="margin-top: 10px; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 8px;">
+              <li style="font-size: 14px; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
+                <span style="color: var(--primary); font-weight: 600; flex-shrink: 0;">1.</span>
+                Enable <strong style="color: var(--text);">Wispr Voice Loop</strong> in the settings UI
+              </li>
+              <li style="font-size: 14px; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
+                <span style="color: var(--primary); font-weight: 600; flex-shrink: 0;">2.</span>
+                Set the hotkey to match your Wispr Flow dictation shortcut
+              </li>
+              <li style="font-size: 14px; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
+                <span style="color: var(--primary); font-weight: 600; flex-shrink: 0;">3.</span>
+                Run <code style="background: var(--bg); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px;">npm run auto-submit</code> to start the background listener
+              </li>
+            </ul>
+            <p style="margin-top: 12px;">Now after each task, your assistant speaks the result, automatically starts Wispr to listen for your next command, and submits it — a fully voice-driven coding loop.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Config section -->
+  <section class="config-section" aria-label="Configuration options">
+    <div class="config-grid">
+      <div class="config-text">
+        <div class="section-label" style="text-align: left;">Configurable</div>
+        <h3>Fully customizable to your workflow</h3>
+        <p>Every aspect of TalkToCursor can be configured through the web-based settings UI or directly in the config file. No code changes needed.</p>
+        <ul class="config-list">
+          <li>Choose from any ElevenLabs voice</li>
+          <li>Adjust speed, stability, and expressiveness</li>
+          <li>Toggle auto-listen for voice loops</li>
+          <li>Configure hands-free dictation</li>
+          <li>Set custom hotkeys for Wispr Flow</li>
+          <li>Environment variable overrides supported</li>
+        </ul>
+      </div>
+      <div class="config-preview">
+        <div class="config-preview-header">
+          <div class="install-dot"></div>
+          <div class="install-dot"></div>
+          <div class="install-dot"></div>
+        </div>
+        <div class="config-preview-body">
+<pre><span class="comment">// config.json</span>
+{
+  <span class="key">"voiceId"</span>: <span class="string">"Rachel"</span>,
+  <span class="key">"model"</span>: <span class="string">"eleven_flash_v2_5"</span>,
+  <span class="key">"voiceSettings"</span>: {
+    <span class="key">"speed"</span>: 1.0,
+    <span class="key">"stability"</span>: 0.5,
+    <span class="key">"similarityBoost"</span>: 0.75,
+    <span class="key">"style"</span>: 0.0
+  },
+  <span class="key">"autoListen"</span>: true,
+  <span class="key">"autoSubmit"</span>: {
+    <span class="key">"enabled"</span>: true,
+    <span class="key">"silenceDelay"</span>: 3.0
+  }
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" aria-label="Get started">
+    <h2>Start talking to your code</h2>
+    <p>Install TalkToCursor in minutes and experience hands-free coding with voice feedback.</p>
+    <div class="cta-actions">
+      <a href="#install" class="btn btn-primary">
+        Get Started
+      </a>
+      <a href="INSTALL.md" download class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Install Guide
+      </a>
+      <a href="https://www.npmjs.com/package/talktocursor" target="_blank" class="btn btn-secondary">
+        View on npm
+      </a>
+    </div>
+  </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <p>TalkToCursor &mdash; <a href="https://opensource.org/license/mit" target="_blank" style="color: var(--text-muted); text-decoration: none; transition: color 0.2s;">MIT License</a></p>
+      <a href="https://buymeacoffee.com/727mike" target="_blank" class="footer-bmac">
+        <img src="bmac.png" alt="Buy Me a Coffee">
+      </a>
+      <ul class="footer-links">
+        <li><a href="https://www.npmjs.com/package/talktocursor" target="_blank">npm</a></li>
+        <li><a href="https://elevenlabs.io" target="_blank">ElevenLabs</a></li>
+        <li><a href="https://modelcontextprotocol.io" target="_blank">MCP</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    function copyInstall(btn) {
+      navigator.clipboard.writeText('npx -y talktocursor').then(() => {
+        btn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Copied!
+        `;
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          `;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    // Smooth scroll for nav links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+
+  <noscript>
+    <style>
+      .hero-badge-dot { animation: none !important; }
+    </style>
+  </noscript>
+
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "name": "talktocursor",
+  "version": "1.0.0",
+  "description": "Hands-free voice interface for Cursor AI — text-to-speech, voice commands, and conversational coding using ElevenLabs TTS",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "talktocursor": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x build/index.js",
+    "watch": "tsc --watch",
+    "settings": "node build/settings-server.js",
+    "auto-submit": ".venv/bin/python scripts/auto-submit.py",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "text-to-speech",
+    "elevenlabs",
+    "cursor",
+    "tts",
+    "voice",
+    "hands-free",
+    "dictation",
+    "model-context-protocol",
+    "ai-assistant"
+  ],
+  "author": "Mike Sheehan",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikesheehan/talktocursor"
+  },
+  "homepage": "https://github.com/mikesheehan/talktocursor#readme",
+  "files": [
+    "build/",
+    "public/",
+    "scripts/*.py",
+    "INSTALL.md",
+    "README.md"
+  ],
+  "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.34.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "express": "^5.2.1",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}
