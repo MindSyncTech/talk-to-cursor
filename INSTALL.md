@@ -1,5 +1,7 @@
 # TalkToCursor - Installation Guide
 
+**[talktocursor.com](https://talktocursor.com)** | **[npm](https://www.npmjs.com/package/talktocursor)** | **[GitHub](https://github.com/MindSyncTech/talktocursor)**
+
 A hands-free voice interface for Cursor AI. Your coding assistant speaks progress updates aloud and can listen for voice commands using ElevenLabs TTS.
 
 ---

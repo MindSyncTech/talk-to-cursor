@@ -32,7 +32,7 @@
     "type": "git",
     "url": "https://github.com/MindSyncTech/talktocursor"
   },
-  "homepage": "https://github.com/MindSyncTech/talktocursor#readme",
+  "homepage": "https://talktocursor.com",
   "files": [
     "build/",
     "public/",

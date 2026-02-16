@@ -1,6 +1,8 @@
-# Cursor TTS MCP Server
+# TalkToCursor
 
-A Model Context Protocol (MCP) server that adds text-to-speech capabilities to Cursor AI. The agent can speak progress updates, completions, and responses aloud using ElevenLabs TTS, enabling hands-free coding workflows.
+**[talktocursor.com](https://talktocursor.com)**
+
+A hands-free voice interface for Cursor AI. Your coding assistant speaks progress updates, completions, and responses aloud using ElevenLabs TTS, enabling fully voice-driven coding workflows.
 
 ## Features
 
@@ -167,9 +169,14 @@ The script monitors the text field and automatically presses Enter when dictatio
 - `npm run settings` - Open the web settings UI
 - `npm run auto-submit` - Start the auto-submit script (macOS only)
 
+## Links
+
+- **Website:** [talktocursor.com](https://talktocursor.com)
+- **npm:** [npmjs.com/package/talktocursor](https://www.npmjs.com/package/talktocursor)
+
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE)
 
 ## Credits
 
