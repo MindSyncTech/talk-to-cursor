@@ -6,11 +6,11 @@ A hands-free voice interface for Cursor AI. Your coding assistant speaks progres
 
 ## Features
 
-- 🔊 **Text-to-Speech** - Agent speaks aloud via ElevenLabs API
-- 🎛️ **Settings UI** - Web interface to configure API key, voice, and speech parameters
-- ⚡ **Auto-Submit** - Optional: automatically press Enter when dictation finishes (hands-free)
-- 🎨 **Voice Presets** - Quick settings for fast, slow, expressive, stable, and dramatic speech
-- 🔧 **Configurable** - Speed, stability, similarity boost, and style exaggeration controls
+- **Text-to-Speech** - Agent speaks aloud via ElevenLabs API
+- **Settings UI** - Web interface to configure API key, voice, and speech parameters
+- **Auto-Submit** - Optional: automatically press Enter when dictation finishes (hands-free)
+- **Voice Presets** - Quick settings for fast, slow, expressive, stable, and dramatic speech
+- **Configurable** - Speed, stability, similarity boost, and style exaggeration controls
 
 ## Installation
 
