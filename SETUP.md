@@ -4,7 +4,7 @@ Your Cursor TTS MCP server is fully built and configured! Follow these steps to 
 
 ## Step 1: Get Your ElevenLabs API Key
 
-1. Go to https://elevenlabs.io/app/settings/api-keys
+1. Go to https://try.elevenlabs.io/talktocursor
 2. Sign up or log in (free tier available)
 3. Create a new API key and copy it
 
@@ -80,8 +80,8 @@ echo $ELEVENLABS_API_KEY
 
 ## Next Steps
 
-- Browse more voices at: https://elevenlabs.io/app/voice-library
-- Check your usage at: https://elevenlabs.io/app/usage
+- Browse more voices at: https://try.elevenlabs.io/talktocursor
+- Check your usage at: https://try.elevenlabs.io/talktocursor
 - Read the full README: `~/cursor-tts-mcp/README.md`
 
 Enjoy coding by voice! 🎤✨

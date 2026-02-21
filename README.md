@@ -58,7 +58,7 @@ For example:
 
 ### 5. Get your ElevenLabs API key
 
-1. Go to [elevenlabs.io/app/settings/api-keys](https://elevenlabs.io/app/settings/api-keys)
+1. Go to [elevenlabs.io/app/settings/api-keys](https://try.elevenlabs.io/talktocursor)
 2. Sign up or log in (free tier available)
 3. Create a new API key and copy it
 
@@ -180,5 +180,5 @@ MIT — see [LICENSE](LICENSE)
 
 ## Credits
 
-- [ElevenLabs](https://elevenlabs.io) for TTS API
+- [ElevenLabs](https://try.elevenlabs.io/talktocursor) for TTS API
 - [Model Context Protocol](https://modelcontextprotocol.io) for MCP SDK

@@ -74,7 +74,7 @@ Then add to your Cursor MCP config (`~/.cursor/mcp.json`):
 
 ## Step 3: Get your ElevenLabs API Key
 
-1. Go to [elevenlabs.io/app/settings/api-keys](https://elevenlabs.io/app/settings/api-keys)
+1. Go to [elevenlabs.io/app/settings/api-keys](https://try.elevenlabs.io/talktocursor)
 2. Sign up or log in (free tier available with 10,000 characters/month)
 3. Create a new API key and copy it
 
@@ -171,7 +171,7 @@ npm run auto-submit
 
 ### Wispr Voice Loop Setup (requires Wispr Flow)
 
-For a full conversational voice loop using [Wispr Flow](https://wispr.com):
+For a full conversational voice loop using [Wispr Flow](https://ref.wisprflow.ai/talktocursor):
 
 1. Install Wispr Flow and configure its dictation hotkey
 2. Enable **Wispr Voice Loop** in the settings UI
