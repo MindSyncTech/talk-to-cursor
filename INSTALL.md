@@ -1,6 +1,6 @@
 # TalkToCursor - Installation Guide
 
-**[talktocursor.com](https://talktocursor.com)** | **[npm](https://www.npmjs.com/package/talktocursor)** | **[GitHub](https://github.com/MindSyncTech/talktocursor)**
+**[talktocursor.com](https://talktocursor.com)** | **[npm](https://www.npmjs.com/package/talktocursor)** | **[GitHub](https://github.com/MindSyncTech/cursor-tts-mcp)**
 
 A hands-free voice interface for Cursor AI. Your coding assistant speaks progress updates aloud and can listen for voice commands using ElevenLabs TTS.
 
@@ -41,7 +41,7 @@ cd cursor-tts-mcp
 
 **Option B** - From GitHub:
 ```bash
-git clone https://github.com/yourusername/cursor-tts-mcp.git
+git clone https://github.com/MindSyncTech/cursor-tts-mcp.git
 cd cursor-tts-mcp
 ```
 

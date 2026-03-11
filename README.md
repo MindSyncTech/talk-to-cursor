@@ -17,7 +17,7 @@ A hands-free voice interface for Cursor AI. Your coding assistant speaks progres
 ### 1. Clone or download this repository
 
 ```bash
-git clone https://github.com/yourusername/cursor-tts-mcp.git
+git clone https://github.com/MindSyncTech/cursor-tts-mcp.git
 cd cursor-tts-mcp
 ```
 
