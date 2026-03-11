@@ -7,6 +7,12 @@ build/
 
 # Config (contains API keys)
 config.json
+.env
+.env.local
+.env.*.local
+
+# Website / landing (not needed to run the app)
+landing/
 
 # Signal files
 listen-signal.json
