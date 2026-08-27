@@ -2,36 +2,36 @@
 
 **[talktocursor.com](https://talktocursor.com)**
 
-A hands-free voice interface for Cursor AI. Your coding assistant speaks progress updates, completions, and responses aloud using ElevenLabs, local Voicebox, or Google-powered TalkToCursor Cloud TTS.
+A hands-free voice interface for Cursor AI. Your coding assistant speaks progress updates, completions, and responses aloud using managed TalkToCursor Cloud, ElevenLabs, or local Voicebox TTS.
 
 ## Features
 
-- **Text-to-Speech Providers** - Choose your own ElevenLabs key, local Voicebox voice cloning, or managed TalkToCursor Cloud
-- **Settings UI** - Web interface to configure API key, voice, and speech parameters
+- **Text-to-Speech Providers** - Choose managed TalkToCursor Cloud, your own ElevenLabs key, or local Voicebox
+- **Settings UI** - Connect providers, choose voices, and manage speech and hands-free settings
 - **Auto-Submit** - Optional: automatically press Enter when dictation finishes (hands-free)
-- **Voice Presets** - Quick settings for fast, slow, expressive, stable, and dramatic speech
-- **Configurable** - Speed, stability, similarity boost, and style exaggeration controls
+- **Provider-Aware Controls** - Cloud voice selection, ElevenLabs presets and tuning, and Voicebox profiles
+- **Portable Cloud Settings** - Sync managed voice preferences across connected devices
 
 ## Recommended Voice Setup
 
-TalkToCursor handles text-to-speech responses from Cursor. For speech-to-text dictation, pair it with [Wispr Flow](https://ref.wisprflow.ai/talktocursor) for a smoother hands-free coding loop.
+TalkToCursor handles text-to-speech responses from Cursor. Choose the provider that fits your priorities:
 
-Choose a TTS provider:
-- **[ElevenLabs](https://try.elevenlabs.io/talktocursor)** - Recommended cloud text-to-speech provider (best quality)
-- **[Voicebox](https://github.com/jamiepine/voicebox)** - Free, local text-to-speech and voice cloning (manual setup)
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com) (recommended for easiest setup)** - Managed Google Cloud TTS for $15/month with 100,000 included characters, portable settings, and no provider API key stored locally.
+- **[ElevenLabs](https://try.elevenlabs.io/talktocursor) (best for voice selection and control)** - Bring your own API key for a broad voice library, models, presets, and detailed tuning.
+- **[Voicebox](https://github.com/jamiepine/voicebox) (free, private, and local)** - Run speech synthesis and voice cloning on your computer with manual setup.
 
-Choose a dictation service:
-- **[Wispr Flow](https://ref.wisprflow.ai/talktocursor)** - Recommended for voice dictation and hands-free prompts
-- **[Handy](https://github.com/cjpais/Handy) (free & private)** — Open-source transcription that runs locally using Whisper or Parakeet, must be installed manually.
+For optional speech-to-text and the hands-free conversational loop:
 
-For TTS with minimal setup, consider:
-- **[TalkToCursor Cloud](https://cloud.talktocursor.com)** - Managed Google Cloud TTS for $15/month with 100,000 included characters, portable settings, and no provider API key stored on the local device.
+- **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended for easiest setup)** - Polished voice dictation with minimal configuration.
+- **[Handy](https://github.com/cjpais/Handy) (free, private, and local)** - Open-source transcription using Whisper or Parakeet.
 
 ## Installation
 
 ### 1. Install
 
-For a global install:
+The recommended setup lets Cursor run TalkToCursor directly through `npx`, with no global install required. Skip to step 3 if you use this option.
+
+For a global install instead:
 
 ```bash
 npm install -g talktocursor
@@ -58,6 +58,19 @@ Skip this step for a global install.
 ### 3. Configure Cursor to use the MCP server
 
 Edit (or create) `~/.cursor/mcp.json`:
+
+Recommended `npx` configuration:
+
+```json
+{
+  "mcpServers": {
+    "tts": {
+      "command": "npx",
+      "args": ["-y", "talktocursor"]
+    }
+  }
+}
+```
 
 For a global install:
 
@@ -98,7 +111,13 @@ For example:
 
 ### 5. Configure the MCP server
 
-Open the settings UI (global install):
+Open the settings UI for the recommended `npx` setup:
+
+```bash
+npx -y --package talktocursor talktocursor-settings
+```
+
+For a global install:
 
 ```bash
 talktocursor-settings
@@ -107,7 +126,7 @@ talktocursor-settings
 For a source install, use `npm run settings`.
 
 Then open http://localhost:3847 in your browser and:
-1. Select **ElevenLabs**, **Voicebox**, or **TalkToCursor Cloud** under Text-to-Speech Provider
+1. Select **TalkToCursor Cloud**, **ElevenLabs**, or **Voicebox** under Text-to-Speech Provider
 2. Connect your Cloud account, save an ElevenLabs key, or connect local Voicebox
 3. (Optional) Enable Auto-Submit if you want hands-free dictation
 
@@ -141,34 +160,34 @@ After each task, your assistant speaks the result, starts the selected provider 
 
 ## Usage
 
-Once installed, the Cursor AI agent will automatically speak at key moments:
+Once configured, Cursor can use TalkToCursor to speak:
 - When starting a task
 - When completing a task
 - When encountering errors or needing clarification
 - At major progress milestones
 
-You can customize when the agent speaks by editing `~/.cursor/rules/voice-feedback.mdc`.
+To encourage automatic voice feedback at these moments, add a Cursor rule. See the [voice-feedback rule example](INSTALL.md#optional-voice-feedback-rule).
 
 ## Voice Settings
 
-The settings UI lets you adjust:
+ElevenLabs supports detailed voice controls:
 
 - **Speed** (0.7x - 1.2x) - How fast the speech is delivered
 - **Stability** (0-1) - More consistent vs. more expressive
 - **Similarity Boost** (0-1) - How closely it matches the original voice
 - **Style Exaggeration** (0-1) - Amplifies the speaker's style (V2+ models)
 
-ElevenLabs keeps its BYOK voice and model controls. TalkToCursor Cloud uses the
-fixed `gemini-2.5-flash-tts` model and a fixed list of Google voices, defaulting
-to Kore.
-
-**Quick Presets:**
+**ElevenLabs Quick Presets:**
 - Default - Balanced settings
 - Fast - Quick and energetic
 - Slow - Clear and measured
 - Expressive - Dynamic and varied
 - Stable - Consistent tone
 - Dramatic - Maximum style
+
+TalkToCursor Cloud uses the fixed `gemini-2.5-flash-tts` model and a curated
+list of Google voices, defaulting to Kore. Voicebox uses the profiles and models
+available in your local Voicebox installation.
 
 ## Auto-Submit (Optional)
 
@@ -209,18 +228,18 @@ Cloud device credentials are stored in the macOS Keychain when available, with a
 
 **Tool doesn't appear in Cursor?**
 - Make sure you fully quit and restarted Cursor (Cmd+Q)
-- Check that `~/.cursor/mcp.json` has the correct absolute path
-- Run `npm run build` to ensure the project is compiled
+- Check that `~/.cursor/mcp.json` contains the correct `npx`, global, or source configuration
+- For source installs, run `npm run build` to ensure the project is compiled
 
-**"API key not set" error?**
-- Open the settings UI: `talktocursor-settings` (or `npm run settings` from source)
-- Enter your ElevenLabs API key and click "Save API Key"
+**Provider isn't connected?**
+- Reopen the settings UI using the command for your installation method in step 5
+- Connect TalkToCursor Cloud, save an ElevenLabs API key, or start Voicebox locally
 - Restart Cursor
 
 **No audio?**
 - Check system volume and speaker output
 - Install or verify `mpv`: `brew install mpv`
-- Test your API key in the settings UI
+- Check the selected provider's connection status in the settings UI
 
 **Auto-submit not working?**
 - Ensure macOS Accessibility permissions are granted
@@ -239,6 +258,7 @@ Cloud device credentials are stored in the macOS Keychain when available, with a
 ## Links
 
 - **Website:** [talktocursor.com](https://talktocursor.com)
+- **TalkToCursor Cloud:** [cloud.talktocursor.com](https://cloud.talktocursor.com)
 - **npm:** [npmjs.com/package/talktocursor](https://www.npmjs.com/package/talktocursor)
 
 ## License
