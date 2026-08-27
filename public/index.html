@@ -33,9 +33,30 @@
     }
 
     .container {
-      max-width: 640px;
+      max-width: 960px;
       margin: 0 auto;
       padding: 48px 24px;
+    }
+
+    .card-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-row--single {
+      grid-template-columns: 1fr;
+    }
+
+    .card-row > .card {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 768px) {
+      .card-row {
+        grid-template-columns: 1fr;
+      }
     }
 
     header {
@@ -100,6 +121,27 @@
       margin-bottom: 20px;
     }
 
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .form-row--single {
+      grid-template-columns: 1fr;
+    }
+
+    .form-row .form-group {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .form-group:last-child {
       margin-bottom: 0;
     }
@@ -120,6 +162,7 @@
 
     input[type="text"],
     input[type="password"],
+    input[type="url"],
     select {
       width: 100%;
       padding: 10px 14px;
@@ -185,6 +228,34 @@
       margin-top: 24px;
     }
 
+    .btn-row-centered {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-row-centered .btn-primary {
+      flex: none;
+    }
+
+    .cloud-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .cloud-actions .btn-primary {
+      flex: none;
+    }
+
+    .cloud-actions button {
+      width: 100%;
+      min-height: 40px;
+      padding: 10px 12px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
     button {
       padding: 10px 20px;
       border-radius: var(--radius-sm);
@@ -195,13 +266,16 @@
       transition: all 0.2s;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
+      text-align: center;
     }
 
     .btn-primary {
       background: var(--primary);
       color: white;
       flex: 1;
+      justify-content: center;
     }
 
     .btn-primary:hover {
@@ -393,6 +467,15 @@
       color: var(--warning);
     }
 
+    #cloudUsageNotice {
+      margin-bottom: 16px;
+    }
+
+    .cloud-actions-help {
+      margin-top: 12px;
+      line-height: 1.45;
+    }
+
     .presets-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -436,6 +519,42 @@
 
     .slider-group {
       margin-bottom: 20px;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .slider-row--2col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .slider-row .slider-group {
+      margin-bottom: 0;
+    }
+
+    .slider-row .slider-label {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .slider-row .slider-value {
+      text-align: left;
+    }
+
+    .slider-row .help-text {
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 768px) {
+      .slider-row {
+        grid-template-columns: 1fr;
+      }
     }
 
     .slider-group:last-of-type {
@@ -672,6 +791,14 @@
       color: var(--primary);
       text-decoration: none;
     }
+
+    .footer-disclaimer {
+      margin-top: 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      opacity: 0.75;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -679,9 +806,59 @@
     <header>
       <div class="icon">🔊</div>
       <h1>Talk to Cursor Settings</h1>
-      <p>Configure your text-to-speech MCP server</p>
+      <p>Configure text-to-speech and hands-free voice input</p>
     </header>
 
+    <!-- TTS Provider + Auto-Listen -->
+    <div class="card-row">
+    <div class="card">
+      <div class="card-title">Text-to-Speech Provider</div>
+      <div class="form-group">
+        <label for="ttsProvider">Provider</label>
+        <select id="ttsProvider">
+          <option value="elevenlabs">ElevenLabs (recommended)</option>
+          <option value="cloud">TalkToCursor Cloud (managed)</option>
+          <option value="voicebox">Voicebox (free &amp; local)</option>
+        </select>
+        <div class="help-text">Use your own provider, choose free local speech, or connect a managed Cloud plan.</div>
+      </div>
+      <div class="env-notice" id="elevenLabsProviderInfo" style="margin-top: 0;">
+        <strong>ElevenLabs:</strong> Recommended for the simplest setup and polished cloud voices.
+      </div>
+      <div class="env-notice" id="voiceboxProviderInfo" style="display: none; margin-top: 0;">
+        <strong>Voicebox:</strong> Install and run
+        <a href="https://github.com/jamiepine/voicebox/releases" target="_blank" rel="noopener noreferrer" style="color: var(--primary);">Voicebox</a>
+        locally, create a voice profile, then configure it below.
+      </div>
+      <div class="env-notice" id="cloudProviderInfo" style="display: none; margin-top: 0;">
+        <strong>TalkToCursor Cloud:</strong> Managed voices, included monthly usage, and portable settings without a provider API key.
+      </div>
+    </div>
+
+    <!-- Auto-Listen Card -->
+    <div class="card">
+      <div class="card-title">Auto-Listen</div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Enable Auto-Listen</span>
+          <span class="toggle-desc">Automatically start listening for voice input after task completion</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="autoListenEnabled">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 16px; line-height: 1.5;">
+        When enabled, I'll automatically call the listen tool after completing tasks to trigger the configured voice input provider.
+        Disable this if you prefer to manually start dictation.
+      </p>
+    </div>
+    </div>
+
+    <div id="elevenLabsSettings">
+    <div class="card-row">
     <!-- API Key Card -->
     <div class="card">
       <div class="card-title">
@@ -735,10 +912,14 @@
         <div class="voices-grid" id="voicesGrid"></div>
       </div>
     </div>
+    </div>
 
-    <!-- Model Card -->
+    <!-- Voice Settings Card -->
     <div class="card">
-      <div class="card-title">Model</div>
+      <div class="card-title">
+        Voice Settings
+        <button class="reset-link" id="resetSettingsBtn" type="button">Reset to defaults</button>
+      </div>
 
       <div class="form-group">
         <label for="model">TTS Model</label>
@@ -750,20 +931,6 @@
           <option value="eleven_turbo_v2">Turbo v2</option>
           <option value="eleven_monolingual_v1">Monolingual v1</option>
         </select>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn-primary" id="saveModelBtn" type="button" style="flex: none;">
-          Save Model
-        </button>
-      </div>
-    </div>
-
-    <!-- Voice Settings Card -->
-    <div class="card">
-      <div class="card-title">
-        Voice Settings
-        <button class="reset-link" id="resetSettingsBtn" type="button">Reset to defaults</button>
       </div>
 
       <div class="form-group" style="margin-bottom: 24px;">
@@ -796,6 +963,7 @@
         </div>
       </div>
 
+      <div class="slider-row slider-row--2col">
       <div class="slider-group">
         <div class="slider-label">
           <label for="speed">Speed</label>
@@ -847,6 +1015,7 @@
         </div>
         <div class="help-text">Amplifies the style of the original speaker. Only works with V2+ models. May increase latency.</div>
       </div>
+      </div>
 
       <div class="btn-row">
         <button class="btn-primary" id="saveSettingsBtn" type="button" style="flex: none;">
@@ -854,26 +1023,109 @@
         </button>
       </div>
     </div>
+    </div>
 
-    <!-- Auto-Listen Card -->
-    <div class="card">
-      <div class="card-title">Auto-Listen</div>
+    <!-- Provider settings + Auto-Submit -->
+    <div class="card-row" id="cloudAutoSubmitRow">
+    <!-- Voicebox Settings Card -->
+    <div class="card" id="voiceboxSettings" style="display: none;">
+      <div class="card-title">Voicebox</div>
+
+      <div class="form-group">
+        <label for="voiceboxBaseUrl">Local API URL</label>
+        <input type="text" id="voiceboxBaseUrl" value="http://127.0.0.1:17493" spellcheck="false">
+        <div class="help-text">The local REST API exposed by the running Voicebox app.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="voiceboxProfile">Voice Profile (optional)</label>
+        <input type="text" id="voiceboxProfile" placeholder="Use Voicebox default binding" spellcheck="false">
+        <div class="help-text">Enter a Voicebox profile name or ID, or leave blank to use its TalkToCursor client binding.</div>
+      </div>
 
       <div class="toggle-row">
         <div class="toggle-info">
-          <span class="toggle-title">Enable Auto-Listen</span>
-          <span class="toggle-desc">Automatically start listening for voice input after task completion</span>
+          <span class="toggle-title">Use Voice Personality</span>
+          <span class="toggle-desc">Rewrite spoken text through the profile's configured personality</span>
         </div>
         <label class="switch">
-          <input type="checkbox" id="autoListenEnabled">
+          <input type="checkbox" id="voiceboxPersonality">
           <span class="switch-slider"></span>
         </label>
       </div>
 
-      <p style="color: var(--text-muted); font-size: 13px; margin-top: 16px; line-height: 1.5;">
-        When enabled, I'll automatically call the listen tool after completing tasks to trigger the Wispr voice loop. 
-        Disable this if you prefer to manually start dictation.
-      </p>
+      <div class="btn-row">
+        <button class="btn-secondary" id="testVoiceboxBtn" type="button">Test Connection</button>
+        <button class="btn-primary" id="saveVoiceboxBtn" type="button">Save Voicebox Settings</button>
+      </div>
+    </div>
+
+    <!-- TalkToCursor Cloud Settings Card -->
+    <div class="card" id="cloudSettings" style="display: none;">
+      <div class="card-title">
+        TalkToCursor Cloud
+        <span id="cloudStatusBadge" class="badge badge-missing">Not Connected</span>
+      </div>
+
+      <div class="form-group">
+        <label for="cloudApiUrl">Cloud API URL</label>
+        <input type="url" id="cloudApiUrl" value="https://cloud.talktocursor.com" spellcheck="false">
+        <div class="help-text">Use the default service URL unless you are running a private deployment.</div>
+      </div>
+
+      <div id="cloudDisconnected">
+        <div class="btn-row">
+          <button class="btn-primary" id="connectCloudBtn" type="button">Connect Cloud Account</button>
+        </div>
+        <div class="env-notice" id="cloudPairingNotice" style="display: none;">
+          <strong>Device code:</strong> <code id="cloudUserCode"></code>
+          <span style="display: block; margin-top: 6px;">Approve this code in the Cloud dashboard. This window will finish connecting automatically.</span>
+        </div>
+      </div>
+
+      <div id="cloudConnected" style="display: none;">
+        <div class="env-notice" id="cloudUsageNotice">
+          Connected. Checking subscription and usage…
+        </div>
+
+        <div class="form-group">
+          <label for="cloudVoiceId">Cloud Voice</label>
+          <select id="cloudVoiceId">
+            <optgroup label="Male">
+              <option value="Alnilam">Alnilam</option>
+              <option value="Charon">Charon</option>
+              <option value="Puck">Puck</option>
+              <option value="Sadaltager">Sadaltager</option>
+              <option value="Umbriel">Umbriel</option>
+              <option value="Sadachbia">Sadachbia</option>
+            </optgroup>
+            <optgroup label="Female">
+              <option value="Achernar">Achernar</option>
+              <option value="Despina">Despina</option>
+              <option value="Kore" selected>Kore</option>
+              <option value="Leda">Leda</option>
+              <option value="Sulafat">Sulafat</option>
+              <option value="Zephyr">Zephyr</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="cloudModel">Cloud Model</label>
+          <select id="cloudModel" disabled>
+            <option value="gemini-2.5-flash-tts">Gemini 2.5 Flash TTS</option>
+          </select>
+          <div class="help-text">Managed Cloud speech uses a fixed Google Cloud TTS model.</div>
+        </div>
+
+        <div class="cloud-actions">
+          <button class="btn-primary" id="saveCloudBtn" type="button">Save</button>
+          <button class="btn-secondary" id="downloadCloudSettingsBtn" type="button">Download</button>
+          <button class="btn-secondary" id="uploadCloudSettingsBtn" type="button">Upload</button>
+          <button class="btn-secondary" id="disconnectCloudBtn" type="button">Disconnect</button>
+        </div>
+        <div class="help-text cloud-actions-help">Upload and download are explicit so another device never silently overwrites your local preferences.</div>
+      </div>
     </div>
 
     <!-- Auto-Submit Card -->
@@ -892,6 +1144,7 @@
       </div>
 
       <div class="auto-submit-details" id="autoSubmitDetails">
+        <div id="autoSubmitSliders">
         <div class="slider-group">
           <div class="slider-label">
             <label for="silenceDelay">Silence Delay</label>
@@ -917,6 +1170,7 @@
           </div>
           <div class="help-text">Minimum characters in clipboard to count as dictation. Prevents accidental submits from short copy-paste actions.</div>
         </div>
+        </div>
 
         <div class="btn-row" style="margin-bottom: 16px;">
           <button class="btn-primary" id="saveAutoSubmitBtn" type="button" style="flex: none;">
@@ -925,11 +1179,11 @@
         </div>
 
         <div class="env-notice" style="margin-top: 0;">
-          <strong>How it works:</strong> Monitors the text field via Accessibility API. Detects text from dictation, typing, or paste. Auto-submits when Cursor is active.
+          <strong>How it works:</strong> Detects text from dictation, typing, or paste. Auto-submits when Cursor is active.
           <br><br>
           <strong>Setup:</strong> After enabling and saving, run in a terminal:
           <div style="position: relative; margin-top: 6px;">
-            <code style="display: block; padding: 6px 10px 6px 10px; background: var(--bg); border-radius: 4px; font-size: 13px; padding-right: 45px;">npm run auto-submit</code>
+            <code style="display: block; padding: 6px 10px 6px 10px; background: var(--bg); border-radius: 4px; font-size: 13px; padding-right: 45px;">talktocursor-auto-submit</code>
             <button class="copy-btn" onclick="copyCommand()" title="Copy command">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -941,26 +1195,48 @@
         </div>
       </div>
     </div>
+    </div>
 
-    <!-- Wispr Voice Loop Card -->
+    <!-- Voice Input Provider Card -->
     <div class="card">
-      <div class="card-title">Wispr Voice Loop</div>
+      <div class="card-title">Voice Input Provider</div>
       <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px; margin-bottom: 12px;">
-        Download Wispr from <a href="https://ref.wisprflow.ai/talktocursor" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: none;">wispr.com</a>
+        Choose Wispr Flow for the recommended polished experience or Handy for free, private, offline transcription.
       </p>
+
+      <div class="form-group">
+        <label for="voiceInputProvider">Provider</label>
+        <select id="voiceInputProvider">
+          <option value="wispr">Wispr Flow (recommended)</option>
+          <option value="handy">Handy (free &amp; private)</option>
+        </select>
+      </div>
+
+      <div class="env-notice" id="wisprProviderInfo" style="margin-top: 0; margin-bottom: 16px;">
+        <strong>Wispr Flow:</strong> Install it from
+        <a href="https://ref.wisprflow.ai/talktocursor" target="_blank" rel="noopener noreferrer" style="color: var(--primary);">wisprflow.ai</a>
+        and configure its dictation shortcut below.
+      </div>
+
+      <div class="env-notice" id="handyProviderInfo" style="display: none; margin-top: 0; margin-bottom: 16px;">
+        <strong>Handy:</strong> Install the free app from
+        <a href="https://github.com/cjpais/Handy/releases" target="_blank" rel="noopener noreferrer" style="color: var(--primary);">GitHub</a>,
+        launch it, and grant Microphone and Accessibility permissions.
+      </div>
 
       <div class="toggle-row">
         <div class="toggle-info">
-          <span class="toggle-title">Enable Wispr Voice Loop</span>
-          <span class="toggle-desc">Hands-free conversational loop with automatic Wispr control</span>
+          <span class="toggle-title">Enable Voice Input Loop</span>
+          <span class="toggle-desc">Automatically listen for your next command after the assistant speaks</span>
         </div>
         <label class="switch">
-          <input type="checkbox" id="wisprLoopEnabled">
+          <input type="checkbox" id="voiceInputEnabled">
           <span class="switch-slider"></span>
         </label>
       </div>
 
-      <div class="auto-submit-details" id="wisprLoopDetails">
+      <div class="auto-submit-details" id="voiceInputDetails">
+        <div class="slider-row">
         <div class="slider-group">
           <div class="slider-label">
             <label for="ttsDelay">TTS Delay</label>
@@ -971,7 +1247,7 @@
             <span>1s (quick)</span>
             <span>8s (patient)</span>
           </div>
-          <div class="help-text">How long to wait for TTS to finish before starting Wispr. Increase if TTS gets cut off.</div>
+          <div class="help-text">How long to wait for TTS to finish before starting voice input. Increase if TTS gets cut off.</div>
         </div>
 
         <div class="slider-group">
@@ -999,22 +1275,31 @@
           </div>
           <div class="help-text">How long of silence confirms you're done speaking. Increase if it cuts you off mid-sentence.</div>
         </div>
-
-        <div class="form-group">
-          <label for="wisprHotkey">Wispr Hotkey</label>
-          <input type="text" id="wisprHotkey" value="shift+ctrl" spellcheck="false">
-          <div class="help-text">Hotkey combo that toggles Wispr recording (start/stop). Default: shift+ctrl</div>
         </div>
 
-        <div class="form-group">
-          <label for="manualTriggerHotkey">Manual Trigger Hotkey</label>
-          <input type="text" id="manualTriggerHotkey" value="ctrl+shift+l" spellcheck="false">
-          <div class="help-text">Global hotkey to manually start the voice loop anytime. Default: ctrl+shift+l</div>
+        <div class="form-row" id="voiceHotkeyRow">
+          <div id="wisprSettings" class="form-group">
+            <label for="wisprHotkey">Wispr Hotkey</label>
+            <input type="text" id="wisprHotkey" value="shift+ctrl" spellcheck="false">
+            <div class="help-text">Hotkey combo that toggles Wispr recording (start/stop). Default: shift+ctrl</div>
+          </div>
+
+          <div class="form-group">
+            <label for="manualTriggerHotkey">Manual Trigger Hotkey</label>
+            <input type="text" id="manualTriggerHotkey" value="ctrl+shift+l" spellcheck="false">
+            <div class="help-text">Global hotkey to manually start the voice loop anytime. Default: ctrl+shift+l</div>
+          </div>
+
+          <div id="handySettings" class="form-group" style="display: none;">
+            <label for="handyCommand">Handy Command (optional)</label>
+            <input type="text" id="handyCommand" placeholder="Auto-detect" spellcheck="false">
+            <div class="help-text">Leave blank to auto-detect Handy. Set a custom executable path if Handy is installed elsewhere.</div>
+          </div>
         </div>
 
         <div class="btn-row" style="margin-bottom: 16px;">
-          <button class="btn-primary" id="saveWisprLoopBtn" type="button" style="flex: none;">
-            Save Wispr Loop Settings
+          <button class="btn-primary" id="saveVoiceInputBtn" type="button" style="flex: none;">
+            Save Voice Input Settings
           </button>
         </div>
 
@@ -1022,12 +1307,12 @@
           <strong>How it works:</strong>
           <ol style="margin: 8px 0 0 20px; padding: 0;">
             <li>Agent finishes task and calls listen() tool</li>
-            <li>Script waits for TTS to finish, then triggers Wispr</li>
+            <li>Script waits for TTS to finish, then starts the selected provider</li>
             <li>Your mic is monitored for speech and silence</li>
-            <li>When silence is detected, Wispr stops and pastes</li>
+            <li>When silence is detected, the provider stops and pastes</li>
             <li>Auto-submit presses Enter, cycle repeats</li>
           </ol>
-          <span style="display: block; margin-top: 8px;">Requires sounddevice Python package and PortAudio. See terminal for setup commands.</span>
+          <span style="display: block; margin-top: 8px;">The automatic loop currently requires macOS, the sounddevice Python package, and PortAudio. See the installation guide for setup commands.</span>
         </div>
       </div>
     </div>
@@ -1035,11 +1320,12 @@
     <!-- Info Notice -->
     <div class="env-notice">
       <strong>Note:</strong> Environment variables (<code>ELEVENLABS_API_KEY</code>, <code>ELEVENLABS_VOICE_ID</code>) take priority over these settings.
-      After saving, restart Cursor for the MCP server to pick up the new config.
+      TTS changes apply to the next spoken response. Restart the auto-submit script after changing voice-input settings.
     </div>
 
     <footer>
-      <a href="https://talktocursor.com" target="_blank" rel="noopener noreferrer">talktocursor.com</a> &middot; <a href="https://github.com/MindSyncTech/talktocursor" target="_blank" rel="noopener noreferrer">GitHub</a> &middot; <a href="https://github.com" target="_blank">Documentation</a>
+      <a href="https://talktocursor.com" target="_blank" rel="noopener noreferrer">talktocursor.com</a> &middot; <a href="https://github.com/MindSyncTech/talk-to-cursor" target="_blank" rel="noopener noreferrer">GitHub</a> &middot; <a href="https://github.com/MindSyncTech/talk-to-cursor/blob/main/INSTALL.md" target="_blank" rel="noopener noreferrer">Documentation</a>
+      <p class="footer-disclaimer">Some links are affiliate links. This helps support TalkToCursor at no extra cost to you.</p>
     </footer>
   </div>
 
@@ -1047,6 +1333,33 @@
 
   <script>
     // Elements
+    const ttsProvider = document.getElementById('ttsProvider');
+    const elevenLabsProviderInfo = document.getElementById('elevenLabsProviderInfo');
+    const voiceboxProviderInfo = document.getElementById('voiceboxProviderInfo');
+    const cloudProviderInfo = document.getElementById('cloudProviderInfo');
+    const elevenLabsSettings = document.getElementById('elevenLabsSettings');
+    const voiceboxSettings = document.getElementById('voiceboxSettings');
+    const cloudSettings = document.getElementById('cloudSettings');
+    const cloudApiUrl = document.getElementById('cloudApiUrl');
+    const cloudVoiceId = document.getElementById('cloudVoiceId');
+    const cloudModel = document.getElementById('cloudModel');
+    const cloudStatusBadge = document.getElementById('cloudStatusBadge');
+    const cloudDisconnected = document.getElementById('cloudDisconnected');
+    const cloudConnected = document.getElementById('cloudConnected');
+    const connectCloudBtn = document.getElementById('connectCloudBtn');
+    const disconnectCloudBtn = document.getElementById('disconnectCloudBtn');
+    const saveCloudBtn = document.getElementById('saveCloudBtn');
+    const downloadCloudSettingsBtn = document.getElementById('downloadCloudSettingsBtn');
+    const uploadCloudSettingsBtn = document.getElementById('uploadCloudSettingsBtn');
+    const cloudPairingNotice = document.getElementById('cloudPairingNotice');
+    const cloudUserCode = document.getElementById('cloudUserCode');
+    const cloudUsageNotice = document.getElementById('cloudUsageNotice');
+    const cloudAutoSubmitRow = document.getElementById('cloudAutoSubmitRow');
+    const voiceboxBaseUrl = document.getElementById('voiceboxBaseUrl');
+    const voiceboxProfile = document.getElementById('voiceboxProfile');
+    const voiceboxPersonality = document.getElementById('voiceboxPersonality');
+    const testVoiceboxBtn = document.getElementById('testVoiceboxBtn');
+    const saveVoiceboxBtn = document.getElementById('saveVoiceboxBtn');
     const apiKeyInput = document.getElementById('apiKey');
     const toggleKeyBtn = document.getElementById('toggleKey');
     const testBtn = document.getElementById('testBtn');
@@ -1058,7 +1371,6 @@
     const voicesList = document.getElementById('voicesList');
     const voicesGrid = document.getElementById('voicesGrid');
     const modelSelect = document.getElementById('model');
-    const saveModelBtn = document.getElementById('saveModelBtn');
     const speedSlider = document.getElementById('speed');
     const speedValue = document.getElementById('speedValue');
     const stabilitySlider = document.getElementById('stability');
@@ -1072,13 +1384,19 @@
     const autoListenEnabled = document.getElementById('autoListenEnabled');
     const autoSubmitEnabled = document.getElementById('autoSubmitEnabled');
     const autoSubmitDetails = document.getElementById('autoSubmitDetails');
+    const autoSubmitSliders = document.getElementById('autoSubmitSliders');
     const silenceDelaySlider = document.getElementById('silenceDelay');
     const silenceDelayValue = document.getElementById('silenceDelayValue');
     const minTextLengthSlider = document.getElementById('minTextLength');
     const minTextLengthValue = document.getElementById('minTextLengthValue');
     const saveAutoSubmitBtn = document.getElementById('saveAutoSubmitBtn');
-    const wisprLoopEnabled = document.getElementById('wisprLoopEnabled');
-    const wisprLoopDetails = document.getElementById('wisprLoopDetails');
+    const voiceInputProvider = document.getElementById('voiceInputProvider');
+    const voiceInputEnabled = document.getElementById('voiceInputEnabled');
+    const voiceInputDetails = document.getElementById('voiceInputDetails');
+    const wisprProviderInfo = document.getElementById('wisprProviderInfo');
+    const handyProviderInfo = document.getElementById('handyProviderInfo');
+    const wisprSettings = document.getElementById('wisprSettings');
+    const handySettings = document.getElementById('handySettings');
     const ttsDelaySlider = document.getElementById('ttsDelay');
     const ttsDelayValue = document.getElementById('ttsDelayValue');
     const silenceThresholdSlider = document.getElementById('silenceThreshold');
@@ -1086,11 +1404,49 @@
     const silenceDurationSlider = document.getElementById('silenceDuration');
     const silenceDurationValue = document.getElementById('silenceDurationValue');
     const wisprHotkeyInput = document.getElementById('wisprHotkey');
+    const handyCommandInput = document.getElementById('handyCommand');
     const manualTriggerHotkeyInput = document.getElementById('manualTriggerHotkey');
-    const saveWisprLoopBtn = document.getElementById('saveWisprLoopBtn');
+    const saveVoiceInputBtn = document.getElementById('saveVoiceInputBtn');
     const toastEl = document.getElementById('toast');
 
     let currentPreviewAudio = null;
+    let cloudPollTimer = null;
+    const managedCloudVoices = new Set([
+      'Alnilam', 'Charon', 'Puck', 'Sadaltager', 'Umbriel', 'Sadachbia',
+      'Achernar', 'Despina', 'Kore', 'Leda', 'Sulafat', 'Zephyr',
+    ]);
+
+    function updateTtsProvider() {
+      const isElevenLabs = ttsProvider.value === 'elevenlabs';
+      const isVoicebox = ttsProvider.value === 'voicebox';
+      const isCloud = ttsProvider.value === 'cloud';
+      elevenLabsProviderInfo.style.display = isElevenLabs ? 'block' : 'none';
+      voiceboxProviderInfo.style.display = isVoicebox ? 'block' : 'none';
+      cloudProviderInfo.style.display = isCloud ? 'block' : 'none';
+      elevenLabsSettings.style.display = isElevenLabs ? 'block' : 'none';
+      voiceboxSettings.style.display = isVoicebox ? 'block' : 'none';
+      cloudSettings.style.display = isCloud ? 'block' : 'none';
+      cloudAutoSubmitRow.classList.toggle('card-row--single', !(isCloud || isVoicebox));
+      autoSubmitSliders.classList.toggle('slider-row', isElevenLabs);
+      autoSubmitSliders.classList.toggle('slider-row--2col', isElevenLabs);
+    }
+
+    ttsProvider.addEventListener('change', async () => {
+      updateTtsProvider();
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ttsProvider: ttsProvider.value }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('TTS provider saved', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save TTS provider', 'error');
+      }
+    });
 
     // Wire up slider value displays
     const sliders = [
@@ -1136,9 +1492,19 @@
       minTextLengthValue.textContent = parseInt(minTextLengthSlider.value);
     });
 
-    // Wispr loop toggle and sliders
-    wisprLoopEnabled.addEventListener('change', () => {
-      wisprLoopDetails.classList.toggle('open', wisprLoopEnabled.checked);
+    // Voice input provider, toggle, and sliders
+    function updateVoiceInputProvider() {
+      const isWispr = voiceInputProvider.value === 'wispr';
+      wisprProviderInfo.style.display = isWispr ? 'block' : 'none';
+      handyProviderInfo.style.display = isWispr ? 'none' : 'block';
+      wisprSettings.style.display = isWispr ? 'block' : 'none';
+      handySettings.style.display = isWispr ? 'none' : 'block';
+    }
+
+    voiceInputProvider.addEventListener('change', updateVoiceInputProvider);
+
+    voiceInputEnabled.addEventListener('change', () => {
+      voiceInputDetails.classList.toggle('open', voiceInputEnabled.checked);
     });
 
     ttsDelaySlider.addEventListener('input', () => {
@@ -1202,6 +1568,9 @@
         const res = await fetch('/api/config');
         const data = await res.json();
 
+        ttsProvider.value = data.ttsProvider || 'elevenlabs';
+        updateTtsProvider();
+
         if (data.apiKeySet) {
           apiKeyInput.placeholder = data.apiKey;
           apiKeyBadge.textContent = 'Set';
@@ -1214,6 +1583,22 @@
         voiceIdInput.value = data.voiceId || '';
         modelSelect.value = data.model || 'eleven_flash_v2_5';
 
+        if (data.voicebox) {
+          voiceboxBaseUrl.value = data.voicebox.baseUrl || 'http://127.0.0.1:17493';
+          voiceboxProfile.value = data.voicebox.profile || '';
+          voiceboxPersonality.checked = !!data.voicebox.personality;
+        }
+
+        if (data.cloud) {
+          cloudApiUrl.value = data.cloud.apiUrl || 'https://cloud.talktocursor.com';
+          cloudVoiceId.value = managedCloudVoices.has(data.cloud.voiceId) ? data.cloud.voiceId : 'Kore';
+          cloudModel.value = 'gemini-2.5-flash-tts';
+        }
+        setCloudConnectionState(!!data.cloudConnected);
+        if (data.cloudConnected) {
+          refreshCloudStatus();
+        }
+
         // Auto-listen setting
         if (data.autoListen !== undefined) {
           autoListenEnabled.checked = data.autoListen;
@@ -1224,10 +1609,28 @@
           const as = data.autoSubmit;
           autoSubmitEnabled.checked = !!as.enabled;
           autoSubmitDetails.classList.toggle('open', !!as.enabled);
-          silenceDelaySlider.value = as.silenceDelay ?? 2.0;
+          silenceDelaySlider.value = as.silenceDelay ?? 3.0;
           silenceDelayValue.textContent = parseFloat(silenceDelaySlider.value).toFixed(1) + 's';
-          minTextLengthSlider.value = as.minTextLength ?? 10;
+          minTextLengthSlider.value = as.minTextLength ?? 15;
           minTextLengthValue.textContent = parseInt(minTextLengthSlider.value);
+        }
+
+        // Voice input settings
+        if (data.voiceInput) {
+          const vi = data.voiceInput;
+          voiceInputProvider.value = vi.provider || 'wispr';
+          voiceInputEnabled.checked = !!vi.enabled;
+          voiceInputDetails.classList.toggle('open', !!vi.enabled);
+          ttsDelaySlider.value = vi.ttsDelay ?? 4.0;
+          ttsDelayValue.textContent = parseFloat(ttsDelaySlider.value).toFixed(1) + 's';
+          silenceThresholdSlider.value = vi.silenceThreshold ?? 0.02;
+          silenceThresholdValue.textContent = parseFloat(silenceThresholdSlider.value).toFixed(3);
+          silenceDurationSlider.value = vi.silenceDuration ?? 2.0;
+          silenceDurationValue.textContent = parseFloat(silenceDurationSlider.value).toFixed(1) + 's';
+          wisprHotkeyInput.value = vi.wisprHotkey || 'shift+ctrl';
+          handyCommandInput.value = vi.handyCommand || '';
+          manualTriggerHotkeyInput.value = vi.manualTriggerHotkey || 'ctrl+shift+l';
+          updateVoiceInputProvider();
         }
 
         // Voice settings sliders
@@ -1246,6 +1649,181 @@
         showToast('Failed to load config', 'error');
       }
     }
+
+    function setCloudConnectionState(connected) {
+      cloudStatusBadge.textContent = connected ? 'Connected' : 'Not Connected';
+      cloudStatusBadge.className = connected ? 'badge badge-set' : 'badge badge-missing';
+      cloudDisconnected.style.display = connected ? 'none' : 'block';
+      cloudConnected.style.display = connected ? 'block' : 'none';
+    }
+
+    async function refreshCloudStatus() {
+      try {
+        const res = await fetch('/api/cloud/status');
+        const data = await res.json();
+        setCloudConnectionState(!!data.connected);
+        if (data.usage) {
+          cloudUsageNotice.textContent =
+            `${data.usage.remaining.toLocaleString()} of ${data.usage.included.toLocaleString()} characters remaining this billing period.`;
+        } else if (data.error) {
+          cloudUsageNotice.textContent = data.error.message || data.error;
+        }
+      } catch (error) {
+        cloudUsageNotice.textContent = 'Cloud status is temporarily unavailable.';
+      }
+    }
+
+    async function pollCloudConnection(deviceCode, expiresIn) {
+      const expiresAt = Date.now() + expiresIn * 1000;
+      const poll = async () => {
+        if (Date.now() >= expiresAt) {
+          cloudPairingNotice.style.display = 'none';
+          connectCloudBtn.disabled = false;
+          showToast('Cloud device code expired. Try connecting again.', 'error');
+          return;
+        }
+        try {
+          const res = await fetch('/api/cloud/connect/poll', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deviceCode }),
+          });
+          const data = await res.json();
+          if (res.status === 202 || data.pending) {
+            cloudPollTimer = setTimeout(poll, 3000);
+            return;
+          }
+          if (!res.ok) {
+            throw new Error(data.error?.message || data.error || 'Connection failed');
+          }
+          await fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ttsProvider: 'cloud' }),
+          });
+          ttsProvider.value = 'cloud';
+          updateTtsProvider();
+          cloudPairingNotice.style.display = 'none';
+          connectCloudBtn.disabled = false;
+          setCloudConnectionState(true);
+          await refreshCloudStatus();
+          showToast('TalkToCursor Cloud connected', 'success');
+        } catch (error) {
+          connectCloudBtn.disabled = false;
+          showToast(error.message || 'Cloud connection failed', 'error');
+        }
+      };
+      cloudPollTimer = setTimeout(poll, 1000);
+    }
+
+    connectCloudBtn.addEventListener('click', async () => {
+      connectCloudBtn.disabled = true;
+      try {
+        const res = await fetch('/api/cloud/connect/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiUrl: cloudApiUrl.value.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || data.error || 'Could not start connection');
+        cloudUserCode.textContent = data.user_code;
+        cloudPairingNotice.style.display = 'block';
+        window.open(data.verification_uri_complete, '_blank', 'noopener,noreferrer');
+        pollCloudConnection(data.device_code, data.expires_in || 600);
+      } catch (error) {
+        connectCloudBtn.disabled = false;
+        showToast(error.message || 'Could not connect Cloud', 'error');
+      }
+    });
+
+    disconnectCloudBtn.addEventListener('click', async () => {
+      clearTimeout(cloudPollTimer);
+      await fetch('/api/cloud/disconnect', { method: 'POST' });
+      setCloudConnectionState(false);
+      showToast('Cloud account disconnected', 'success');
+    });
+
+    saveCloudBtn.addEventListener('click', async () => {
+      const cloud = {
+        apiUrl: cloudApiUrl.value.trim(),
+        voiceId: cloudVoiceId.value.trim(),
+        model: cloudModel.value,
+      };
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ttsProvider: 'cloud', cloud }),
+      });
+      const data = await res.json();
+      showToast(data.success ? 'Cloud voice settings saved' : 'Could not save Cloud settings', data.success ? 'success' : 'error');
+    });
+
+    downloadCloudSettingsBtn.addEventListener('click', async () => {
+      const res = await fetch('/api/cloud/settings/download', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        await loadConfig();
+        showToast(`Downloaded Cloud settings revision ${data.revision}`, 'success');
+      } else {
+        showToast(data.error?.message || data.error || 'Could not download settings', 'error');
+      }
+    });
+
+    uploadCloudSettingsBtn.addEventListener('click', async () => {
+      const res = await fetch('/api/cloud/settings/upload', { method: 'POST' });
+      const data = await res.json();
+      showToast(
+        data.success ? `Uploaded Cloud settings revision ${data.revision}` : (data.error?.message || data.error || 'Could not upload settings'),
+        data.success ? 'success' : 'error'
+      );
+    });
+
+    testVoiceboxBtn.addEventListener('click', async () => {
+      testVoiceboxBtn.disabled = true;
+      testVoiceboxBtn.innerHTML = '<span class="spinner"></span> Testing...';
+      try {
+        const res = await fetch('/api/test-voicebox', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ baseUrl: voiceboxBaseUrl.value.trim() }),
+        });
+        const data = await res.json();
+        showToast(data.message || data.error, data.success ? 'success' : 'error');
+      } catch (error) {
+        showToast('Voicebox connection test failed', 'error');
+      } finally {
+        testVoiceboxBtn.disabled = false;
+        testVoiceboxBtn.innerHTML = 'Test Connection';
+      }
+    });
+
+    saveVoiceboxBtn.addEventListener('click', async () => {
+      saveVoiceboxBtn.disabled = true;
+      saveVoiceboxBtn.innerHTML = '<span class="spinner"></span> Saving...';
+      const voicebox = {
+        baseUrl: voiceboxBaseUrl.value.trim() || 'http://127.0.0.1:17493',
+        profile: voiceboxProfile.value.trim(),
+        personality: voiceboxPersonality.checked,
+      };
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ttsProvider: 'voicebox', voicebox }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          ttsProvider.value = 'voicebox';
+          updateTtsProvider();
+          showToast('Voicebox settings saved', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save Voicebox settings', 'error');
+      } finally {
+        saveVoiceboxBtn.disabled = false;
+        saveVoiceboxBtn.innerHTML = 'Save Voicebox Settings';
+      }
+    });
 
     // Save API key
     saveKeyBtn.addEventListener('click', async () => {
@@ -1419,30 +1997,6 @@
       });
     }
 
-    // Save model
-    saveModelBtn.addEventListener('click', async () => {
-      saveModelBtn.disabled = true;
-      saveModelBtn.innerHTML = '<span class="spinner"></span> Saving...';
-
-      try {
-        const res = await fetch('/api/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: modelSelect.value }),
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          showToast('Model saved successfully', 'success');
-        }
-      } catch (error) {
-        showToast('Failed to save model', 'error');
-      } finally {
-        saveModelBtn.disabled = false;
-        saveModelBtn.innerHTML = 'Save Model';
-      }
-    });
-
     // Save voice settings
     saveSettingsBtn.addEventListener('click', async () => {
       saveSettingsBtn.disabled = true;
@@ -1459,7 +2013,10 @@
         const res = await fetch('/api/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ voiceSettings }),
+          body: JSON.stringify({
+            model: modelSelect.value,
+            voiceSettings,
+          }),
         });
         const data = await res.json();
 
@@ -1527,17 +2084,19 @@
       return div.innerHTML;
     }
 
-    // Save wispr loop settings
-    saveWisprLoopBtn.addEventListener('click', async () => {
-      saveWisprLoopBtn.disabled = true;
-      saveWisprLoopBtn.innerHTML = '<span class="spinner"></span> Saving...';
+    // Save voice input settings
+    saveVoiceInputBtn.addEventListener('click', async () => {
+      saveVoiceInputBtn.disabled = true;
+      saveVoiceInputBtn.innerHTML = '<span class="spinner"></span> Saving...';
 
-      const wisprLoop = {
-        enabled: wisprLoopEnabled.checked,
+      const voiceInput = {
+        enabled: voiceInputEnabled.checked,
+        provider: voiceInputProvider.value,
         ttsDelay: parseFloat(ttsDelaySlider.value),
         silenceThreshold: parseFloat(silenceThresholdSlider.value),
         silenceDuration: parseFloat(silenceDurationSlider.value),
         wisprHotkey: wisprHotkeyInput.value.trim(),
+        handyCommand: handyCommandInput.value.trim(),
         manualTriggerHotkey: manualTriggerHotkeyInput.value.trim(),
       };
 
@@ -1545,24 +2104,24 @@
         const res = await fetch('/api/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wisprLoop }),
+          body: JSON.stringify({ voiceInput }),
         });
         const data = await res.json();
 
         if (data.success) {
-          showToast('Wispr loop settings saved', 'success');
+          showToast('Voice input settings saved', 'success');
         }
       } catch (error) {
-        showToast('Failed to save wispr loop settings', 'error');
+        showToast('Failed to save voice input settings', 'error');
       } finally {
-        saveWisprLoopBtn.disabled = false;
-        saveWisprLoopBtn.innerHTML = 'Save Wispr Loop Settings';
+        saveVoiceInputBtn.disabled = false;
+        saveVoiceInputBtn.innerHTML = 'Save Voice Input Settings';
       }
     });
 
     // Copy command to clipboard
     function copyCommand() {
-      const command = 'npm run auto-submit';
+      const command = 'talktocursor-auto-submit';
       navigator.clipboard.writeText(command).then(() => {
         showToast('Command copied to clipboard', 'success');
       }).catch(() => {
