@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Auto-Submit and Wispr Voice Loop for Cursor TTS MCP
+Auto-Submit and Voice Input Loop for TalkToCursor
 
 Combines two features:
 1. Auto-submit: Detects when text appears in the focused field and auto-presses Enter
-2. Wispr voice loop: Watches for listen signals, triggers Wispr, detects silence, and pastes
+2. Voice input loop: Triggers Wispr Flow or Handy after TTS and stops after silence
 
 How it works:
   - Monitors the focused text field via Accessibility API for auto-submit
   - Watches for listen-signal.json from the MCP server
-  - When signal detected, starts Wispr and monitors mic for silence
-  - Registers a manual trigger hotkey to start Wispr anytime
+  - When signaled, starts the configured provider and monitors mic for silence
+  - Registers a manual trigger hotkey to start voice input anytime
 
 Requires macOS Accessibility permissions:
   System Settings > Privacy & Security > Accessibility
@@ -22,50 +22,106 @@ import os
 import sys
 import threading
 import subprocess
+import shlex
 from pathlib import Path
-from ApplicationServices import (
-    AXUIElementCreateSystemWide,
-    AXUIElementCopyAttributeValue,
-    AXIsProcessTrusted,
-)
-from pynput import keyboard
-from pynput.keyboard import Key, KeyCode, Controller, HotKey, GlobalHotKeys
 
-# Import our silence detector
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from silence_detector import wait_for_silence
+if sys.platform != 'darwin':
+    print("ERROR: TalkToCursor auto-submit and voice input are supported only on macOS.", file=sys.stderr)
+    sys.exit(1)
+
+try:
+    from ApplicationServices import (
+        AXUIElementCreateSystemWide,
+        AXUIElementCopyAttributeValue,
+        AXIsProcessTrusted,
+    )
+    from pynput.keyboard import Key, KeyCode, Controller, GlobalHotKeys
+except ImportError as error:
+    package_root = Path(os.environ.get(
+        'TALKTOCURSOR_PACKAGE_ROOT',
+        Path(__file__).resolve().parent.parent,
+    ))
+    requirements = package_root / 'requirements.txt'
+    print(f"ERROR: Missing Python dependency: {error}", file=sys.stderr)
+    print(
+        f'Install auto-submit dependencies with: '
+        f'{sys.executable} -m pip install -r "{requirements}"',
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 # ─── Configuration ───────────────────────────────────────────────────────────
 
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config.json')
-SIGNAL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'listen-signal.json')
-TTS_COMPLETE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tts-complete.json')
+def user_data_dir():
+    override = os.environ.get('TALKTOCURSOR_DATA_DIR')
+    if override:
+        return Path(override).expanduser()
+    if sys.platform == 'darwin':
+        return Path.home() / 'Library' / 'Application Support' / 'TalkToCursor'
+    if sys.platform == 'win32':
+        return Path(os.environ.get('APPDATA', Path.home() / 'AppData' / 'Roaming')) / 'TalkToCursor'
+    return Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'talktocursor'
+
+USER_DATA_DIR = user_data_dir()
+USER_DATA_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+try:
+    USER_DATA_DIR.chmod(0o700)
+except OSError:
+    pass
+
+CONFIG_PATH = USER_DATA_DIR / 'config.json'
+SIGNAL_PATH = USER_DATA_DIR / 'listen-signal.json'
+TTS_COMPLETE_PATH = USER_DATA_DIR / 'tts-complete.json'
+PACKAGE_ROOT = Path(os.environ.get(
+    'TALKTOCURSOR_PACKAGE_ROOT',
+    Path(__file__).resolve().parent.parent,
+))
+LEGACY_CONFIG_PATH = PACKAGE_ROOT / 'config.json'
+
+def migrate_legacy_config():
+    if CONFIG_PATH.exists() or not LEGACY_CONFIG_PATH.exists():
+        return
+    try:
+        content = LEGACY_CONFIG_PATH.read_text(encoding='utf-8')
+        json.loads(content)
+        temporary = CONFIG_PATH.with_suffix(f'.{os.getpid()}.tmp')
+        temporary.write_text(content, encoding='utf-8')
+        temporary.chmod(0o600)
+        os.replace(temporary, CONFIG_PATH)
+        LEGACY_CONFIG_PATH.unlink()
+        print(f"[config] Migrated settings to {CONFIG_PATH}")
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"[config] Could not migrate legacy settings: {error}")
+
+migrate_legacy_config()
 
 def load_config():
     defaults = {
         'autoSubmit': {
-            'enabled': True,
+            'enabled': False,
             'silenceDelay': 3.0,
             'minTextLength': 15,
             'targetApp': 'Cursor',
         },
-        'wisprLoop': {
+        'voiceInput': {
             'enabled': False,
+            'provider': 'wispr',
             'ttsDelay': 4.0,
             'silenceThreshold': 0.02,
             'silenceDuration': 2.0,
             'wisprHotkey': 'shift+ctrl',
+            'handyCommand': '',
             'manualTriggerHotkey': 'ctrl+shift+l',
         }
     }
     try:
         with open(CONFIG_PATH, 'r') as f:
             config = json.load(f)
-            for key in defaults:
-                if key in config:
-                    for subkey in defaults[key]:
-                        if subkey in config[key]:
-                            defaults[key][subkey] = config[key][subkey]
+            if 'autoSubmit' in config:
+                defaults['autoSubmit'].update(config['autoSubmit'])
+            # Support configs created before voiceInput replaced wisprLoop.
+            voice_input = config.get('voiceInput', config.get('wisprLoop', {}))
+            defaults['voiceInput'].update(voice_input)
     except (FileNotFoundError, json.JSONDecodeError):
         pass
     return defaults
@@ -77,12 +133,14 @@ SILENCE_DELAY = config['autoSubmit']['silenceDelay']
 MIN_TEXT_LENGTH = config['autoSubmit']['minTextLength']
 TARGET_APP = config['autoSubmit']['targetApp']
 
-WISPR_LOOP_ENABLED = config['wisprLoop']['enabled']
-TTS_DELAY = config['wisprLoop']['ttsDelay']
-SILENCE_THRESHOLD = config['wisprLoop']['silenceThreshold']
-SILENCE_DURATION = config['wisprLoop']['silenceDuration']
-WISPR_HOTKEY = config['wisprLoop']['wisprHotkey']
-MANUAL_TRIGGER_HOTKEY = config['wisprLoop']['manualTriggerHotkey']
+VOICE_INPUT_ENABLED = config['voiceInput']['enabled']
+VOICE_INPUT_PROVIDER = config['voiceInput']['provider']
+TTS_DELAY = config['voiceInput']['ttsDelay']
+SILENCE_THRESHOLD = config['voiceInput']['silenceThreshold']
+SILENCE_DURATION = config['voiceInput']['silenceDuration']
+WISPR_HOTKEY = config['voiceInput']['wisprHotkey']
+HANDY_COMMAND = config['voiceInput']['handyCommand']
+MANUAL_TRIGGER_HOTKEY = config['voiceInput']['manualTriggerHotkey']
 
 # ─── State ───────────────────────────────────────────────────────────────────
 
@@ -158,7 +216,7 @@ def press_hotkey(keys):
 
 def wait_for_tts_completion(timeout=15.0):
     """Wait for the TTS completion signal file with timeout."""
-    print(f"[wispr-loop] Waiting for TTS to complete...")
+    print("[voice-input] Waiting for TTS to complete...")
     start_time = time.time()
     
     # Clear any stale completion signal first
@@ -170,7 +228,7 @@ def wait_for_tts_completion(timeout=15.0):
     
     while (time.time() - start_time) < timeout:
         if os.path.exists(TTS_COMPLETE_PATH):
-            print(f"[wispr-loop] TTS completion signal received!")
+            print("[voice-input] TTS completion signal received!")
             # Delete the completion signal
             try:
                 os.remove(TTS_COMPLETE_PATH)
@@ -180,22 +238,60 @@ def wait_for_tts_completion(timeout=15.0):
         time.sleep(0.1)  # Poll every 100ms
     
     # Timeout - proceed anyway with a warning
-    print(f"[wispr-loop] Warning: TTS completion timeout after {timeout}s, proceeding anyway...")
+    print(f"[voice-input] Warning: TTS completion timeout after {timeout}s, proceeding anyway...")
     return False
 
-def trigger_wispr_loop():
-    """Execute the Wispr voice loop: start Wispr, wait for silence, stop Wispr."""
-    print(f"[wispr-loop] Starting Wispr voice loop...")
+def toggle_voice_input():
+    """Start or stop the configured voice input provider."""
+    if VOICE_INPUT_PROVIDER == 'wispr':
+        print(f"[voice-input] Pressing {WISPR_HOTKEY} to toggle Wispr Flow...")
+        press_hotkey(parse_hotkey(WISPR_HOTKEY))
+        return True
+
+    if VOICE_INPUT_PROVIDER == 'handy':
+        if HANDY_COMMAND:
+            command = shlex.split(HANDY_COMMAND)
+        elif sys.platform == 'darwin':
+            command = ['/Applications/Handy.app/Contents/MacOS/Handy']
+        else:
+            command = ['handy']
+
+        try:
+            subprocess.run(
+                [*command, '--toggle-transcription'],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            print("[voice-input] Toggled Handy transcription")
+            return True
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            print(f"[voice-input] Could not control Handy: {error}")
+            print("[voice-input] Make sure Handy is installed and already running.")
+            return False
+
+    print(f"[voice-input] Unknown provider: {VOICE_INPUT_PROVIDER}")
+    return False
+
+def trigger_voice_input_loop():
+    """Start the configured provider, wait for silence, then stop it."""
+    print(f"[voice-input] Starting {VOICE_INPUT_PROVIDER} voice input loop...")
+
+    if not toggle_voice_input():
+        return
     
-    # Parse Wispr hotkey
-    wispr_keys = parse_hotkey(WISPR_HOTKEY)
-    
-    # Trigger Wispr to start recording
-    print(f"[wispr-loop] Pressing {WISPR_HOTKEY} to start Wispr recording...")
-    press_hotkey(wispr_keys)
-    
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from silence_detector import wait_for_silence
+    except ImportError as error:
+        print(f"[voice-input] Missing microphone dependency: {error}")
+        print(f'[voice-input] Install dependencies with: {sys.executable} -m pip install -r "{PACKAGE_ROOT / "requirements.txt"}"')
+        toggle_voice_input()
+        return
+
     # Wait for silence detection
-    print(f"[wispr-loop] Monitoring mic for silence (threshold: {SILENCE_THRESHOLD}, duration: {SILENCE_DURATION}s)...")
+    print(f"[voice-input] Monitoring mic for silence (threshold: {SILENCE_THRESHOLD}, duration: {SILENCE_DURATION}s)...")
     speech_detected = wait_for_silence(
         silence_threshold=SILENCE_THRESHOLD,
         silence_duration=SILENCE_DURATION,
@@ -203,12 +299,12 @@ def trigger_wispr_loop():
     )
     
     if speech_detected:
-        # User spoke, now stop Wispr (triggers paste)
-        print(f"[wispr-loop] Pressing {WISPR_HOTKEY} to stop Wispr and paste...")
-        press_hotkey(wispr_keys)
-        print(f"[wispr-loop] Wispr should paste text now, auto-submit will handle pressing Enter")
+        print(f"[voice-input] Speech complete; stopping {VOICE_INPUT_PROVIDER}...")
+        toggle_voice_input()
+        print("[voice-input] Transcribed text will be pasted and auto-submit will press Enter")
     else:
-        print(f"[wispr-loop] No speech detected, cancelling")
+        print("[voice-input] No speech detected; cancelling")
+        toggle_voice_input()
 
 # ─── Auto-Submit Monitor ─────────────────────────────────────────────────────
 
@@ -277,18 +373,18 @@ def monitor_text_field():
         
         time.sleep(0.15)  # Poll ~7 times per second
 
-# ─── Wispr Loop Signal Watcher ──────────────────────────────────────────────
+# ─── Voice Input Signal Watcher ─────────────────────────────────────────────
 
 def watch_for_signals():
-    """Watch for listen-signal.json and trigger Wispr loop when found."""
+    """Watch for listen-signal.json and trigger the voice input loop."""
     while True:
-        if not WISPR_LOOP_ENABLED:
+        if not VOICE_INPUT_ENABLED:
             time.sleep(0.5)
             continue
         
         try:
             if os.path.exists(SIGNAL_PATH):
-                print(f"[wispr-loop] Listen signal detected!")
+                print("[voice-input] Listen signal detected!")
                 
                 # Delete the signal file
                 os.remove(SIGNAL_PATH)
@@ -296,19 +392,19 @@ def watch_for_signals():
                 # Wait for TTS to actually finish playing
                 wait_for_tts_completion()
                 
-                # Start the Wispr loop in a separate thread so we don't block
-                threading.Thread(target=trigger_wispr_loop, daemon=True).start()
+                # Start the voice input loop in a separate thread so we don't block
+                threading.Thread(target=trigger_voice_input_loop, daemon=True).start()
         
         except Exception as e:
-            print(f"[wispr-loop] Error: {e}")
+            print(f"[voice-input] Error: {e}")
         
         time.sleep(0.3)  # Poll for signal file every 300ms
 
 # ─── Manual Trigger Hotkey ──────────────────────────────────────────────────
 
 def setup_manual_trigger():
-    """Register a global hotkey to manually trigger the Wispr loop."""
-    if not WISPR_LOOP_ENABLED:
+    """Register a global hotkey to manually trigger the voice input loop."""
+    if not VOICE_INPUT_ENABLED:
         return None
     
     # Convert hotkey string to format expected by GlobalHotKeys
@@ -324,8 +420,8 @@ def setup_manual_trigger():
     formatted_hotkey = '+'.join(formatted_parts)
     
     def on_manual_trigger():
-        print(f"[wispr-loop] Manual trigger activated!")
-        threading.Thread(target=trigger_wispr_loop, daemon=True).start()
+        print("[voice-input] Manual trigger activated!")
+        threading.Thread(target=trigger_voice_input_loop, daemon=True).start()
     
     try:
         hotkeys = GlobalHotKeys({
@@ -334,7 +430,7 @@ def setup_manual_trigger():
         hotkeys.start()
         return hotkeys
     except Exception as e:
-        print(f"[wispr-loop] Failed to register manual trigger hotkey: {e}")
+        print(f"[voice-input] Failed to register manual trigger hotkey: {e}")
         return None
 
 # ─── Main ────────────────────────────────────────────────────────────────────
@@ -350,19 +446,21 @@ def main():
         print()
 
     print(f"""
-  Cursor Auto-Submit & Wispr Voice Loop
-  ──────────────────────────────────────
+  TalkToCursor Auto-Submit & Voice Input
+  ───────────────────────────────────────
   
   Auto-Submit: {'Enabled' if AUTO_SUBMIT_ENABLED else 'Disabled'}
     Submit delay:    {SILENCE_DELAY}s
     Min text length: {MIN_TEXT_LENGTH} chars
     Target app:      {TARGET_APP}
   
-  Wispr Loop: {'Enabled' if WISPR_LOOP_ENABLED else 'Disabled'}
+  Voice Input: {'Enabled' if VOICE_INPUT_ENABLED else 'Disabled'}
+    Provider:        {VOICE_INPUT_PROVIDER}
     TTS delay:       {TTS_DELAY}s
     Silence thresh:  {SILENCE_THRESHOLD}
     Silence duration: {SILENCE_DURATION}s
-    Wispr hotkey:    {WISPR_HOTKEY}
+    Wispr hotkey:    {WISPR_HOTKEY if VOICE_INPUT_PROVIDER == 'wispr' else 'n/a'}
+    Handy command:   {HANDY_COMMAND or 'auto-detect'}
     Manual trigger:  {MANUAL_TRIGGER_HOTKEY}
 
   Press Ctrl+C to stop.
@@ -374,14 +472,14 @@ def main():
         text_monitor.start()
         print("[auto-submit] Text field monitor started")
     
-    if WISPR_LOOP_ENABLED:
+    if VOICE_INPUT_ENABLED:
         signal_watcher = threading.Thread(target=watch_for_signals, daemon=True)
         signal_watcher.start()
-        print("[wispr-loop] Signal watcher started")
+        print("[voice-input] Signal watcher started")
         
         manual_hotkey = setup_manual_trigger()
         if manual_hotkey:
-            print(f"[wispr-loop] Manual trigger registered: {MANUAL_TRIGGER_HOTKEY}")
+            print(f"[voice-input] Manual trigger registered: {MANUAL_TRIGGER_HOTKEY}")
     
     try:
         # Keep main thread alive

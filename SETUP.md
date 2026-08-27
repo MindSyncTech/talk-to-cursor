@@ -1,14 +1,22 @@
 # Quick Setup Guide
 
-Your Cursor TTS MCP server is fully built and configured! Follow these steps to get it working:
+Follow these steps to configure TalkToCursor after installing it.
 
-## Step 1: Get Your ElevenLabs API Key
+## Step 1: Choose Your Text-to-Speech Provider
 
-1. Go to https://try.elevenlabs.io/talktocursor
-2. Sign up or log in (free tier available)
-3. Create a new API key and copy it
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Managed Google Cloud TTS for $15/month with 100,000 included characters and portable settings. No provider API key is stored locally.
+- **[ElevenLabs](https://try.elevenlabs.io/talktocursor):** Create an API key for full voice and model controls.
+- **[Voicebox](https://github.com/jamiepine/voicebox) (free & local):** Install and run Voicebox, download a model, and create a voice profile.
 
-## Step 2: Add Environment Variables
+TalkToCursor Cloud uses the fixed `gemini-2.5-flash-tts` model and defaults to the Kore voice.
+
+## Step 2: Configure TalkToCursor
+
+Run `talktocursor-settings` (or `npm run settings` from a source checkout),
+open **http://localhost:3847**, select your TTS provider, and configure it
+there. Remote service URLs must use HTTPS; HTTP is allowed only for localhost.
+
+If using ElevenLabs, you can alternatively add environment variables:
 
 Open your shell profile file:
 ```bash
@@ -47,21 +55,28 @@ echo $ELEVENLABS_API_KEY
 1. Open a new Cursor chat (Cmd+L)
 2. Check "Available Tools" - you should see a "speak" tool
 3. Type: **"Say hello using the speak tool"**
-4. Listen for the voice through your speakers! 🔊
+4. Listen for the voice through your speakers.
 
 ## Step 5: Try Voice-to-Voice Coding
 
-1. Open Wispr Flow (for speech-to-text input)
-2. Speak a coding request: "Refactor the login function"
-3. The agent will narrate what it's doing as it works
-4. Follow along hands-free!
+1. Install and open [Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended) or [Handy](https://github.com/cjpais/Handy) (free and private)
+2. Select it under **Voice Input Provider** in the TalkToCursor settings UI
+3. Install the optional Python dependencies:
+   `python3 -m pip install -r "$(npm root -g)/talktocursor/requirements.txt"`
+4. Install PortAudio with `brew install portaudio`, enable **Voice Input Loop**,
+   and run `talktocursor-auto-submit`
+5. Speak a coding request: "Refactor the login function"
+6. The agent will narrate what it's doing and listen for your next request
 
-## What's Been Configured
+For a source checkout, install `requirements.txt` directly and use
+`npm run auto-submit`. Auto-submit and the voice-input loop require macOS.
 
-✅ **MCP Server**: `~/cursor-tts-mcp/` (built and ready)
-✅ **Cursor Config**: `~/.cursor/mcp.json` (server registered)
-✅ **Voice Rule**: `~/.cursor/rules/voice-feedback.mdc` (agent knows to speak)
-✅ **mpv**: Installed via Homebrew (audio playback)
+## What You Need to Configure
+
+- **MCP Server:** add `talktocursor` to `~/.cursor/mcp.json`
+- **TTS provider:** choose ElevenLabs, Voicebox, or TalkToCursor Cloud
+- **Voice rule (optional):** add a rule controlling when the agent speaks
+- **Audio playback:** install `mpv` with Homebrew if it is not available
 
 ## Troubleshooting
 
@@ -80,8 +95,8 @@ echo $ELEVENLABS_API_KEY
 
 ## Next Steps
 
-- Browse more voices at: https://try.elevenlabs.io/talktocursor
-- Check your usage at: https://try.elevenlabs.io/talktocursor
-- Read the full README: `~/cursor-tts-mcp/README.md`
+- Browse more voices at [ElevenLabs](https://try.elevenlabs.io/talktocursor)
+- Check your usage at [ElevenLabs](https://try.elevenlabs.io/talktocursor)
+- Read the full [README](README.md)
 
-Enjoy coding by voice! 🎤✨
+Enjoy coding by voice.

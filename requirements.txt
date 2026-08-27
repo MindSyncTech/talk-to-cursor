@@ -1,0 +1,4 @@
+numpy>=1.26,<3
+pyobjc-framework-ApplicationServices>=10,<13
+pynput>=1.7,<2
+sounddevice>=0.4,<1
