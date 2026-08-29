@@ -2,6 +2,15 @@
 
 Follow these steps to configure TalkToCursor after installing it.
 
+## Step 0: Connect Your Coding Host
+
+Follow the host-specific MCP instructions in [INSTALL.md](INSTALL.md#choose-your-coding-host):
+
+- Cursor uses `~/.cursor/mcp.json`
+- Codex uses `~/.codex/config.toml` or `codex mcp add`
+- Antigravity uses the active raw configuration opened from its MCP management screen
+- Other hosts must support local stdio MCP servers
+
 ## Step 1: Choose Your Text-to-Speech Provider
 
 - **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Managed Google Cloud TTS for $15/month with 100,000 included characters and portable settings. No provider API key is stored locally.
@@ -43,18 +52,18 @@ Verify it's set:
 echo $ELEVENLABS_API_KEY
 ```
 
-## Step 3: Restart Cursor
+## Step 3: Restart Your Coding Host
 
-**Important**: Completely quit and restart Cursor for it to load the MCP server.
+Completely quit and restart the coding host so it reloads the MCP server.
 
-1. Press `Cmd+Q` to quit Cursor
-2. Reopen Cursor from Applications or Spotlight
+1. Quit Cursor, Codex, Antigravity, or your other host
+2. Reopen it and check its MCP tools
 
 ## Step 4: Test It!
 
-1. Open a new Cursor chat (Cmd+L)
-2. Check "Available Tools" - you should see a "speak" tool
-3. Type: **"Say hello using the speak tool"**
+1. Open a new agent conversation
+2. Check the host’s MCP tools for `speak`
+3. Type: **"Use the speak tool to say hello"**
 4. Listen for the voice through your speakers.
 
 ## Step 5: Try Voice-to-Voice Coding
@@ -68,12 +77,14 @@ echo $ELEVENLABS_API_KEY
 5. Speak a coding request: "Refactor the login function"
 6. The agent will narrate what it's doing and listen for your next request
 
+The automatic voice-input loop is designed for Cursor on macOS. Codex and Antigravity users may prefer their native voice input.
+
 For a source checkout, install `requirements.txt` directly and use
 `npm run auto-submit`. Auto-submit and the voice-input loop require macOS.
 
 ## What You Need to Configure
 
-- **MCP Server:** add `talktocursor` to `~/.cursor/mcp.json`
+- **MCP Server:** add `talktocursor` using the host-specific configuration in `INSTALL.md`
 - **TTS provider:** choose ElevenLabs, Voicebox, or TalkToCursor Cloud
 - **Voice rule (optional):** add a rule controlling when the agent speaks
 - **Audio playback:** install `mpv` with Homebrew if it is not available
@@ -81,12 +92,14 @@ For a source checkout, install `requirements.txt` directly and use
 ## Troubleshooting
 
 **Tool doesn't appear?**
-- Make sure you fully quit and restarted Cursor (Cmd+Q)
-- Check the MCP config exists: `cat ~/.cursor/mcp.json`
+- Fully quit and restart the coding host
+- Check its MCP configuration using the host-specific instructions in `INSTALL.md`
+- In Codex, run `codex mcp list`
+- In Antigravity on macOS, use an absolute `npx` path if the GUI cannot find it
 
 **"API key not set" error?**
 - Verify: `echo $ELEVENLABS_API_KEY` shows your key
-- Restart Cursor after setting the env var
+- Restart the coding host after setting the env var
 
 **No audio?**
 - Check system volume
