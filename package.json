@@ -1,7 +1,7 @@
 {
   "name": "talktocursor",
-  "version": "1.1.0",
-  "description": "Hands-free voice interface for Cursor AI with ElevenLabs, local Voicebox, or managed TalkToCursor Cloud TTS.",
+  "version": "1.1.1",
+  "description": "Text-to-speech for Cursor, Claude Code, Codex, Antigravity, and compatible MCP coding assistants.",
   "type": "module",
   "main": "build/index.js",
   "bin": {
@@ -28,6 +28,9 @@
     "local-tts",
     "cloud-tts",
     "cursor",
+    "claude-code",
+    "codex",
+    "antigravity",
     "tts",
     "voice",
     "hands-free",
