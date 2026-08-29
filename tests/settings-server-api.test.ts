@@ -3,6 +3,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 const mocks = vi.hoisted(() => {
   const defaults = {
+    ttsEnabled: true,
+    pauseMediaDuringSpeech: false,
+    spokenResponseDetail: "brief",
     ttsProvider: "elevenlabs",
     apiKey: "sk-secret-value",
     voiceId: "voice-1",
@@ -26,19 +29,29 @@ const mocks = vi.hoisted(() => {
     },
     autoSubmit: {
       enabled: false,
+      mode: "fixed",
       silenceDelay: 3,
       minTextLength: 15,
       targetApp: "Cursor",
+      smartCandidateSilence: 0.8,
+      smartTurnThreshold: 0.5,
+      smartMaxSilence: 3,
+      smartTextDelay: 0.2,
+      submitCommandEnabled: true,
+      submitPhrase: "send it",
     },
     voiceInput: {
       enabled: false,
       provider: "wispr",
-      ttsDelay: 4,
-      silenceThreshold: 0.02,
+      silenceThreshold: 0.005,
       silenceDuration: 2,
       wisprHotkey: "shift+ctrl",
       handyCommand: "",
       manualTriggerHotkey: "ctrl+shift+l",
+      wakeWordEnabled: false,
+      wakePhrase: "hey cursor",
+      wakeSensitivity: 0.5,
+      wakeChime: true,
     },
     autoListen: true,
   };
@@ -52,6 +65,7 @@ const mocks = vi.hoisted(() => {
 });
 
 vi.mock("../src/config.js", () => ({
+  USER_DATA_DIR: "/tmp/talktocursor-tests",
   loadConfig: () => mocks.config,
   saveConfig: (update: Record<string, unknown>) => {
     const nestedKeys = [
@@ -155,6 +169,7 @@ describe("local settings server API", () => {
     expect(body.apiKeySet).toBe(true);
     expect(JSON.stringify(body)).not.toContain("sk-secret-value");
     expect(body.cloud.apiUrl).toBe("https://cloud.talktocursor.com");
+    expect(body.spokenResponseDetail).toBe("brief");
   });
 
   it("blocks requests from non-local browser origins", async () => {
@@ -192,6 +207,7 @@ describe("local settings server API", () => {
     const response = await post("/api/config", {
       apiKey: "",
       autoListen: false,
+      spokenResponseDetail: "detailed",
     });
     const body = await response.json();
 
@@ -199,6 +215,7 @@ describe("local settings server API", () => {
     expect(mocks.config.apiKey).toBe("sk-secret-value");
     expect(body.config.apiKey).toBe("sk-s****alue");
     expect(body.config.autoListen).toBe(false);
+    expect(body.config.spokenResponseDetail).toBe("detailed");
   });
 
   it("starts Cloud pairing against the configured production URL", async () => {

@@ -32,6 +32,10 @@ export const cloudProvider: TTSProviderAdapter = {
         text,
         voiceId: config.cloud.voiceId,
         model: config.cloud.model,
+        voiceSettings: {
+          speed: config.voiceSettings.speed,
+          style: config.voiceSettings.style,
+        },
       }),
       signal: AbortSignal.timeout(60_000),
     });
