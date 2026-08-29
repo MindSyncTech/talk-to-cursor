@@ -11,6 +11,7 @@ A voice layer for MCP-compatible coding assistants. Your agent can speak progres
 TalkToCursor uses the same stdio MCP package in every host. Choose the configuration format your coding assistant supports.
 
 - [Cursor setup](https://talktocursor.com/cursor-tts/)
+- [Claude Code setup](https://talktocursor.com/talk-to-claude-code/)
 - [OpenAI Codex setup](https://talktocursor.com/talk-to-codex/)
 - [Google Antigravity setup](https://talktocursor.com/talk-to-antigravity/)
 - [Other MCP-compatible hosts](https://talktocursor.com/talk-to-ide/)
@@ -35,6 +36,16 @@ Add to `~/.cursor/mcp.json`:
   }
 }
 ```
+
+### Claude Code
+
+Register TalkToCursor at user scope so it is available across projects:
+
+```bash
+claude mcp add --scope user talktocursor -- npx -y talktocursor
+```
+
+Omit `--scope user` to use Claude Code’s default local project scope. Run `claude mcp list` to confirm the server is registered.
 
 ### OpenAI Codex
 
@@ -179,7 +190,7 @@ Fully quit and reopen Cursor, Codex, Antigravity, or your other MCP host so it r
 3. Type: **"Use the speak tool to say hello."**
 4. You should hear the selected voice through your speakers.
 
-In Codex, `codex mcp list` also confirms whether the server is registered. In Antigravity, use the MCP management panel.
+In Claude Code, use `claude mcp list`. In Codex, use `codex mcp list`. In Antigravity, use the MCP management panel.
 
 ---
 
@@ -198,6 +209,19 @@ alwaysApply: true
 ---
 
 # Voice feedback
+
+Use the `speak` tool at task start, important milestones,
+when asking a question, and at completion.
+Keep spoken updates to 1-2 sentences.
+Do not read code, paths, logs, or stack traces aloud.
+```
+
+### Claude Code
+
+Add to the global `~/.claude/CLAUDE.md` or a project’s `CLAUDE.md`:
+
+```markdown
+## Voice feedback
 
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
@@ -235,7 +259,7 @@ Do not read code, paths, logs, or stack traces aloud.
 
 ## Optional: Hands-Free Dictation (macOS only)
 
-For a fully hands-free experience with voice dictation. This Accessibility-based auto-submit workflow is designed for Cursor and is not claimed as verified in every MCP host. Codex and Antigravity users may prefer their native voice input.
+For a fully hands-free experience with voice dictation. This Accessibility-based auto-submit workflow is designed for Cursor and is not claimed as verified in every MCP host. Claude Code, Codex, and Antigravity users may prefer their native voice input.
 
 ### Auto-Submit Setup
 
@@ -333,6 +357,7 @@ ElevenLabs BYOK voice or model.
 ### Tool doesn't appear
 - Fully quit and restart the coding host
 - Verify the host-specific MCP entry under [Choose Your Coding Host](#choose-your-coding-host)
+- In Claude Code, run `claude mcp list`
 - In Codex, run `codex mcp list`
 - In Antigravity, check the MCP management panel; on macOS, use an absolute `npx` path if the GUI cannot find it
 - For source installs, run `npm run build`

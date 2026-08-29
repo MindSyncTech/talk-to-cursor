@@ -7,6 +7,7 @@ Follow these steps to configure TalkToCursor after installing it.
 Follow the host-specific MCP instructions in [INSTALL.md](INSTALL.md#choose-your-coding-host):
 
 - Cursor uses `~/.cursor/mcp.json`
+- Claude Code uses `claude mcp add --scope user talktocursor -- npx -y talktocursor`
 - Codex uses `~/.codex/config.toml` or `codex mcp add`
 - Antigravity uses the active raw configuration opened from its MCP management screen
 - Other hosts must support local stdio MCP servers
@@ -56,7 +57,7 @@ echo $ELEVENLABS_API_KEY
 
 Completely quit and restart the coding host so it reloads the MCP server.
 
-1. Quit Cursor, Codex, Antigravity, or your other host
+1. Quit Cursor, Claude Code, Codex, Antigravity, or your other host
 2. Reopen it and check its MCP tools
 
 ## Step 4: Test It!
@@ -77,7 +78,7 @@ Completely quit and restart the coding host so it reloads the MCP server.
 5. Speak a coding request: "Refactor the login function"
 6. The agent will narrate what it's doing and listen for your next request
 
-The automatic voice-input loop is designed for Cursor on macOS. Codex and Antigravity users may prefer their native voice input.
+The automatic voice-input loop is designed for Cursor on macOS. Claude Code, Codex, and Antigravity users may prefer their native voice input.
 
 For a source checkout, install `requirements.txt` directly and use
 `npm run auto-submit`. Auto-submit and the voice-input loop require macOS.
@@ -94,6 +95,7 @@ For a source checkout, install `requirements.txt` directly and use
 **Tool doesn't appear?**
 - Fully quit and restart the coding host
 - Check its MCP configuration using the host-specific instructions in `INSTALL.md`
+- In Claude Code, run `claude mcp list`
 - In Codex, run `codex mcp list`
 - In Antigravity on macOS, use an absolute `npx` path if the GUI cannot find it
 

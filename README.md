@@ -17,6 +17,7 @@ A voice interface for Cursor and compatible MCP coding assistants. Your agent sp
 TalkToCursor uses one stdio MCP package and one set of voice settings across supported hosts. Installation and persistent instruction formats differ:
 
 - **[Cursor](https://talktocursor.com/cursor-tts/)** - Original integration with Cursor MCP rules and optional macOS hands-free dictation
+- **[Claude Code](https://talktocursor.com/talk-to-claude-code/)** - Spoken output and custom voices alongside native voice dictation
 - **[OpenAI Codex](https://talktocursor.com/talk-to-codex/)** - Custom/local TTS and spoken milestones alongside native Codex Voice
 - **[Google Antigravity](https://talktocursor.com/talk-to-antigravity/)** - Spoken agent output alongside native live transcription
 - **[Other MCP-compatible hosts](https://talktocursor.com/talk-to-ide/)** - Requirements and a generic local stdio MCP recipe
@@ -89,9 +90,15 @@ For OpenAI Codex:
 codex mcp add talktocursor -- npx -y talktocursor
 ```
 
+For Claude Code:
+
+```bash
+claude mcp add --scope user talktocursor -- npx -y talktocursor
+```
+
 For Google Antigravity, open its MCP management screen and add the same JSON entry shown for Cursor to the active raw configuration. Antigravity’s config path varies by release.
 
-See the [full installation guide](INSTALL.md#choose-your-coding-host) for Codex TOML, Antigravity PATH troubleshooting, generic MCP-host requirements, and source/global-install configurations.
+See the [full installation guide](INSTALL.md#choose-your-coding-host) for Claude Code scopes, Codex TOML, Antigravity PATH troubleshooting, generic MCP-host requirements, and source/global-install configurations.
 
 For a global install in a JSON-based MCP host:
 
@@ -187,7 +194,7 @@ Once configured, your coding agent can use TalkToCursor to speak:
 - When encountering errors or needing clarification
 - At major progress milestones
 
-To encourage automatic voice feedback at these moments, add the appropriate Cursor rule, Codex `AGENTS.md`, or Antigravity global/workspace rule. See the [voice-feedback examples](INSTALL.md#optional-voice-feedback-instructions).
+To encourage automatic voice feedback at these moments, add the appropriate Cursor rule, Claude Code `CLAUDE.md`, Codex `AGENTS.md`, or Antigravity global/workspace rule. See the [voice-feedback examples](INSTALL.md#optional-voice-feedback-instructions).
 
 ## Voice Settings
 
@@ -241,6 +248,7 @@ The script monitors the text field and automatically presses Enter when dictatio
 - **Windows:** `%APPDATA%\TalkToCursor\config.json`
 - **Linux:** `${XDG_CONFIG_HOME:-~/.config}/talktocursor/config.json`
 - **Cursor:** `~/.cursor/mcp.json` and optional `~/.cursor/rules/voice-feedback.mdc`
+- **Claude Code:** `claude mcp add` and optional global `~/.claude/CLAUDE.md` or project `CLAUDE.md`
 - **Codex:** `~/.codex/config.toml` and optional global or project `AGENTS.md`
 - **Antigravity:** use its MCP management screen for the active config; global rules use `~/.gemini/GEMINI.md` and workspace rules live under `.agents/rules`
 
@@ -251,6 +259,7 @@ Cloud device credentials are stored in the macOS Keychain when available, with a
 **Tool doesn't appear?**
 - Fully quit and restart the coding host
 - Check the correct host configuration in the [installation guide](INSTALL.md#choose-your-coding-host)
+- In Claude Code, run `claude mcp list`
 - In Codex, run `codex mcp list`
 - In Antigravity on macOS, use an absolute path to `npx` if the GUI cannot find it
 - For source installs, run `npm run build` to ensure the project is compiled
