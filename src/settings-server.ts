@@ -16,6 +16,15 @@ import {
   getCloudToken,
   saveCloudToken,
 } from "./credentials.js";
+import {
+  checkBackgroundServicePermissions,
+  getBackgroundServiceLog,
+  getBackgroundServiceStatus,
+  installBackgroundService,
+  startBackgroundService,
+  stopBackgroundService,
+  uninstallBackgroundService,
+} from "./background-service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,6 +56,9 @@ app.use(express.static(join(__dirname, "..", "public")));
 app.get("/api/config", (_req, res) => {
   const config = loadConfig();
   res.json({
+    ttsEnabled: config.ttsEnabled,
+    pauseMediaDuringSpeech: config.pauseMediaDuringSpeech,
+    spokenResponseDetail: config.spokenResponseDetail,
     ttsProvider: config.ttsProvider,
     apiKey: config.apiKey ? maskKey(config.apiKey) : "",
     apiKeySet: !!config.apiKey,
@@ -83,6 +95,9 @@ app.post("/api/config", (req, res) => {
   res.json({
     success: true,
     config: {
+      ttsEnabled: saved.ttsEnabled,
+      pauseMediaDuringSpeech: saved.pauseMediaDuringSpeech,
+      spokenResponseDetail: saved.spokenResponseDetail,
       ttsProvider: saved.ttsProvider,
       apiKey: saved.apiKey ? maskKey(saved.apiKey) : "",
       apiKeySet: !!saved.apiKey,
@@ -97,6 +112,59 @@ app.post("/api/config", (req, res) => {
       autoListen: saved.autoListen,
     },
   });
+});
+
+app.get("/api/background-service/status", (_req, res) => {
+  res.json(getBackgroundServiceStatus());
+});
+
+app.get("/api/background-service/log", (_req, res) => {
+  res.type("text/plain").send(getBackgroundServiceLog());
+});
+
+app.post("/api/background-service/permissions", async (_req, res) => {
+  try {
+    res.json(await checkBackgroundServicePermissions(true));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
+  }
+});
+
+app.post("/api/background-service/install", async (_req, res) => {
+  try {
+    res.json(await installBackgroundService());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
+  }
+});
+
+app.post("/api/background-service/start", async (_req, res) => {
+  try {
+    res.json(await startBackgroundService());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
+  }
+});
+
+app.post("/api/background-service/stop", (_req, res) => {
+  try {
+    res.json(stopBackgroundService());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
+  }
+});
+
+app.post("/api/background-service/uninstall", (_req, res) => {
+  try {
+    res.json(uninstallBackgroundService());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
+  }
 });
 
 function normalizeCloudApiUrl(value: unknown): string {
@@ -223,6 +291,16 @@ app.post("/api/cloud/settings/download", async (_req, res) => {
     const cloudVoiceId = normalizeManagedVoice(settings.voiceId);
     const cloudModel = normalizeManagedModel(settings.model);
     const saved = saveConfig({
+      ttsEnabled:
+        settings.ttsEnabled === undefined
+          ? config.ttsEnabled
+          : settings.ttsEnabled,
+      pauseMediaDuringSpeech:
+        settings.pauseMediaDuringSpeech === undefined
+          ? config.pauseMediaDuringSpeech
+          : settings.pauseMediaDuringSpeech,
+      spokenResponseDetail:
+        settings.spokenResponseDetail ?? config.spokenResponseDetail,
       voiceSettings: settings.voiceSettings,
       autoListen: settings.autoListen,
       cloud: {
@@ -253,6 +331,9 @@ app.post("/api/cloud/settings/upload", async (_req, res) => {
         body: JSON.stringify({
           revision: config.cloud.settingsRevision,
           settings: {
+            ttsEnabled: config.ttsEnabled,
+            pauseMediaDuringSpeech: config.pauseMediaDuringSpeech,
+            spokenResponseDetail: config.spokenResponseDetail,
             voiceId: config.cloud.voiceId,
             model: config.cloud.model,
             voiceSettings: config.voiceSettings,

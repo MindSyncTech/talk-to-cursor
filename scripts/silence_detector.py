@@ -25,7 +25,7 @@ class State(Enum):
 
 class SilenceDetector:
     def __init__(self, 
-                 silence_threshold=0.02,
+                 silence_threshold=0.005,
                  silence_duration=2.0,
                  sample_rate=16000,
                  chunk_size=1024):
@@ -112,7 +112,7 @@ class SilenceDetector:
         
         return self.speech_detected
 
-def wait_for_silence(silence_threshold=0.02, 
+def wait_for_silence(silence_threshold=0.005,
                      silence_duration=2.0, 
                      verbose=True):
     """
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     print()
     
     speech_detected = wait_for_silence(
-        silence_threshold=0.02,
+        silence_threshold=0.005,
         silence_duration=2.0,
         verbose=True
     )

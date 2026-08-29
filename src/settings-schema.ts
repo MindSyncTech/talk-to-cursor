@@ -11,12 +11,20 @@ export const MANAGED_TTS_VOICES = [
   "Sadaltager",
   "Umbriel",
   "Sadachbia",
+  "Achird",
+  "Algenib",
+  "Enceladus",
+  "Iapetus",
   "Achernar",
   "Despina",
   "Kore",
   "Leda",
   "Sulafat",
   "Zephyr",
+  "Aoede",
+  "Callirrhoe",
+  "Laomedeia",
+  "Vindemiatrix",
 ] as const;
 
 const managedVoiceSet = new Set<string>(MANAGED_TTS_VOICES);
@@ -97,24 +105,54 @@ export const cloudSettingsSchema = z.object({
 
 export const autoSubmitSettingsSchema = z.object({
   enabled: z.boolean(),
+  mode: z.enum(["fixed", "smart"]),
   silenceDelay: z.number().finite().min(0.5).max(5),
   minTextLength: z.number().int().min(5).max(50),
   targetApp: z.string().trim().min(1).max(200),
+  smartCandidateSilence: z.number().finite().min(0.2).max(1),
+  smartTurnThreshold: z.number().finite().min(0.1).max(0.9),
+  smartMaxSilence: z.number().finite().min(1).max(8),
+  smartTextDelay: z.number().finite().min(0.1).max(1),
+  submitCommandEnabled: z.boolean(),
+  submitPhrase: z.literal("send it"),
 });
 
-export const voiceInputSettingsSchema = z.object({
-  enabled: z.boolean(),
-  provider: z.enum(["wispr", "handy"]),
-  ttsDelay: z.number().finite().min(1).max(8),
-  silenceThreshold: z.number().finite().min(0.005).max(0.1),
-  silenceDuration: z.number().finite().min(0.5).max(5),
-  wisprHotkey: z.string().trim().min(1).max(100),
-  handyCommand: z.string().trim().max(1_000),
-  manualTriggerHotkey: z.string().trim().min(1).max(100),
-});
+export const voiceInputSettingsSchema = z
+  .object({
+    enabled: z.boolean(),
+    provider: z.enum(["wispr", "handy"]),
+    silenceThreshold: z.number().finite().min(0.005).max(0.1),
+    silenceDuration: z.number().finite().min(0.5).max(5),
+    wisprHotkey: z.string().trim().min(1).max(100),
+    handyCommand: z.string().trim().max(1_000),
+    manualTriggerHotkey: z.string().trim().min(1).max(100),
+    wakeWordEnabled: z.boolean(),
+    wakePhrase: z.enum([
+      "cursor",
+      "hey cursor",
+      "ok cursor",
+      "codex",
+      "hey codex",
+      "ok codex",
+      "claude",
+      "hey claude",
+      "ok claude",
+      "hey google",
+      "ok google",
+      "hey chat",
+      "ok chat",
+    ]),
+    wakeSensitivity: z.number().finite().min(0).max(1),
+    wakeChime: z.boolean(),
+  })
+  // Discard retired fields such as ttsDelay from existing config files.
+  .strip();
 
 export const settingsSchema = z
   .object({
+    ttsEnabled: z.boolean(),
+    pauseMediaDuringSpeech: z.boolean(),
+    spokenResponseDetail: z.enum(["minimal", "brief", "detailed"]),
     ttsProvider: z.enum(["elevenlabs", "voicebox", "cloud"]),
     apiKey: z.string().max(1_000),
     voiceId: z.string().trim().min(1).max(200),

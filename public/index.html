@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Talk to Cursor</title>
+  <title>TalkToCursor Settings</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -47,6 +47,28 @@
 
     .card-row--single {
       grid-template-columns: 1fr;
+    }
+
+    .card-row--top {
+      align-items: stretch;
+    }
+
+    .card-row--top > .card {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-row--top > .card > .btn-row {
+      margin-top: auto;
+    }
+
+    .card-row--provider-active #autoSubmitCard {
+      order: 2;
+    }
+
+    .card-row--provider-active #backgroundServiceCard {
+      grid-column: 1 / -1;
+      order: 3;
     }
 
     .card-row > .card {
@@ -136,14 +158,42 @@
       margin-bottom: 0;
     }
 
+    .provider-save-action {
+      display: flex;
+      align-items: flex-start;
+      padding-top: 27px;
+    }
+
     @media (max-width: 768px) {
       .form-row {
         grid-template-columns: 1fr;
+      }
+
+      .provider-save-action {
+        padding-top: 0;
       }
     }
 
     .form-group:last-child {
       margin-bottom: 0;
+    }
+
+    .cloud-voice-picker {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .cloud-voice-preview {
+      min-width: 108px;
+      padding-inline: 14px;
+    }
+
+    .cloud-voice-preview[aria-pressed="true"] {
+      color: white;
+      background: var(--primary);
+      border-color: var(--primary);
     }
 
     label {
@@ -237,6 +287,10 @@
       flex: none;
     }
 
+    .btn-row--full .btn-primary {
+      width: 100%;
+    }
+
     .cloud-actions {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -254,6 +308,45 @@
       padding: 10px 12px;
       font-size: 13px;
       white-space: nowrap;
+    }
+
+    .permission-grid {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .permission-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .permission-close {
+      width: 28px;
+      height: 28px;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .permission-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .permission-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    .permission-links a {
+      color: var(--primary-hover);
     }
 
     button {
@@ -642,6 +735,14 @@
       margin-bottom: 0;
     }
 
+    .toggle-stack {
+      margin-bottom: 16px;
+    }
+
+    .toggle-stack .toggle-row {
+      margin-bottom: 0;
+    }
+
     .toggle-info {
       display: flex;
       flex-direction: column;
@@ -708,7 +809,7 @@
     }
 
     .auto-submit-details.open {
-      max-height: 1000px;
+      max-height: 1600px;
       opacity: 1;
     }
 
@@ -805,39 +906,70 @@
   <div class="container">
     <header>
       <div class="icon">🔊</div>
-      <h1>Talk to Cursor Settings</h1>
-      <p>Configure text-to-speech and hands-free voice input</p>
+      <h1>TalkToCursor Settings</h1>
+      <p>Configure speech for your MCP coding assistant and hands-free voice input for Cursor on macOS</p>
     </header>
 
-    <!-- TTS Provider + Auto-Listen -->
-    <div class="card-row">
+    <!-- Spoken Responses + Listening Triggers -->
+    <div class="card-row card-row--top">
     <div class="card">
-      <div class="card-title">Text-to-Speech Provider</div>
+      <div class="card-title">Spoken Responses</div>
+      <div class="toggle-stack">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <span class="toggle-title">Enable Spoken Responses</span>
+            <span class="toggle-desc">Allow your coding assistant to speak task updates and completions</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="ttsEnabled">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <span class="toggle-title">Pause Media During Speech</span>
+            <span class="toggle-desc">Pause Apple Music or Spotify, then resume afterward (macOS)</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="pauseMediaDuringSpeech">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="spokenResponseDetail">Spoken Response Detail</label>
+        <select id="spokenResponseDetail">
+          <option value="minimal">Minimal — say “Done”</option>
+          <option value="brief">Brief — summarize in 1–2 sentences</option>
+          <option value="detailed">Detailed — speak the full update</option>
+        </select>
+        <div class="help-text">Questions, failures, blockers, and required follow-ups remain detailed when necessary.</div>
+      </div>
       <div class="form-group">
         <label for="ttsProvider">Provider</label>
         <select id="ttsProvider">
-          <option value="elevenlabs">ElevenLabs (recommended)</option>
-          <option value="cloud">TalkToCursor Cloud (managed)</option>
+          <option value="cloud">TalkToCursor Cloud (recommended)</option>
+          <option value="elevenlabs">ElevenLabs (voice selection &amp; control)</option>
           <option value="voicebox">Voicebox (free &amp; local)</option>
         </select>
-        <div class="help-text">Use your own provider, choose free local speech, or connect a managed Cloud plan.</div>
+        <div class="help-text">Use your own provider, choose free local speech, or connect TalkToCursor Cloud ($15/month with 100,000 included characters).</div>
       </div>
-      <div class="env-notice" id="elevenLabsProviderInfo" style="margin-top: 0;">
-        <strong>ElevenLabs:</strong> Recommended for the simplest setup and polished cloud voices.
+      <div class="env-notice" id="elevenLabsProviderInfo" style="display: none; margin-top: 0;">
+        <strong>ElevenLabs:</strong> Bring your own API key for the broadest voice library, models, presets, and detailed tuning.
       </div>
       <div class="env-notice" id="voiceboxProviderInfo" style="display: none; margin-top: 0;">
         <strong>Voicebox:</strong> Install and run
         <a href="https://github.com/jamiepine/voicebox/releases" target="_blank" rel="noopener noreferrer" style="color: var(--primary);">Voicebox</a>
         locally, create a voice profile, then configure it below.
       </div>
-      <div class="env-notice" id="cloudProviderInfo" style="display: none; margin-top: 0;">
-        <strong>TalkToCursor Cloud:</strong> Managed voices, included monthly usage, and portable settings without a provider API key.
+      <div class="env-notice" id="cloudProviderInfo" style="margin-top: 0;">
+        <strong>TalkToCursor Cloud:</strong> Managed Google Cloud TTS for $15/month with 100,000 included characters, portable settings, and no provider API key.
       </div>
     </div>
 
-    <!-- Auto-Listen Card -->
+    <!-- Cursor Listening Triggers Card -->
     <div class="card">
-      <div class="card-title">Auto-Listen</div>
+      <div class="card-title">Cursor Listening Triggers</div>
 
       <div class="toggle-row">
         <div class="toggle-info">
@@ -850,14 +982,80 @@
         </label>
       </div>
 
-      <p style="color: var(--text-muted); font-size: 13px; margin-top: 16px; line-height: 1.5;">
-        When enabled, I'll automatically call the listen tool after completing tasks to trigger the configured voice input provider.
-        Disable this if you prefer to manually start dictation.
-      </p>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Enable Wake Phrase</span>
+          <span class="toggle-desc">Listen locally for a phrase that starts Wispr or Handy</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="wakeWordEnabled">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="auto-submit-details" id="wakeWordDetails">
+        <div class="form-group">
+          <label for="wakePhrase">Wake Phrase</label>
+          <select id="wakePhrase">
+            <option value="hey cursor">Hey Cursor</option>
+            <option value="ok cursor">OK Cursor</option>
+            <option value="cursor">Cursor</option>
+            <option value="hey codex">Hey Codex</option>
+            <option value="ok codex">OK Codex</option>
+            <option value="codex">Codex</option>
+            <option value="hey claude">Hey Claude</option>
+            <option value="ok claude">OK Claude</option>
+            <option value="claude">Claude</option>
+            <option value="hey google">Hey Google</option>
+            <option value="ok google">OK Google</option>
+            <option value="hey chat">Hey Chat</option>
+            <option value="ok chat">OK Chat</option>
+          </select>
+          <div class="help-text">Longer phrases reduce accidental activations. The phrase name does not change the target app; automation submits only in Cursor.</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <label for="wakeSensitivity">Sensitivity</label>
+            <span class="slider-value" id="wakeSensitivityValue">0.50</span>
+          </div>
+          <input type="range" id="wakeSensitivity" min="0" max="1" step="0.05" value="0.5">
+          <div class="slider-range-labels">
+            <span>Fewer triggers</span>
+            <span>Maximum sensitivity</span>
+          </div>
+          <div class="help-text">The upper half increases sensitivity more aggressively. Very high settings may cause accidental activations.</div>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <span class="toggle-title">Activation Chime</span>
+            <span class="toggle-desc">Play a confirmation sound before dictation begins</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="wakeChime">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="env-notice" style="margin-top: 0; margin-bottom: 16px;">
+          Wake phrase detection stays on your Mac. The first launch downloads an English keyword model of about 20 MB.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="manualTriggerHotkey">Manual Trigger Hotkey</label>
+        <input type="text" id="manualTriggerHotkey" value="ctrl+shift+l" spellcheck="false">
+        <div class="help-text">Global hotkey to manually start the selected voice input provider.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="saveListeningTriggersBtn" type="button">Save Cursor Listening Triggers</button>
+      </div>
     </div>
     </div>
 
-    <div id="elevenLabsSettings">
+    <div id="elevenLabsSettings" style="display: none;">
     <div class="card-row">
     <!-- API Key Card -->
     <div class="card">
@@ -1061,7 +1259,7 @@
     </div>
 
     <!-- TalkToCursor Cloud Settings Card -->
-    <div class="card" id="cloudSettings" style="display: none;">
+    <div class="card" id="cloudSettings">
       <div class="card-title">
         TalkToCursor Cloud
         <span id="cloudStatusBadge" class="badge badge-missing">Not Connected</span>
@@ -1090,24 +1288,63 @@
 
         <div class="form-group">
           <label for="cloudVoiceId">Cloud Voice</label>
-          <select id="cloudVoiceId">
-            <optgroup label="Male">
-              <option value="Alnilam">Alnilam</option>
-              <option value="Charon">Charon</option>
-              <option value="Puck">Puck</option>
-              <option value="Sadaltager">Sadaltager</option>
-              <option value="Umbriel">Umbriel</option>
-              <option value="Sadachbia">Sadachbia</option>
-            </optgroup>
-            <optgroup label="Female">
-              <option value="Achernar">Achernar</option>
-              <option value="Despina">Despina</option>
-              <option value="Kore" selected>Kore</option>
-              <option value="Leda">Leda</option>
-              <option value="Sulafat">Sulafat</option>
-              <option value="Zephyr">Zephyr</option>
-            </optgroup>
-          </select>
+          <div class="cloud-voice-picker">
+            <select id="cloudVoiceId">
+              <optgroup label="Male">
+                <option value="Alnilam">Alnilam</option>
+                <option value="Charon">Charon</option>
+                <option value="Puck">Puck</option>
+                <option value="Sadaltager">Sadaltager</option>
+                <option value="Umbriel">Umbriel</option>
+                <option value="Sadachbia">Sadachbia</option>
+                <option value="Achird">Achird</option>
+                <option value="Algenib">Algenib</option>
+                <option value="Enceladus">Enceladus</option>
+                <option value="Iapetus">Iapetus</option>
+              </optgroup>
+              <optgroup label="Female">
+                <option value="Achernar">Achernar</option>
+                <option value="Despina">Despina</option>
+                <option value="Kore" selected>Kore</option>
+                <option value="Leda">Leda</option>
+                <option value="Sulafat">Sulafat</option>
+                <option value="Zephyr">Zephyr</option>
+                <option value="Aoede">Aoede</option>
+                <option value="Callirrhoe">Callirrhoe</option>
+                <option value="Laomedeia">Laomedeia</option>
+                <option value="Vindemiatrix">Vindemiatrix</option>
+              </optgroup>
+            </select>
+            <button class="btn-secondary cloud-voice-preview" id="cloudVoicePreviewBtn" type="button" aria-pressed="false">
+              <span aria-hidden="true">&#9654;</span> Preview
+            </button>
+          </div>
+          <div class="help-text">Pre-rendered sample. Preview playback does not use Cloud characters.</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <label for="cloudSpeed">Speech Speed</label>
+            <span class="slider-value" id="cloudSpeedValue">1.00x</span>
+          </div>
+          <input type="range" id="cloudSpeed" min="0.7" max="1.2" step="0.05" value="1">
+          <div class="slider-range-labels">
+            <span>0.7x (slow)</span>
+            <span>1.2x (fast)</span>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <label for="cloudStyle">Voice Style</label>
+            <span class="slider-value" id="cloudStyleValue">Natural</span>
+          </div>
+          <input type="range" id="cloudStyle" min="0" max="1" step="0.05" value="0.5">
+          <div class="slider-range-labels">
+            <span>Steady / neutral</span>
+            <span>Expressive / emotional</span>
+          </div>
+          <div class="help-text">Applied to generated Cloud speech. Pre-rendered voice previews remain neutral.</div>
         </div>
 
         <div class="form-group">
@@ -1128,9 +1365,84 @@
       </div>
     </div>
 
-    <!-- Auto-Submit Card -->
-    <div class="card">
-      <div class="card-title">Auto-Submit</div>
+    <!-- Cursor Hands-Free Background Helper -->
+    <div class="card" id="backgroundServiceCard">
+      <div class="card-title">
+        Cursor Hands-Free Background Helper
+        <span id="backgroundServiceBadge" class="badge badge-missing">Not Installed</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px; margin-bottom: 16px;">
+        For Cursor on macOS, runs auto-submit, voice input, manual hotkeys, and wake phrases invisibly. Once installed, it starts automatically when you sign in.
+      </p>
+
+      <div class="env-notice" id="backgroundServiceNotice" style="margin-top: 0; margin-bottom: 16px;">
+        Install once to create a private Python environment and remove the need for a terminal window.
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="installBackgroundServiceBtn" type="button">Install &amp; Start Cursor Helper</button>
+        <button class="btn-primary" id="startBackgroundServiceBtn" type="button" style="display: none;">Start</button>
+        <button class="btn-secondary" id="restartBackgroundServiceBtn" type="button" style="display: none;">Restart</button>
+        <button class="btn-secondary" id="stopBackgroundServiceBtn" type="button" style="display: none;">Stop</button>
+        <button class="btn-secondary" id="removeBackgroundServiceBtn" type="button" style="display: none;">Remove</button>
+        <button class="btn-secondary" id="checkBackgroundPermissionsBtn" type="button" style="display: none;">Request / Check Permissions</button>
+      </div>
+      <div class="help-text" style="margin-top: 12px;">
+        The first installation can take a few minutes. macOS may request Microphone, Accessibility, or Automation permission when features first run.
+      </div>
+      <div class="env-notice" id="backgroundPermissionResults" style="display: none; margin-top: 16px;">
+        <div class="permission-header">
+          <strong>macOS permissions</strong>
+          <button class="btn-icon permission-close" id="closeBackgroundPermissionsBtn" type="button" aria-label="Close permission results">&times;</button>
+        </div>
+        <div class="permission-grid">
+          <div class="permission-row">
+            <span>Accessibility</span>
+            <span class="badge badge-missing" id="accessibilityPermissionBadge">Not checked</span>
+          </div>
+          <div class="permission-row">
+            <span>Input Monitoring</span>
+            <span class="badge badge-missing" id="inputMonitoringPermissionBadge">Not checked</span>
+          </div>
+          <div class="permission-row">
+            <span>Microphone</span>
+            <span class="badge badge-missing" id="microphonePermissionBadge">Not checked</span>
+          </div>
+        </div>
+        <div class="help-text">
+          Grant access to: <code id="permissionApplicationPath"></code>
+        </div>
+        <div class="permission-links">
+          <a href="x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility">Open Accessibility</a>
+          <a href="x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent">Open Input Monitoring</a>
+          <a href="x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone">Open Microphone</a>
+        </div>
+        <div class="help-text" style="margin-top: 10px;">Missing permissions trigger native macOS prompts automatically. After approving them, restart the helper and check again.</div>
+      </div>
+
+      <details class="env-notice" style="margin-top: 16px;">
+        <summary style="cursor: pointer; font-weight: 500;">Advanced: Run manually in Terminal</summary>
+        <p style="margin: 12px 0 8px;">
+          Use this fallback if you prefer not to install the background helper. The terminal must remain open.
+        </p>
+        <div style="position: relative;">
+          <code style="display: block; padding: 8px 46px 8px 10px; background: var(--bg); border-radius: 4px; font-size: 13px;">talktocursor-auto-submit</code>
+          <button class="copy-btn" onclick="copyCommand()" title="Copy manual startup command" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <p class="help-text" style="margin-top: 8px;">
+          From a source checkout, use <code>npm run auto-submit</code>. Stop the installed helper first to avoid running two listeners.
+        </p>
+      </details>
+    </div>
+
+    <!-- Cursor Auto-Submit Card -->
+    <div class="card" id="autoSubmitCard">
+      <div class="card-title">Cursor Auto-Submit</div>
 
       <div class="toggle-row">
         <div class="toggle-info">
@@ -1145,6 +1457,16 @@
 
       <div class="auto-submit-details" id="autoSubmitDetails">
         <div id="autoSubmitSliders">
+        <div class="form-group">
+          <label for="autoSubmitMode">Turn Detection</label>
+          <select id="autoSubmitMode">
+            <option value="smart">Smart Turn (recommended)</option>
+            <option value="fixed">Fixed Pause</option>
+          </select>
+          <div class="help-text">Smart Turn uses a small local audio model to distinguish a finished prompt from a thinking pause.</div>
+        </div>
+
+        <div id="fixedAutoSubmitDetails">
         <div class="slider-group">
           <div class="slider-label">
             <label for="silenceDelay">Silence Delay</label>
@@ -1156,6 +1478,63 @@
             <span>5s (patient)</span>
           </div>
           <div class="help-text">How long to wait after typing stops before pressing Enter. Increase if prompts are getting cut off.</div>
+        </div>
+        </div>
+
+        <div class="auto-submit-details" id="smartAutoSubmitDetails">
+          <div class="slider-group">
+            <div class="slider-label">
+              <label for="smartCandidateSilence">Candidate Pause</label>
+              <span class="slider-value" id="smartCandidateSilenceValue">0.80s</span>
+            </div>
+            <input type="range" id="smartCandidateSilence" min="0.2" max="1" step="0.05" value="0.8">
+            <div class="slider-range-labels">
+              <span>Faster</span>
+              <span>More patient</span>
+            </div>
+            <div class="help-text">How much quiet audio triggers a local end-of-turn check.</div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label">
+              <label for="smartTurnThreshold">Completion Confidence</label>
+              <span class="slider-value" id="smartTurnThresholdValue">0.50</span>
+            </div>
+            <input type="range" id="smartTurnThreshold" min="0.1" max="0.9" step="0.05" value="0.5">
+            <div class="slider-range-labels">
+              <span>Faster submits</span>
+              <span>Fewer interruptions</span>
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label">
+              <label for="smartMaxSilence">Maximum Silence</label>
+              <span class="slider-value" id="smartMaxSilenceValue">3.0s</span>
+            </div>
+            <input type="range" id="smartMaxSilence" min="1" max="8" step="0.25" value="3">
+            <div class="slider-range-labels">
+              <span>1s</span>
+              <span>8s</span>
+            </div>
+            <div class="help-text">Fallback wait if the model is unavailable or remains uncertain.</div>
+          </div>
+
+          <details class="env-notice" style="margin-bottom: 16px;">
+            <summary style="cursor: pointer; font-weight: 500;">Advanced</summary>
+            <div class="slider-group" style="margin-top: 16px;">
+              <div class="slider-label">
+                <label for="smartTextDelay">Text Settle Delay</label>
+                <span class="slider-value" id="smartTextDelayValue">0.20s</span>
+              </div>
+              <input type="range" id="smartTextDelay" min="0.1" max="1" step="0.05" value="0.2">
+              <div class="help-text">Briefly waits for Handy or Wispr to finish inserting text before pressing Enter.</div>
+            </div>
+          </details>
+
+          <div class="env-notice" style="margin-top: 0; margin-bottom: 16px;">
+            Smart Turn runs locally. Its verified 8.7 MB model downloads once when first used.
+          </div>
         </div>
 
         <div class="slider-group">
@@ -1170,38 +1549,41 @@
           </div>
           <div class="help-text">Minimum characters in clipboard to count as dictation. Prevents accidental submits from short copy-paste actions.</div>
         </div>
+
+        <div id="submitCommandDetails">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-title">Spoken “Send It” Command</span>
+              <span class="toggle-desc">Say “send it” to finish immediately; the phrase is removed before submission</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="submitCommandEnabled" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
         </div>
 
-        <div class="btn-row" style="margin-bottom: 16px;">
-          <button class="btn-primary" id="saveAutoSubmitBtn" type="button" style="flex: none;">
-            Save Auto-Submit Settings
+        <div class="btn-row btn-row--full" style="margin-bottom: 16px;">
+          <button class="btn-primary" id="saveAutoSubmitBtn" type="button">
+            Save Cursor Auto-Submit Settings
           </button>
         </div>
 
         <div class="env-notice" style="margin-top: 0;">
           <strong>How it works:</strong> Detects text from dictation, typing, or paste. Auto-submits when Cursor is active.
           <br><br>
-          <strong>Setup:</strong> After enabling and saving, run in a terminal:
-          <div style="position: relative; margin-top: 6px;">
-            <code style="display: block; padding: 6px 10px 6px 10px; background: var(--bg); border-radius: 4px; font-size: 13px; padding-right: 45px;">talktocursor-auto-submit</code>
-            <button class="copy-btn" onclick="copyCommand()" title="Copy command">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            </button>
-          </div>
-          <span style="display: block; margin-top: 6px;">Requires macOS Accessibility permissions (System Settings &gt; Privacy &gt; Accessibility).</span>
+          <strong>Setup:</strong> Save your settings, then install the Cursor Hands-Free Background Helper above.
         </div>
       </div>
     </div>
     </div>
 
-    <!-- Voice Input Provider Card -->
+    <!-- Cursor Voice Input Provider Card -->
     <div class="card">
-      <div class="card-title">Voice Input Provider</div>
+      <div class="card-title">Cursor Voice Input Provider</div>
       <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px; margin-bottom: 12px;">
-        Choose Wispr Flow for the recommended polished experience or Handy for free, private, offline transcription.
+        For Cursor on macOS, choose Wispr Flow for the recommended polished experience or Handy for free, private, offline transcription.
       </p>
 
       <div class="form-group">
@@ -1226,8 +1608,8 @@
 
       <div class="toggle-row">
         <div class="toggle-info">
-          <span class="toggle-title">Enable Voice Input Loop</span>
-          <span class="toggle-desc">Automatically listen for your next command after the assistant speaks</span>
+          <span class="toggle-title">Enable Voice Input</span>
+          <span class="toggle-desc">Allow listening triggers to start the selected dictation provider</span>
         </div>
         <label class="switch">
           <input type="checkbox" id="voiceInputEnabled">
@@ -1239,28 +1621,15 @@
         <div class="slider-row">
         <div class="slider-group">
           <div class="slider-label">
-            <label for="ttsDelay">TTS Delay</label>
-            <span class="slider-value" id="ttsDelayValue">4.0s</span>
-          </div>
-          <input type="range" id="ttsDelay" min="1" max="8" step="0.5" value="4.0">
-          <div class="slider-range-labels">
-            <span>1s (quick)</span>
-            <span>8s (patient)</span>
-          </div>
-          <div class="help-text">How long to wait for TTS to finish before starting voice input. Increase if TTS gets cut off.</div>
-        </div>
-
-        <div class="slider-group">
-          <div class="slider-label">
             <label for="silenceThreshold">Silence Threshold</label>
-            <span class="slider-value" id="silenceThresholdValue">0.020</span>
+            <span class="slider-value" id="silenceThresholdValue">0.005</span>
           </div>
-          <input type="range" id="silenceThreshold" min="0.005" max="0.1" step="0.005" value="0.02">
+          <input type="range" id="silenceThreshold" min="0.005" max="0.1" step="0.005" value="0.005">
           <div class="slider-range-labels">
             <span>0.005 (sensitive)</span>
             <span>0.1 (strict)</span>
           </div>
-          <div class="help-text">RMS amplitude threshold for speech detection. Lower = more sensitive to quiet speech.</div>
+          <div class="help-text">Maximum RMS threshold for speech detection. The helper adapts lower based on microphone noise; lower values remain more sensitive.</div>
         </div>
 
         <div class="slider-group">
@@ -1284,23 +1653,17 @@
             <div class="help-text">Hotkey combo that toggles Wispr recording (start/stop). Default: shift+ctrl</div>
           </div>
 
-          <div class="form-group">
-            <label for="manualTriggerHotkey">Manual Trigger Hotkey</label>
-            <input type="text" id="manualTriggerHotkey" value="ctrl+shift+l" spellcheck="false">
-            <div class="help-text">Global hotkey to manually start the voice loop anytime. Default: ctrl+shift+l</div>
-          </div>
-
           <div id="handySettings" class="form-group" style="display: none;">
             <label for="handyCommand">Handy Command (optional)</label>
             <input type="text" id="handyCommand" placeholder="Auto-detect" spellcheck="false">
             <div class="help-text">Leave blank to auto-detect Handy. Set a custom executable path if Handy is installed elsewhere.</div>
           </div>
-        </div>
 
-        <div class="btn-row" style="margin-bottom: 16px;">
-          <button class="btn-primary" id="saveVoiceInputBtn" type="button" style="flex: none;">
-            Save Voice Input Settings
-          </button>
+          <div class="provider-save-action">
+            <button class="btn-primary" id="saveVoiceInputBtn" type="button">
+              Save Voice Input Settings
+            </button>
+          </div>
         </div>
 
         <div class="env-notice" style="margin-top: 0;">
@@ -1320,11 +1683,11 @@
     <!-- Info Notice -->
     <div class="env-notice">
       <strong>Note:</strong> Environment variables (<code>ELEVENLABS_API_KEY</code>, <code>ELEVENLABS_VOICE_ID</code>) take priority over these settings.
-      TTS changes apply to the next spoken response. Restart the auto-submit script after changing voice-input settings.
+      TTS changes apply to the next spoken response. Restart the Hands-Free Background Helper after changing voice-input settings.
     </div>
 
     <footer>
-      <a href="https://talktocursor.com" target="_blank" rel="noopener noreferrer">talktocursor.com</a> &middot; <a href="https://github.com/MindSyncTech/talk-to-cursor" target="_blank" rel="noopener noreferrer">GitHub</a> &middot; <a href="https://github.com/MindSyncTech/talk-to-cursor/blob/main/INSTALL.md" target="_blank" rel="noopener noreferrer">Documentation</a>
+      <a href="https://talktocursor.com" target="_blank" rel="noopener noreferrer">talktocursor.com</a> &middot; <a href="https://cloud.talktocursor.com/support" target="_blank" rel="noopener noreferrer">Support</a> &middot; <a href="https://cloud.talktocursor.com/privacy" target="_blank" rel="noopener noreferrer">Privacy</a> &middot; <a href="https://cloud.talktocursor.com/terms" target="_blank" rel="noopener noreferrer">Terms</a> &middot; <a href="https://cloud.talktocursor.com/refunds" target="_blank" rel="noopener noreferrer">Refunds</a> &middot; <a href="https://github.com/MindSyncTech/talk-to-cursor" target="_blank" rel="noopener noreferrer">GitHub</a> &middot; <a href="https://talktocursor.com/talk-to-ide/" target="_blank" rel="noopener noreferrer">Host guides</a>
       <p class="footer-disclaimer">Some links are affiliate links. This helps support TalkToCursor at no extra cost to you.</p>
     </footer>
   </div>
@@ -1333,6 +1696,9 @@
 
   <script>
     // Elements
+    const ttsEnabled = document.getElementById('ttsEnabled');
+    const pauseMediaDuringSpeech = document.getElementById('pauseMediaDuringSpeech');
+    const spokenResponseDetail = document.getElementById('spokenResponseDetail');
     const ttsProvider = document.getElementById('ttsProvider');
     const elevenLabsProviderInfo = document.getElementById('elevenLabsProviderInfo');
     const voiceboxProviderInfo = document.getElementById('voiceboxProviderInfo');
@@ -1342,6 +1708,11 @@
     const cloudSettings = document.getElementById('cloudSettings');
     const cloudApiUrl = document.getElementById('cloudApiUrl');
     const cloudVoiceId = document.getElementById('cloudVoiceId');
+    const cloudVoicePreviewBtn = document.getElementById('cloudVoicePreviewBtn');
+    const cloudSpeedSlider = document.getElementById('cloudSpeed');
+    const cloudSpeedValue = document.getElementById('cloudSpeedValue');
+    const cloudStyleSlider = document.getElementById('cloudStyle');
+    const cloudStyleValue = document.getElementById('cloudStyleValue');
     const cloudModel = document.getElementById('cloudModel');
     const cloudStatusBadge = document.getElementById('cloudStatusBadge');
     const cloudDisconnected = document.getElementById('cloudDisconnected');
@@ -1382,13 +1753,41 @@
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
     const resetSettingsBtn = document.getElementById('resetSettingsBtn');
     const autoListenEnabled = document.getElementById('autoListenEnabled');
+    const saveListeningTriggersBtn = document.getElementById('saveListeningTriggersBtn');
+    const backgroundServiceBadge = document.getElementById('backgroundServiceBadge');
+    const backgroundServiceNotice = document.getElementById('backgroundServiceNotice');
+    const installBackgroundServiceBtn = document.getElementById('installBackgroundServiceBtn');
+    const startBackgroundServiceBtn = document.getElementById('startBackgroundServiceBtn');
+    const restartBackgroundServiceBtn = document.getElementById('restartBackgroundServiceBtn');
+    const stopBackgroundServiceBtn = document.getElementById('stopBackgroundServiceBtn');
+    const removeBackgroundServiceBtn = document.getElementById('removeBackgroundServiceBtn');
+    const checkBackgroundPermissionsBtn = document.getElementById('checkBackgroundPermissionsBtn');
+    const backgroundPermissionResults = document.getElementById('backgroundPermissionResults');
+    const closeBackgroundPermissionsBtn = document.getElementById('closeBackgroundPermissionsBtn');
+    const accessibilityPermissionBadge = document.getElementById('accessibilityPermissionBadge');
+    const inputMonitoringPermissionBadge = document.getElementById('inputMonitoringPermissionBadge');
+    const microphonePermissionBadge = document.getElementById('microphonePermissionBadge');
+    const permissionApplicationPath = document.getElementById('permissionApplicationPath');
     const autoSubmitEnabled = document.getElementById('autoSubmitEnabled');
     const autoSubmitDetails = document.getElementById('autoSubmitDetails');
     const autoSubmitSliders = document.getElementById('autoSubmitSliders');
+    const autoSubmitMode = document.getElementById('autoSubmitMode');
+    const fixedAutoSubmitDetails = document.getElementById('fixedAutoSubmitDetails');
+    const smartAutoSubmitDetails = document.getElementById('smartAutoSubmitDetails');
     const silenceDelaySlider = document.getElementById('silenceDelay');
     const silenceDelayValue = document.getElementById('silenceDelayValue');
     const minTextLengthSlider = document.getElementById('minTextLength');
     const minTextLengthValue = document.getElementById('minTextLengthValue');
+    const smartCandidateSilenceSlider = document.getElementById('smartCandidateSilence');
+    const smartCandidateSilenceValue = document.getElementById('smartCandidateSilenceValue');
+    const smartTurnThresholdSlider = document.getElementById('smartTurnThreshold');
+    const smartTurnThresholdValue = document.getElementById('smartTurnThresholdValue');
+    const smartMaxSilenceSlider = document.getElementById('smartMaxSilence');
+    const smartMaxSilenceValue = document.getElementById('smartMaxSilenceValue');
+    const smartTextDelaySlider = document.getElementById('smartTextDelay');
+    const smartTextDelayValue = document.getElementById('smartTextDelayValue');
+    const submitCommandDetails = document.getElementById('submitCommandDetails');
+    const submitCommandEnabled = document.getElementById('submitCommandEnabled');
     const saveAutoSubmitBtn = document.getElementById('saveAutoSubmitBtn');
     const voiceInputProvider = document.getElementById('voiceInputProvider');
     const voiceInputEnabled = document.getElementById('voiceInputEnabled');
@@ -1397,8 +1796,6 @@
     const handyProviderInfo = document.getElementById('handyProviderInfo');
     const wisprSettings = document.getElementById('wisprSettings');
     const handySettings = document.getElementById('handySettings');
-    const ttsDelaySlider = document.getElementById('ttsDelay');
-    const ttsDelayValue = document.getElementById('ttsDelayValue');
     const silenceThresholdSlider = document.getElementById('silenceThreshold');
     const silenceThresholdValue = document.getElementById('silenceThresholdValue');
     const silenceDurationSlider = document.getElementById('silenceDuration');
@@ -1406,15 +1803,165 @@
     const wisprHotkeyInput = document.getElementById('wisprHotkey');
     const handyCommandInput = document.getElementById('handyCommand');
     const manualTriggerHotkeyInput = document.getElementById('manualTriggerHotkey');
+    const wakeWordEnabled = document.getElementById('wakeWordEnabled');
+    const wakeWordDetails = document.getElementById('wakeWordDetails');
+    const wakePhrase = document.getElementById('wakePhrase');
+    const wakeSensitivitySlider = document.getElementById('wakeSensitivity');
+    const wakeSensitivityValue = document.getElementById('wakeSensitivityValue');
+    const wakeChime = document.getElementById('wakeChime');
     const saveVoiceInputBtn = document.getElementById('saveVoiceInputBtn');
     const toastEl = document.getElementById('toast');
 
     let currentPreviewAudio = null;
+    let currentCloudPreviewVoice = null;
     let cloudPollTimer = null;
     const managedCloudVoices = new Set([
       'Alnilam', 'Charon', 'Puck', 'Sadaltager', 'Umbriel', 'Sadachbia',
+      'Achird', 'Algenib', 'Enceladus', 'Iapetus',
       'Achernar', 'Despina', 'Kore', 'Leda', 'Sulafat', 'Zephyr',
+      'Aoede', 'Callirrhoe', 'Laomedeia', 'Vindemiatrix',
     ]);
+    const backgroundServiceButtons = [
+      installBackgroundServiceBtn,
+      startBackgroundServiceBtn,
+      restartBackgroundServiceBtn,
+      stopBackgroundServiceBtn,
+      removeBackgroundServiceBtn,
+      checkBackgroundPermissionsBtn,
+    ];
+
+    function renderBackgroundService(status) {
+      if (!status.supported) {
+        backgroundServiceBadge.textContent = 'Unsupported';
+        backgroundServiceBadge.className = 'badge badge-missing';
+        backgroundServiceNotice.textContent = 'The background helper is currently available only on macOS.';
+      } else if (status.running) {
+        backgroundServiceBadge.textContent = 'Running';
+        backgroundServiceBadge.className = 'badge badge-set';
+        backgroundServiceNotice.textContent = 'Running in the background and configured to launch automatically at login.';
+      } else if (status.installed) {
+        backgroundServiceBadge.textContent = 'Stopped';
+        backgroundServiceBadge.className = 'badge badge-missing';
+        backgroundServiceNotice.textContent = 'Installed and configured to launch at login, but currently stopped.';
+      } else {
+        backgroundServiceBadge.textContent = 'Not Installed';
+        backgroundServiceBadge.className = 'badge badge-missing';
+        backgroundServiceNotice.textContent = 'Install once to create a private Python environment and remove the need for a terminal window.';
+      }
+
+      installBackgroundServiceBtn.style.display = status.supported && !status.installed ? '' : 'none';
+      startBackgroundServiceBtn.style.display = status.supported && status.installed && !status.running ? '' : 'none';
+      restartBackgroundServiceBtn.style.display = status.running ? '' : 'none';
+      stopBackgroundServiceBtn.style.display = status.running ? '' : 'none';
+      removeBackgroundServiceBtn.style.display = status.installed ? '' : 'none';
+      checkBackgroundPermissionsBtn.style.display =
+        status.supported && status.dependenciesReady ? '' : 'none';
+      backgroundServiceButtons.forEach((button) => {
+        button.disabled = false;
+      });
+    }
+
+    async function refreshBackgroundService() {
+      const res = await fetch('/api/background-service/status');
+      const status = await res.json();
+      renderBackgroundService(status);
+      return status;
+    }
+
+    async function runBackgroundServiceAction(action, pendingMessage) {
+      backgroundServiceButtons.forEach((button) => {
+        button.disabled = true;
+      });
+      backgroundServiceNotice.textContent = pendingMessage;
+      try {
+        const res = await fetch(`/api/background-service/${action}`, {
+          method: 'POST',
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || `Could not ${action} the background helper`);
+        }
+        renderBackgroundService(data);
+        const completedAction = {
+          install: 'installed',
+          start: 'started',
+          stop: 'stopped',
+          uninstall: 'removed',
+        }[action] || 'updated';
+        showToast(`Background helper ${completedAction}`, 'success');
+      } catch (error) {
+        showToast(error.message || 'Background helper action failed', 'error');
+        await refreshBackgroundService();
+      }
+    }
+
+    async function restartBackgroundServiceIfRunning() {
+      try {
+        const status = await refreshBackgroundService();
+        if (status.running) {
+          await runBackgroundServiceAction('start', 'Applying settings to the background helper…');
+        }
+      } catch {
+        // Settings are still saved if helper status cannot be read.
+      }
+    }
+
+    installBackgroundServiceBtn.addEventListener('click', () => {
+      runBackgroundServiceAction('install', 'Installing dependencies and starting the background helper…');
+    });
+    startBackgroundServiceBtn.addEventListener('click', () => {
+      runBackgroundServiceAction('start', 'Starting the background helper…');
+    });
+    restartBackgroundServiceBtn.addEventListener('click', () => {
+      runBackgroundServiceAction('start', 'Restarting the background helper…');
+    });
+    stopBackgroundServiceBtn.addEventListener('click', () => {
+      runBackgroundServiceAction('stop', 'Stopping the background helper…');
+    });
+    removeBackgroundServiceBtn.addEventListener('click', () => {
+      runBackgroundServiceAction('uninstall', 'Removing the background helper…');
+    });
+
+    function renderPermissionBadge(element, status) {
+      const labels = {
+        granted: 'Granted',
+        denied: 'Not granted',
+        not_determined: 'Not requested',
+        restricted: 'Restricted',
+        unavailable: 'Unavailable',
+        unknown: 'Unknown',
+      };
+      element.textContent = labels[status] || 'Unknown';
+      element.className = `badge ${status === 'granted' ? 'badge-set' : 'badge-missing'}`;
+    }
+
+    checkBackgroundPermissionsBtn.addEventListener('click', async () => {
+      checkBackgroundPermissionsBtn.disabled = true;
+      checkBackgroundPermissionsBtn.innerHTML = '<span class="spinner"></span> Checking…';
+      try {
+        const response = await fetch('/api/background-service/permissions', {
+          method: 'POST',
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || 'Could not check permissions');
+        }
+        renderPermissionBadge(accessibilityPermissionBadge, result.accessibility);
+        renderPermissionBadge(inputMonitoringPermissionBadge, result.inputMonitoring);
+        renderPermissionBadge(microphonePermissionBadge, result.microphone);
+        permissionApplicationPath.textContent = result.applicationPath;
+        backgroundPermissionResults.style.display = 'block';
+      } catch (error) {
+        showToast(error.message || 'Could not check permissions', 'error');
+      } finally {
+        checkBackgroundPermissionsBtn.disabled = false;
+        checkBackgroundPermissionsBtn.textContent = 'Request / Check Permissions';
+      }
+    });
+
+    closeBackgroundPermissionsBtn.addEventListener('click', () => {
+      backgroundPermissionResults.style.display = 'none';
+    });
 
     function updateTtsProvider() {
       const isElevenLabs = ttsProvider.value === 'elevenlabs';
@@ -1426,7 +1973,9 @@
       elevenLabsSettings.style.display = isElevenLabs ? 'block' : 'none';
       voiceboxSettings.style.display = isVoicebox ? 'block' : 'none';
       cloudSettings.style.display = isCloud ? 'block' : 'none';
-      cloudAutoSubmitRow.classList.toggle('card-row--single', !(isCloud || isVoicebox));
+      const hasProviderCard = isCloud || isVoicebox;
+      cloudAutoSubmitRow.classList.toggle('card-row--single', !hasProviderCard);
+      cloudAutoSubmitRow.classList.toggle('card-row--provider-active', hasProviderCard);
       autoSubmitSliders.classList.toggle('slider-row', isElevenLabs);
       autoSubmitSliders.classList.toggle('slider-row--2col', isElevenLabs);
     }
@@ -1445,6 +1994,58 @@
         }
       } catch (error) {
         showToast('Failed to save TTS provider', 'error');
+      }
+    });
+
+    // Speech output toggle - save immediately on change
+    ttsEnabled.addEventListener('change', async () => {
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ttsEnabled: ttsEnabled.checked }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast(ttsEnabled.checked ? 'Spoken responses enabled' : 'Spoken responses disabled', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save spoken response setting', 'error');
+      }
+    });
+
+    // Media pause toggle - save immediately on change
+    pauseMediaDuringSpeech.addEventListener('change', async () => {
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pauseMediaDuringSpeech: pauseMediaDuringSpeech.checked }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast(pauseMediaDuringSpeech.checked ? 'Media pause enabled' : 'Media pause disabled', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to save media pause setting', 'error');
+      }
+    });
+
+    spokenResponseDetail.addEventListener('change', async () => {
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ spokenResponseDetail: spokenResponseDetail.value }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Spoken response detail updated', 'success');
+        }
+      } catch (error) {
+        showToast('Failed to update spoken response detail', 'error');
       }
     });
 
@@ -1484,12 +2085,37 @@
       autoSubmitDetails.classList.toggle('open', autoSubmitEnabled.checked);
     });
 
+    function updateAutoSubmitMode() {
+      const isSmart = autoSubmitMode.value === 'smart';
+      fixedAutoSubmitDetails.style.display = isSmart ? 'none' : 'block';
+      smartAutoSubmitDetails.classList.toggle('open', isSmart);
+      submitCommandDetails.style.display = isSmart ? 'block' : 'none';
+    }
+
+    autoSubmitMode.addEventListener('change', updateAutoSubmitMode);
+
     silenceDelaySlider.addEventListener('input', () => {
       silenceDelayValue.textContent = parseFloat(silenceDelaySlider.value).toFixed(1) + 's';
     });
 
     minTextLengthSlider.addEventListener('input', () => {
       minTextLengthValue.textContent = parseInt(minTextLengthSlider.value);
+    });
+
+    smartCandidateSilenceSlider.addEventListener('input', () => {
+      smartCandidateSilenceValue.textContent = parseFloat(smartCandidateSilenceSlider.value).toFixed(2) + 's';
+    });
+
+    smartTurnThresholdSlider.addEventListener('input', () => {
+      smartTurnThresholdValue.textContent = parseFloat(smartTurnThresholdSlider.value).toFixed(2);
+    });
+
+    smartMaxSilenceSlider.addEventListener('input', () => {
+      smartMaxSilenceValue.textContent = parseFloat(smartMaxSilenceSlider.value).toFixed(1) + 's';
+    });
+
+    smartTextDelaySlider.addEventListener('input', () => {
+      smartTextDelayValue.textContent = parseFloat(smartTextDelaySlider.value).toFixed(2) + 's';
     });
 
     // Voice input provider, toggle, and sliders
@@ -1507,8 +2133,43 @@
       voiceInputDetails.classList.toggle('open', voiceInputEnabled.checked);
     });
 
-    ttsDelaySlider.addEventListener('input', () => {
-      ttsDelayValue.textContent = parseFloat(ttsDelaySlider.value).toFixed(1) + 's';
+    wakeWordEnabled.addEventListener('change', () => {
+      wakeWordDetails.classList.toggle('open', wakeWordEnabled.checked);
+    });
+
+    wakeSensitivitySlider.addEventListener('input', () => {
+      wakeSensitivityValue.textContent = parseFloat(wakeSensitivitySlider.value).toFixed(2);
+    });
+
+    saveListeningTriggersBtn.addEventListener('click', async () => {
+      saveListeningTriggersBtn.disabled = true;
+      saveListeningTriggersBtn.innerHTML = '<span class="spinner"></span> Saving...';
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            voiceInput: {
+              manualTriggerHotkey: manualTriggerHotkeyInput.value.trim(),
+              wakeWordEnabled: wakeWordEnabled.checked,
+              wakePhrase: wakePhrase.value,
+              wakeSensitivity: parseFloat(wakeSensitivitySlider.value),
+              wakeChime: wakeChime.checked,
+            },
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Could not save listening triggers');
+        }
+        await restartBackgroundServiceIfRunning();
+        showToast('Listening triggers saved', 'success');
+      } catch (error) {
+        showToast(error.message || 'Failed to save listening triggers', 'error');
+      } finally {
+        saveListeningTriggersBtn.disabled = false;
+        saveListeningTriggersBtn.innerHTML = 'Save Listening Triggers';
+      }
     });
 
     silenceThresholdSlider.addEventListener('input', () => {
@@ -1568,7 +2229,10 @@
         const res = await fetch('/api/config');
         const data = await res.json();
 
-        ttsProvider.value = data.ttsProvider || 'elevenlabs';
+        ttsEnabled.checked = data.ttsEnabled !== false;
+        pauseMediaDuringSpeech.checked = data.pauseMediaDuringSpeech === true;
+        spokenResponseDetail.value = data.spokenResponseDetail || 'brief';
+        ttsProvider.value = data.ttsProvider || 'cloud';
         updateTtsProvider();
 
         if (data.apiKeySet) {
@@ -1609,10 +2273,21 @@
           const as = data.autoSubmit;
           autoSubmitEnabled.checked = !!as.enabled;
           autoSubmitDetails.classList.toggle('open', !!as.enabled);
+          autoSubmitMode.value = as.mode || 'fixed';
           silenceDelaySlider.value = as.silenceDelay ?? 3.0;
           silenceDelayValue.textContent = parseFloat(silenceDelaySlider.value).toFixed(1) + 's';
           minTextLengthSlider.value = as.minTextLength ?? 15;
           minTextLengthValue.textContent = parseInt(minTextLengthSlider.value);
+          smartCandidateSilenceSlider.value = as.smartCandidateSilence ?? 0.8;
+          smartCandidateSilenceValue.textContent = parseFloat(smartCandidateSilenceSlider.value).toFixed(2) + 's';
+          smartTurnThresholdSlider.value = as.smartTurnThreshold ?? 0.5;
+          smartTurnThresholdValue.textContent = parseFloat(smartTurnThresholdSlider.value).toFixed(2);
+          smartMaxSilenceSlider.value = as.smartMaxSilence ?? 3.0;
+          smartMaxSilenceValue.textContent = parseFloat(smartMaxSilenceSlider.value).toFixed(1) + 's';
+          smartTextDelaySlider.value = as.smartTextDelay ?? 0.2;
+          smartTextDelayValue.textContent = parseFloat(smartTextDelaySlider.value).toFixed(2) + 's';
+          submitCommandEnabled.checked = as.submitCommandEnabled !== false;
+          updateAutoSubmitMode();
         }
 
         // Voice input settings
@@ -1621,15 +2296,19 @@
           voiceInputProvider.value = vi.provider || 'wispr';
           voiceInputEnabled.checked = !!vi.enabled;
           voiceInputDetails.classList.toggle('open', !!vi.enabled);
-          ttsDelaySlider.value = vi.ttsDelay ?? 4.0;
-          ttsDelayValue.textContent = parseFloat(ttsDelaySlider.value).toFixed(1) + 's';
-          silenceThresholdSlider.value = vi.silenceThreshold ?? 0.02;
+          silenceThresholdSlider.value = vi.silenceThreshold ?? 0.005;
           silenceThresholdValue.textContent = parseFloat(silenceThresholdSlider.value).toFixed(3);
           silenceDurationSlider.value = vi.silenceDuration ?? 2.0;
           silenceDurationValue.textContent = parseFloat(silenceDurationSlider.value).toFixed(1) + 's';
           wisprHotkeyInput.value = vi.wisprHotkey || 'shift+ctrl';
           handyCommandInput.value = vi.handyCommand || '';
           manualTriggerHotkeyInput.value = vi.manualTriggerHotkey || 'ctrl+shift+l';
+          wakeWordEnabled.checked = !!vi.wakeWordEnabled;
+          wakeWordDetails.classList.toggle('open', !!vi.wakeWordEnabled);
+          wakePhrase.value = vi.wakePhrase || 'hey cursor';
+          wakeSensitivitySlider.value = vi.wakeSensitivity ?? 0.5;
+          wakeSensitivityValue.textContent = parseFloat(wakeSensitivitySlider.value).toFixed(2);
+          wakeChime.checked = vi.wakeChime !== false;
           updateVoiceInputProvider();
         }
 
@@ -1638,6 +2317,10 @@
           const vs = data.voiceSettings;
           speedSlider.value = vs.speed ?? 1.0;
           speedValue.textContent = parseFloat(speedSlider.value).toFixed(2);
+          cloudSpeedSlider.value = vs.speed ?? 1.0;
+          cloudSpeedValue.textContent = `${parseFloat(cloudSpeedSlider.value).toFixed(2)}x`;
+          cloudStyleSlider.value = vs.style ?? 0.5;
+          cloudStyleValue.textContent = cloudStyleLabel(parseFloat(cloudStyleSlider.value));
           stabilitySlider.value = vs.stability ?? 0.5;
           stabilityValue.textContent = parseFloat(stabilitySlider.value).toFixed(2);
           similarityBoostSlider.value = vs.similarityBoost ?? 0.75;
@@ -1752,7 +2435,14 @@
       const res = await fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ttsProvider: 'cloud', cloud }),
+        body: JSON.stringify({
+          ttsProvider: 'cloud',
+          cloud,
+          voiceSettings: {
+            speed: parseFloat(cloudSpeedSlider.value),
+            style: parseFloat(cloudStyleSlider.value),
+          },
+        }),
       });
       const data = await res.json();
       showToast(data.success ? 'Cloud voice settings saved' : 'Could not save Cloud settings', data.success ? 'success' : 'error');
@@ -1991,11 +2681,90 @@
         currentPreviewAudio.pause();
         currentPreviewAudio = null;
       }
+      resetCloudVoicePreview();
       currentPreviewAudio = new Audio(url);
       currentPreviewAudio.play().catch(() => {
         showToast('Could not play preview', 'error');
       });
     }
+
+    function resetCloudVoicePreview() {
+      currentCloudPreviewVoice = null;
+      cloudVoicePreviewBtn.setAttribute('aria-pressed', 'false');
+      cloudVoicePreviewBtn.innerHTML = '<span aria-hidden="true">&#9654;</span> Preview';
+    }
+
+    function stopCurrentPreview() {
+      if (currentPreviewAudio) {
+        currentPreviewAudio.pause();
+        currentPreviewAudio.currentTime = 0;
+        currentPreviewAudio = null;
+      }
+      resetCloudVoicePreview();
+    }
+
+    cloudVoicePreviewBtn.addEventListener('click', () => {
+      const voice = cloudVoiceId.value;
+      if (
+        currentPreviewAudio &&
+        currentCloudPreviewVoice === voice &&
+        !currentPreviewAudio.paused
+      ) {
+        stopCurrentPreview();
+        return;
+      }
+
+      stopCurrentPreview();
+      currentCloudPreviewVoice = voice;
+      cloudVoicePreviewBtn.disabled = true;
+      cloudVoicePreviewBtn.innerHTML = '<span class="spinner"></span> Loading';
+
+      const audio = new Audio(`/voice-previews/${encodeURIComponent(voice)}.mp3`);
+      audio.playbackRate = parseFloat(cloudSpeedSlider.value);
+      currentPreviewAudio = audio;
+      audio.addEventListener('playing', () => {
+        cloudVoicePreviewBtn.disabled = false;
+        cloudVoicePreviewBtn.setAttribute('aria-pressed', 'true');
+        cloudVoicePreviewBtn.innerHTML = '<span aria-hidden="true">&#9632;</span> Stop';
+      });
+      audio.addEventListener('ended', () => {
+        currentPreviewAudio = null;
+        resetCloudVoicePreview();
+      });
+      audio.addEventListener('error', () => {
+        currentPreviewAudio = null;
+        cloudVoicePreviewBtn.disabled = false;
+        resetCloudVoicePreview();
+        showToast('Could not play Cloud voice preview', 'error');
+      });
+      audio.play().catch(() => {
+        currentPreviewAudio = null;
+        cloudVoicePreviewBtn.disabled = false;
+        resetCloudVoicePreview();
+        showToast('Could not play Cloud voice preview', 'error');
+      });
+    });
+
+    cloudVoiceId.addEventListener('change', stopCurrentPreview);
+
+    cloudSpeedSlider.addEventListener('input', () => {
+      cloudSpeedValue.textContent = `${parseFloat(cloudSpeedSlider.value).toFixed(2)}x`;
+      if (currentPreviewAudio && currentCloudPreviewVoice) {
+        currentPreviewAudio.playbackRate = parseFloat(cloudSpeedSlider.value);
+      }
+    });
+
+    function cloudStyleLabel(value) {
+      if (value >= 0.8) return 'Very expressive';
+      if (value >= 0.6) return 'Expressive';
+      if (value >= 0.4) return 'Natural';
+      if (value >= 0.2) return 'Restrained';
+      return 'Steady';
+    }
+
+    cloudStyleSlider.addEventListener('input', () => {
+      cloudStyleValue.textContent = cloudStyleLabel(parseFloat(cloudStyleSlider.value));
+    });
 
     // Save voice settings
     saveSettingsBtn.addEventListener('click', async () => {
@@ -2043,9 +2812,16 @@
 
       const autoSubmit = {
         enabled: autoSubmitEnabled.checked,
+        mode: autoSubmitMode.value,
         silenceDelay: parseFloat(silenceDelaySlider.value),
         minTextLength: parseInt(minTextLengthSlider.value),
         targetApp: 'Cursor',
+        smartCandidateSilence: parseFloat(smartCandidateSilenceSlider.value),
+        smartTurnThreshold: parseFloat(smartTurnThresholdSlider.value),
+        smartMaxSilence: parseFloat(smartMaxSilenceSlider.value),
+        smartTextDelay: parseFloat(smartTextDelaySlider.value),
+        submitCommandEnabled: submitCommandEnabled.checked,
+        submitPhrase: 'send it',
       };
 
       try {
@@ -2057,6 +2833,7 @@
         const data = await res.json();
 
         if (data.success) {
+          await restartBackgroundServiceIfRunning();
           showToast('Auto-submit settings saved', 'success');
         }
       } catch (error) {
@@ -2092,12 +2869,10 @@
       const voiceInput = {
         enabled: voiceInputEnabled.checked,
         provider: voiceInputProvider.value,
-        ttsDelay: parseFloat(ttsDelaySlider.value),
         silenceThreshold: parseFloat(silenceThresholdSlider.value),
         silenceDuration: parseFloat(silenceDurationSlider.value),
         wisprHotkey: wisprHotkeyInput.value.trim(),
         handyCommand: handyCommandInput.value.trim(),
-        manualTriggerHotkey: manualTriggerHotkeyInput.value.trim(),
       };
 
       try {
@@ -2109,6 +2884,7 @@
         const data = await res.json();
 
         if (data.success) {
+          await restartBackgroundServiceIfRunning();
           showToast('Voice input settings saved', 'success');
         }
       } catch (error) {
@@ -2131,6 +2907,9 @@
 
     // Init
     loadConfig();
+    refreshBackgroundService().catch(() => {
+      backgroundServiceNotice.textContent = 'Could not read background helper status.';
+    });
   </script>
 </body>
 </html>

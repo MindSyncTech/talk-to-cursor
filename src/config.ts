@@ -49,6 +49,7 @@ export const USER_DATA_DIR = getUserDataDir();
 export const CONFIG_PATH = join(USER_DATA_DIR, "config.json");
 export const LISTEN_SIGNAL_PATH = join(USER_DATA_DIR, "listen-signal.json");
 export const TTS_COMPLETE_PATH = join(USER_DATA_DIR, "tts-complete.json");
+export const TTS_STATE_PATH = join(USER_DATA_DIR, "tts-state.json");
 const LEGACY_CONFIG_PATH = join(__dirname, "..", "config.json");
 
 function ensureUserDataDir(): void {
@@ -110,24 +111,37 @@ export const DEFAULT_CLOUD: Config["cloud"] = {
 
 export const DEFAULT_AUTO_SUBMIT: Config["autoSubmit"] = {
   enabled: false,
+  mode: "fixed",
   silenceDelay: 3.0,
   minTextLength: 15,
   targetApp: "Cursor",
+  smartCandidateSilence: 0.8,
+  smartTurnThreshold: 0.5,
+  smartMaxSilence: 3.0,
+  smartTextDelay: 0.2,
+  submitCommandEnabled: true,
+  submitPhrase: "send it",
 };
 
 export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
   enabled: false,
   provider: "wispr",
-  ttsDelay: 4.0,
-  silenceThreshold: 0.02,
+  silenceThreshold: 0.005,
   silenceDuration: 2.0,
   wisprHotkey: "shift+ctrl",
   handyCommand: "",
   manualTriggerHotkey: "ctrl+shift+l",
+  wakeWordEnabled: false,
+  wakePhrase: "hey cursor",
+  wakeSensitivity: 0.5,
+  wakeChime: true,
 };
 
 export const DEFAULT_CONFIG: Config = {
-  ttsProvider: "elevenlabs",
+  ttsEnabled: true,
+  pauseMediaDuringSpeech: false,
+  spokenResponseDetail: "brief",
+  ttsProvider: "cloud",
   apiKey: "",
   voiceId: "21m00Tcm4TlvDq8ikWAM",
   model: "eleven_flash_v2_5",
@@ -148,6 +162,13 @@ export function loadConfig(): Config {
       // Migrate existing wisprLoop settings without breaking current installs.
       const parsedVoiceInput = parsed.voiceInput || parsed.wisprLoop || {};
       const candidate = {
+        ttsEnabled: parsed.ttsEnabled !== undefined ? parsed.ttsEnabled : DEFAULT_CONFIG.ttsEnabled,
+        pauseMediaDuringSpeech:
+          parsed.pauseMediaDuringSpeech !== undefined
+            ? parsed.pauseMediaDuringSpeech
+            : DEFAULT_CONFIG.pauseMediaDuringSpeech,
+        spokenResponseDetail:
+          parsed.spokenResponseDetail ?? DEFAULT_CONFIG.spokenResponseDetail,
         ttsProvider: parsed.ttsProvider ?? DEFAULT_CONFIG.ttsProvider,
         apiKey: parsed.apiKey ?? DEFAULT_CONFIG.apiKey,
         voiceId: parsed.voiceId ?? DEFAULT_CONFIG.voiceId,
@@ -214,6 +235,9 @@ export function saveConfig(config: ConfigUpdate): Config {
 export function getEffectiveConfig(): Config {
   const fileConfig = loadConfig();
   return {
+    ttsEnabled: fileConfig.ttsEnabled,
+    pauseMediaDuringSpeech: fileConfig.pauseMediaDuringSpeech,
+    spokenResponseDetail: fileConfig.spokenResponseDetail,
     ttsProvider: fileConfig.ttsProvider,
     apiKey: process.env.ELEVENLABS_API_KEY || fileConfig.apiKey,
     voiceId: process.env.ELEVENLABS_VOICE_ID || fileConfig.voiceId,
