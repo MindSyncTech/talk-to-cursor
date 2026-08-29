@@ -8,7 +8,9 @@ A voice interface for Cursor and compatible MCP coding assistants. Your agent sp
 
 - **Text-to-Speech Providers** - Choose managed TalkToCursor Cloud, your own ElevenLabs key, or local Voicebox
 - **Settings UI** - Connect providers, choose voices, and manage speech and hands-free settings
-- **Auto-Submit** - Optional: automatically press Enter when dictation finishes (hands-free)
+- **Spoken Response Detail** - Choose minimal “Done,” brief summaries, or detailed spoken updates
+- **Smart Auto-Submit** - Distinguish finished prompts from thinking pauses with a small local audio model
+- **Local Wake Phrases** - Start Wispr or Handy with a selectable phrase such as "Hey Cursor"
 - **Provider-Aware Controls** - Cloud voice selection, ElevenLabs presets and tuning, and Voicebox profiles
 - **Portable Cloud Settings** - Sync managed voice preferences across connected devices
 
@@ -38,6 +40,18 @@ For optional speech-to-text and the hands-free conversational loop:
 - **[Handy](https://github.com/cjpais/Handy) (free, private, and local)** - Open-source transcription using Whisper or Parakeet.
 
 ## Installation
+
+### Recommended: install with your AI agent
+
+Give this prompt to Cursor or another coding agent:
+
+> Install TalkToCursor for my current coding assistant by following
+> https://github.com/MindSyncTech/talk-to-cursor/blob/main/INSTALL.md
+> Configure the MCP and persistent voice-feedback instructions. Ask before
+> enabling paid Cloud services or installing the macOS Background Helper.
+
+The agent can configure files and dependencies, but host restarts, account
+sign-in, purchases, and operating-system permissions may still require you.
 
 ### 1. Install
 
@@ -165,15 +179,11 @@ For the full hands-free conversational loop, choose one of these providers:
 - **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended)** — A polished voice-to-text experience with minimal setup.
 - **[Handy](https://github.com/cjpais/Handy) (free & private)** — Open-source transcription that runs locally using Whisper or Parakeet, must be installed manually.
 
-Install and launch your provider, select it under **Voice Input Provider** in the settings UI, enable **Voice Input Loop**, and run:
+Install and launch your provider, select it under **Voice Input Provider**,
+turn on **Enable Voice Input**, then click **Install & Start** under
+**Cursor Hands-Free Background Helper**. The helper runs invisibly and starts at login.
 
-```bash
-talktocursor-auto-submit
-```
-
-For a source install, use `npm run auto-submit`.
-
-After each task, your assistant speaks the result, starts the selected provider for your next command, and submits the transcription. The automatic loop currently requires macOS and is designed for Cursor; Codex and Antigravity users may prefer native voice input.
+After each task, your assistant speaks the result, starts the selected provider for your next command, and submits the transcription. You can also enable a local wake phrase to trigger Wispr or Handy at any time. The first wake-phrase launch downloads an English keyword model of about 20 MB. The automatic loop currently requires macOS and is designed for Cursor; Codex and Antigravity users may prefer native voice input.
 
 ### 7. Restart your coding host
 
@@ -194,7 +204,9 @@ Once configured, your coding agent can use TalkToCursor to speak:
 - When encountering errors or needing clarification
 - At major progress milestones
 
-To encourage automatic voice feedback at these moments, add the appropriate Cursor rule, Claude Code `CLAUDE.md`, Codex `AGENTS.md`, or Antigravity global/workspace rule. See the [voice-feedback examples](INSTALL.md#optional-voice-feedback-instructions).
+To encourage automatic voice feedback at these moments, add the appropriate Cursor rule, Claude Code `CLAUDE.md`, Codex `AGENTS.md`, or Antigravity global/workspace rule. See the [voice-feedback examples](INSTALL.md#configure-automatic-voice-feedback).
+
+Use **Enable Spoken Responses** in the settings UI to pause or resume TTS without removing the `speak` tool or changing your voice-feedback instructions. On macOS, **Pause Media During Speech** can pause a playing Apple Music or Spotify session and resume only the players TalkToCursor paused.
 
 ## Voice Settings
 
@@ -222,32 +234,33 @@ available in your local Voicebox installation.
 For completely hands-free dictation with Wispr Flow or Handy:
 
 1. Enable "Auto-Submit" in the settings UI
-2. Adjust the silence delay (how long to wait after you stop speaking)
+2. Choose **Fixed Pause** or **Smart Turn**
 3. Save the settings
-4. Run in a separate terminal:
-
-```bash
-python3 -m pip install -r "$(npm root -g)/talktocursor/requirements.txt"
-talktocursor-auto-submit
-```
-
-For a source install, run `python3 -m pip install -r requirements.txt`, then use
-`npm run auto-submit`.
+4. Install and start the **Cursor Hands-Free Background Helper** in the settings UI
 
 **Requirements:**
 - macOS only (uses Accessibility API)
-- Python 3 with dependencies from `requirements.txt`
 - PortAudio for microphone-based voice input (`brew install portaudio`)
-- Grant Accessibility permissions: System Settings > Privacy & Security > Accessibility > Add your terminal app
+- Grant Accessibility, Input Monitoring, and Microphone permissions to the background helper
 
-The script monitors the text field and automatically presses Enter when dictation finishes.
+Fixed Pause retains the original timer behavior. Smart Turn checks a short pause
+with Pipecat's local Smart Turn v3.2 model, keeps listening when your thought
+sounds unfinished, and submits quickly when it sounds complete. The verified
+8.7 MB model downloads once on first use and stays under TalkToCursor's local
+application data. You can also say **"send it"** to finish immediately; the
+helper removes that trailing command before submission.
+
+The helper monitors the text field and automatically presses Enter when
+dictation finishes. Dictation started outside TalkToCursor continues to use the
+fixed text delay. The helper can still be run manually with
+`talktocursor-auto-submit` when needed.
 
 ## Configuration Files
 
 - **macOS:** `~/Library/Application Support/TalkToCursor/config.json`
 - **Windows:** `%APPDATA%\TalkToCursor\config.json`
 - **Linux:** `${XDG_CONFIG_HOME:-~/.config}/talktocursor/config.json`
-- **Cursor:** `~/.cursor/mcp.json` and optional `~/.cursor/rules/voice-feedback.mdc`
+- **Cursor:** `~/.cursor/mcp.json`; use `<project>/.cursor/rules/voice-feedback.mdc` for a project or **Cursor Settings → Rules → User Rules** for all projects
 - **Claude Code:** `claude mcp add` and optional global `~/.claude/CLAUDE.md` or project `CLAUDE.md`
 - **Codex:** `~/.codex/config.toml` and optional global or project `AGENTS.md`
 - **Antigravity:** use its MCP management screen for the active config; global rules use `~/.gemini/GEMINI.md` and workspace rules live under `.agents/rules`
@@ -275,7 +288,7 @@ Cloud device credentials are stored in the macOS Keychain when available, with a
 - Check the selected provider's connection status in the settings UI
 
 **Auto-submit not working?**
-- Ensure macOS Accessibility permissions are granted
+- Ensure macOS Accessibility and Input Monitoring permissions are granted
 - Check that Cursor is the frontmost app when dictating; other hosts are not currently verified for the Accessibility-based loop
 - Adjust the "Min Text Length" if short dictations aren't triggering
 - Increase "Silence Delay" if prompts are being submitted too early
@@ -293,6 +306,7 @@ Cloud device credentials are stored in the macOS Keychain when available, with a
 - **Website:** [talktocursor.com](https://talktocursor.com)
 - **TalkToCursor Cloud:** [cloud.talktocursor.com](https://cloud.talktocursor.com)
 - **npm:** [npmjs.com/package/talktocursor](https://www.npmjs.com/package/talktocursor)
+- **Support:** [support@talktocursor.com](mailto:support@talktocursor.com)
 
 ## License
 
