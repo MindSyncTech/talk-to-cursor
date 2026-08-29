@@ -16,6 +16,19 @@ TalkToCursor uses the same stdio MCP package in every host. Choose the configura
 - [Google Antigravity setup](https://talktocursor.com/talk-to-antigravity/)
 - [Other MCP-compatible hosts](https://talktocursor.com/talk-to-ide/)
 
+## Recommended: Install With Your AI Agent
+
+Give this prompt to Cursor or another coding agent:
+
+> Install TalkToCursor for my current coding assistant by following
+> https://github.com/MindSyncTech/talk-to-cursor/blob/main/INSTALL.md
+> Configure the MCP and persistent voice-feedback instructions. Ask before
+> enabling paid Cloud services or installing the macOS Background Helper.
+
+The agent can configure files and dependencies. You may still need to restart
+your coding host, sign in to a provider, approve purchases, and grant
+operating-system permissions.
+
 Requires Node.js 18 or newer. A global install is optional:
 
 ```bash
@@ -194,13 +207,19 @@ In Claude Code, use `claude mcp list`. In Codex, use `codex mcp list`. In Antigr
 
 ---
 
-## Optional: Voice Feedback Instructions
+## Configure Automatic Voice Feedback
 
-Persistent instructions encourage the agent to speak at useful moments without reading noisy technical output aloud.
+The MCP connection exposes `speak`, but it does not force an agent to call the
+tool. Add persistent instructions if you expect automatic speech at task
+completion, when input is needed, or at milestones.
 
 ### Cursor
 
-Create `~/.cursor/rules/voice-feedback.mdc`:
+For the current project, create
+`<project>/.cursor/rules/voice-feedback.mdc`. To apply the instruction to
+every project, paste the same rule text into **Cursor Settings → Rules → User
+Rules**. Do not rely on `~/.cursor/rules`; Cursor does not consistently load
+that directory as global User Rules.
 
 ```markdown
 ---
@@ -210,10 +229,19 @@ alwaysApply: true
 
 # Voice feedback
 
-Use the `speak` tool at task start, important milestones,
-when asking a question, and at completion.
+Use the `speak` tool at task start with `waitForPlayback: false` so work begins
+immediately. Use `waitForPlayback: true` for important milestones, questions,
+failures, required follow-ups, and completion.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
+
+Before sending every final response, call the `speak` tool in the same turn
+with a concise completion summary. Do this even if a task-start update was
+already spoken.
+
+Immediately after completion speech, call the `listen` tool. It safely does
+nothing when Auto-Listen is disabled. Never call `listen` after task-start or
+milestone speech.
 ```
 
 ### Claude Code
@@ -264,7 +292,16 @@ For a fully hands-free experience with voice dictation. This Accessibility-based
 ### Auto-Submit Setup
 
 1. Enable **Auto-Submit** in the settings UI
-2. Install the packaged Python requirements. For a global npm install:
+2. Choose **Fixed Pause** or **Smart Turn**. Smart Turn uses a short audio pause
+   plus a local endpoint model and supports the spoken **"send it"** command.
+3. Click **Install & Start** under **Cursor Hands-Free Background Helper**. TalkToCursor
+   creates a private Python environment, runs invisibly, and starts at login.
+4. Grant Accessibility and Input Monitoring permissions when prompted:
+   - System Settings > Privacy & Security > Accessibility and Input Monitoring
+   - Allow the TalkToCursor background Python helper in both sections
+
+To run the helper manually instead, install the packaged Python requirements.
+For a global npm install:
 
 ```bash
 python3 -m pip install -r "$(npm root -g)/talktocursor/requirements.txt"
@@ -279,7 +316,7 @@ source .venv/bin/activate
 python3 -m pip install -r requirements.txt
 ```
 
-3. Run in a separate terminal:
+Then run:
 
 ```bash
 talktocursor-auto-submit
@@ -289,32 +326,33 @@ For a source install, use `npm run auto-submit`. The launcher uses `python3`
 or the executable named by `TALKTOCURSOR_PYTHON`; it does not require a
 repository `.venv`.
 
-4. Grant Accessibility permissions when prompted:
-   - System Settings > Privacy & Security > Accessibility
-   - Add your terminal app (Terminal.app, iTerm, or Cursor)
-
-### Voice Input Loop Setup
+### Voice Input Setup
 
 Choose a voice input provider:
 
 - **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended):** Install Wispr Flow and configure its dictation hotkey.
-- **[Handy](https://github.com/cjpais/Handy) (free & private):** Install and launch Handy, download a transcription model, and grant Microphone and Accessibility permissions.
+- **[Handy](https://github.com/cjpais/Handy) (free & private):** Install and launch Handy, download a transcription model, and grant Microphone, Accessibility, and Input Monitoring permissions.
 
 Then:
 
 1. Select your provider under **Voice Input Provider** in the settings UI
-2. Enable **Voice Input Loop**
+2. Turn on **Enable Voice Input**
 3. For Wispr Flow, configure the hotkey to match your Wispr settings
 4. For Handy, leave the command blank for auto-detection or enter its executable path
 5. Install PortAudio with `brew install portaudio` (the Python packages are
    already listed in `requirements.txt`)
 
-6. Grant Microphone permissions to your terminal app
-7. Run the auto-submit script (handles both auto-submit and voice input):
+6. Grant Microphone, Accessibility, and Input Monitoring permissions to the TalkToCursor background helper
+7. (Optional) Enable **Wake Phrase**, choose a phrase and sensitivity, and
+   install the updated Python requirements. Detection is local; the first
+   launch downloads an English keyword model of about 20 MB.
+8. Ensure **Cursor Hands-Free Background Helper** shows **Running**. It handles
+   auto-submit, voice input, manual hotkeys, and wake phrases.
 
-```bash
-talktocursor-auto-submit
-```
+When Smart Turn is selected, the first managed dictation downloads the pinned
+Smart Turn v3.2 CPU model (about 8.7 MB), verifies its SHA-256 checksum, and
+caches it locally. Audio inference stays on the Mac. If download or inference
+fails, the helper uses the configured maximum-silence fallback.
 
 ---
 
@@ -324,7 +362,10 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `ttsProvider` | Text-to-speech provider (`elevenlabs`, `voicebox`, or `cloud`) | `elevenlabs` |
+| `ttsEnabled` | Allow spoken task updates and completions | `true` |
+| `pauseMediaDuringSpeech` | Pause Apple Music or Spotify during speech on macOS | `false` |
+| `spokenResponseDetail` | Spoken update length (`minimal`, `brief`, or `detailed`) | `brief` |
+| `ttsProvider` | Text-to-speech provider (`elevenlabs`, `voicebox`, or `cloud`) | `cloud` |
 | `apiKey` | ElevenLabs API key | required for ElevenLabs |
 | `voiceId` | ElevenLabs voice ID | Rachel |
 | `model` | TTS model | `eleven_flash_v2_5` |
@@ -340,14 +381,27 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `cloud.model` | Fixed managed Google Cloud model | `gemini-2.5-flash-tts` |
 | `autoListen` | Auto-listen after tasks | true |
 | `autoSubmit.enabled` | Auto-press Enter | false |
+| `autoSubmit.mode` | Turn detection mode (`fixed` or `smart`) | `fixed` |
+| `autoSubmit.silenceDelay` | Text stability delay for fixed mode | `3.0` |
+| `autoSubmit.smartCandidateSilence` | Quiet audio before a Smart Turn check | `0.8` |
+| `autoSubmit.smartTurnThreshold` | Probability required to end the turn | `0.5` |
+| `autoSubmit.smartMaxSilence` | Safety fallback after uncertain silence | `3.0` |
+| `autoSubmit.smartTextDelay` | Text stability delay after Smart Turn | `0.2` |
+| `autoSubmit.submitCommandEnabled` | Enable the spoken `send it` command | `true` |
 | `voiceInput.enabled` | Automatic voice input loop | false |
 | `voiceInput.provider` | Voice input provider (`wispr` or `handy`) | `wispr` |
 | `voiceInput.wisprHotkey` | Wispr Flow recording shortcut | `shift+ctrl` |
 | `voiceInput.handyCommand` | Optional Handy executable path | auto-detect |
+| `voiceInput.wakeWordEnabled` | Always listen locally for a wake phrase | `false` |
+| `voiceInput.wakePhrase` | Phrase that starts Wispr or Handy | `hey cursor` |
+| `voiceInput.wakeSensitivity` | Wake-phrase detection sensitivity (0-1) | `0.5` |
+| `voiceInput.wakeChime` | Play a sound before dictation starts | `true` |
 
 TalkToCursor Cloud voice choices are grouped in the settings UI: Male
-(Alnilam, Charon, Puck, Sadaltager, Umbriel, Sadachbia) and Female (Achernar,
-Despina, Kore, Leda, Sulafat, Zephyr). These managed settings do not change the
+(Alnilam, Charon, Puck, Sadaltager, Umbriel, Sadachbia, Achird, Algenib,
+Enceladus, Iapetus) and Female (Achernar, Despina, Kore, Leda, Sulafat,
+Zephyr, Aoede, Callirrhoe, Laomedeia, Vindemiatrix). These managed settings do
+not change the
 ElevenLabs BYOK voice or model.
 
 ---
@@ -373,7 +427,7 @@ ElevenLabs BYOK voice or model.
 - Test your API key in the settings UI
 
 ### Auto-submit not working
-- Ensure macOS Accessibility permissions are granted
+- Ensure macOS Accessibility and Input Monitoring permissions are granted
 - Check that Cursor is the frontmost app; other hosts are not currently verified for this loop
 - Try increasing the silence delay in settings
 

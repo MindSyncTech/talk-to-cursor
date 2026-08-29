@@ -1,6 +1,6 @@
 {
   "name": "talktocursor",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Text-to-speech for Cursor, Claude Code, Codex, Antigravity, and compatible MCP coding assistants.",
   "type": "module",
   "main": "build/index.js",
@@ -55,7 +55,9 @@
     "requirements.txt",
     "INSTALL.md",
     "README.md",
-    "SETUP.md"
+    "SETUP.md",
+    "CHANGELOG.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.34.0",

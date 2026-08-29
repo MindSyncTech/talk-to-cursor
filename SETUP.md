@@ -71,17 +71,26 @@ Completely quit and restart the coding host so it reloads the MCP server.
 
 1. Install and open [Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended) or [Handy](https://github.com/cjpais/Handy) (free and private)
 2. Select it under **Voice Input Provider** in the TalkToCursor settings UI
-3. Install the optional Python dependencies:
-   `python3 -m pip install -r "$(npm root -g)/talktocursor/requirements.txt"`
-4. Install PortAudio with `brew install portaudio`, enable **Voice Input Loop**,
-   and run `talktocursor-auto-submit`
-5. Speak a coding request: "Refactor the login function"
-6. The agent will narrate what it's doing and listen for your next request
+3. Install PortAudio with `brew install portaudio` and turn on **Enable Voice Input**
+4. Click **Install & Start** under **Cursor Hands-Free Background Helper**. It creates
+   a private Python environment, runs invisibly, and starts at login.
+5. Grant Accessibility, Input Monitoring, and Microphone permissions to the helper.
+6. Optionally enable **Wake Phrase** and choose a phrase such as "Hey Cursor."
+   The first launch downloads a local English keyword model of about 20 MB.
+7. Speak a coding request: "Refactor the login function"
+8. The agent will narrate what it's doing and listen for your next request
 
 The automatic voice-input loop is designed for Cursor on macOS. Claude Code, Codex, and Antigravity users may prefer their native voice input.
 
-For a source checkout, install `requirements.txt` directly and use
-`npm run auto-submit`. Auto-submit and the voice-input loop require macOS.
+For manual operation, install `requirements.txt` and run
+`talktocursor-auto-submit` (or `npm run auto-submit` from source).
+Auto-submit and the voice-input loop require macOS.
+
+Auto-Submit offers **Fixed Pause** and **Smart Turn** modes. Smart Turn runs a
+verified local endpoint model after a short pause, continues listening when a
+thought appears unfinished, and falls back to a maximum silence timeout. Its
+8.7 MB model downloads once on first use. The optional spoken **"send it"**
+command ends the turn immediately and is removed from the prompt before Enter.
 
 ## What You Need to Configure
 
