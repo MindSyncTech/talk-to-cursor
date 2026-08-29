@@ -2,7 +2,7 @@
 
 **[talktocursor.com](https://talktocursor.com)**
 
-A hands-free voice interface for Cursor AI. Your coding assistant speaks progress updates, completions, and responses aloud using managed TalkToCursor Cloud, ElevenLabs, or local Voicebox TTS.
+A voice interface for Cursor and compatible MCP coding assistants. Your agent speaks progress updates, completions, and responses aloud using managed TalkToCursor Cloud, ElevenLabs, or local Voicebox TTS.
 
 ## Features
 
@@ -12,9 +12,20 @@ A hands-free voice interface for Cursor AI. Your coding assistant speaks progres
 - **Provider-Aware Controls** - Cloud voice selection, ElevenLabs presets and tuning, and Voicebox profiles
 - **Portable Cloud Settings** - Sync managed voice preferences across connected devices
 
+## Coding Host Guides
+
+TalkToCursor uses one stdio MCP package and one set of voice settings across supported hosts. Installation and persistent instruction formats differ:
+
+- **[Cursor](https://talktocursor.com/cursor-tts/)** - Original integration with Cursor MCP rules and optional macOS hands-free dictation
+- **[OpenAI Codex](https://talktocursor.com/talk-to-codex/)** - Custom/local TTS and spoken milestones alongside native Codex Voice
+- **[Google Antigravity](https://talktocursor.com/talk-to-antigravity/)** - Spoken agent output alongside native live transcription
+- **[Other MCP-compatible hosts](https://talktocursor.com/talk-to-ide/)** - Requirements and a generic local stdio MCP recipe
+
+Support for an unlisted IDE is not implied. It must support local stdio MCP servers and allow the agent to call the `speak` tool.
+
 ## Recommended Voice Setup
 
-TalkToCursor handles text-to-speech responses from Cursor. Choose the provider that fits your priorities:
+TalkToCursor handles text-to-speech responses from the connected coding agent. Choose the provider that fits your priorities:
 
 - **[TalkToCursor Cloud](https://cloud.talktocursor.com) (recommended for easiest setup)** - Managed Google Cloud TTS for $15/month with 100,000 included characters, portable settings, and no provider API key stored locally.
 - **[ElevenLabs](https://try.elevenlabs.io/talktocursor) (best for voice selection and control)** - Bring your own API key for a broad voice library, models, presets, and detailed tuning.
@@ -29,7 +40,7 @@ For optional speech-to-text and the hands-free conversational loop:
 
 ### 1. Install
 
-The recommended setup lets Cursor run TalkToCursor directly through `npx`, with no global install required. Skip to step 3 if you use this option.
+The recommended setup lets your MCP host run TalkToCursor directly through `npx`, with no global install required. Skip to step 3 if you use this option.
 
 For a global install instead:
 
@@ -55,16 +66,16 @@ npm run build
 
 Skip this step for a global install.
 
-### 3. Configure Cursor to use the MCP server
+### 3. Connect your coding host
 
-Edit (or create) `~/.cursor/mcp.json`:
+For Cursor, edit (or create) `~/.cursor/mcp.json`:
 
 Recommended `npx` configuration:
 
 ```json
 {
   "mcpServers": {
-    "tts": {
+    "talktocursor": {
       "command": "npx",
       "args": ["-y", "talktocursor"]
     }
@@ -72,24 +83,34 @@ Recommended `npx` configuration:
 }
 ```
 
-For a global install:
+For OpenAI Codex:
+
+```bash
+codex mcp add talktocursor -- npx -y talktocursor
+```
+
+For Google Antigravity, open its MCP management screen and add the same JSON entry shown for Cursor to the active raw configuration. Antigravity’s config path varies by release.
+
+See the [full installation guide](INSTALL.md#choose-your-coding-host) for Codex TOML, Antigravity PATH troubleshooting, generic MCP-host requirements, and source/global-install configurations.
+
+For a global install in a JSON-based MCP host:
 
 ```json
 {
   "mcpServers": {
-    "tts": {
+    "talktocursor": {
       "command": "talktocursor"
     }
   }
 }
 ```
 
-For a source install:
+For a source install in a JSON-based MCP host:
 
 ```json
 {
   "mcpServers": {
-    "tts": {
+    "talktocursor": {
       "command": "node",
       "args": ["/ABSOLUTE/PATH/TO/talk-to-cursor/build/index.js"]
     }
@@ -145,28 +166,28 @@ talktocursor-auto-submit
 
 For a source install, use `npm run auto-submit`.
 
-After each task, your assistant speaks the result, starts the selected provider for your next command, and submits the transcription. The automatic loop currently requires macOS.
+After each task, your assistant speaks the result, starts the selected provider for your next command, and submits the transcription. The automatic loop currently requires macOS and is designed for Cursor; Codex and Antigravity users may prefer native voice input.
 
-### 7. Restart Cursor
+### 7. Restart your coding host
 
-**Fully quit Cursor** (Cmd+Q on Mac, or close completely on Windows/Linux) and reopen it.
+Fully quit and reopen Cursor, Codex, Antigravity, or your other MCP host.
 
 ### 8. Test it
 
-1. Open a new Cursor chat (Cmd+L)
-2. Check that the `speak` tool appears in "Available Tools"
-3. Type: **"Say hello using the speak tool"**
+1. Open a new agent conversation
+2. Check that the `speak` tool appears in the host’s MCP tools
+3. Type: **"Use the speak tool to say hello"**
 4. You should hear the voice through your speakers!
 
 ## Usage
 
-Once configured, Cursor can use TalkToCursor to speak:
+Once configured, your coding agent can use TalkToCursor to speak:
 - When starting a task
 - When completing a task
 - When encountering errors or needing clarification
 - At major progress milestones
 
-To encourage automatic voice feedback at these moments, add a Cursor rule. See the [voice-feedback rule example](INSTALL.md#optional-voice-feedback-rule).
+To encourage automatic voice feedback at these moments, add the appropriate Cursor rule, Codex `AGENTS.md`, or Antigravity global/workspace rule. See the [voice-feedback examples](INSTALL.md#optional-voice-feedback-instructions).
 
 ## Voice Settings
 
@@ -219,22 +240,25 @@ The script monitors the text field and automatically presses Enter when dictatio
 - **macOS:** `~/Library/Application Support/TalkToCursor/config.json`
 - **Windows:** `%APPDATA%\TalkToCursor\config.json`
 - **Linux:** `${XDG_CONFIG_HOME:-~/.config}/talktocursor/config.json`
-- **`~/.cursor/mcp.json`** - Registers the MCP server with Cursor
-- **`~/.cursor/rules/voice-feedback.mdc`** - Controls when the agent speaks
+- **Cursor:** `~/.cursor/mcp.json` and optional `~/.cursor/rules/voice-feedback.mdc`
+- **Codex:** `~/.codex/config.toml` and optional global or project `AGENTS.md`
+- **Antigravity:** use its MCP management screen for the active config; global rules use `~/.gemini/GEMINI.md` and workspace rules live under `.agents/rules`
 
 Cloud device credentials are stored in the macOS Keychain when available, with a mode-0600 user-data file fallback. They are never returned by the local settings API.
 
 ## Troubleshooting
 
-**Tool doesn't appear in Cursor?**
-- Make sure you fully quit and restarted Cursor (Cmd+Q)
-- Check that `~/.cursor/mcp.json` contains the correct `npx`, global, or source configuration
+**Tool doesn't appear?**
+- Fully quit and restart the coding host
+- Check the correct host configuration in the [installation guide](INSTALL.md#choose-your-coding-host)
+- In Codex, run `codex mcp list`
+- In Antigravity on macOS, use an absolute path to `npx` if the GUI cannot find it
 - For source installs, run `npm run build` to ensure the project is compiled
 
 **Provider isn't connected?**
 - Reopen the settings UI using the command for your installation method in step 5
 - Connect TalkToCursor Cloud, save an ElevenLabs API key, or start Voicebox locally
-- Restart Cursor
+- Restart the coding host
 
 **No audio?**
 - Check system volume and speaker output
@@ -243,7 +267,7 @@ Cloud device credentials are stored in the macOS Keychain when available, with a
 
 **Auto-submit not working?**
 - Ensure macOS Accessibility permissions are granted
-- Check that Cursor is the frontmost app when dictating
+- Check that Cursor is the frontmost app when dictating; other hosts are not currently verified for the Accessibility-based loop
 - Adjust the "Min Text Length" if short dictations aren't triggering
 - Increase "Silence Delay" if prompts are being submitted too early
 
