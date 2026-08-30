@@ -25,6 +25,22 @@ import {
   stopBackgroundService,
   uninstallBackgroundService,
 } from "./background-service.js";
+import {
+  applyProfile,
+  assignProfile,
+  clearProfilesCache,
+  createProfile,
+  deleteAssignment,
+  deleteProfile,
+  getSettingsProfileSyncStatus,
+  listAssignments,
+  listProfiles,
+  resolveSettingsProfileSyncConflict,
+  scheduleSettingsProfileSync,
+  startSettingsProfileSyncPolling,
+  updateProfile,
+} from "./settings-profiles.js";
+import { checkForUpdates } from "./update-checker.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -66,6 +82,7 @@ app.get("/api/config", (_req, res) => {
     model: config.model,
     voiceSettings: config.voiceSettings,
     voicebox: config.voicebox,
+    pronunciation: config.pronunciation,
     cloud: config.cloud,
     cloudConnected: !!getCloudToken(),
     autoSubmit: config.autoSubmit,
@@ -92,6 +109,7 @@ app.post("/api/config", (req, res) => {
   }
 
   const saved = saveConfig(parsed.data);
+  scheduleSettingsProfileSync(saved);
   res.json({
     success: true,
     config: {
@@ -105,6 +123,7 @@ app.post("/api/config", (req, res) => {
       model: saved.model,
       voiceSettings: saved.voiceSettings,
       voicebox: saved.voicebox,
+      pronunciation: saved.pronunciation,
       cloud: saved.cloud,
       cloudConnected: !!getCloudToken(),
       autoSubmit: saved.autoSubmit,
@@ -149,6 +168,15 @@ app.post("/api/background-service/start", async (_req, res) => {
   }
 });
 
+app.post("/api/background-service/update", async (_req, res) => {
+  try {
+    res.json(await startBackgroundService());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
+  }
+});
+
 app.post("/api/background-service/stop", (_req, res) => {
   try {
     res.json(stopBackgroundService());
@@ -165,6 +193,11 @@ app.post("/api/background-service/uninstall", (_req, res) => {
     const message = error instanceof Error ? error.message : String(error);
     res.status(500).json({ error: message });
   }
+});
+
+app.get("/api/update/status", async (req, res) => {
+  const force = req.query.refresh === "1";
+  res.json(await checkForUpdates(force));
 });
 
 function normalizeCloudApiUrl(value: unknown): string {
@@ -237,6 +270,7 @@ app.post("/api/cloud/connect/poll", async (req, res) => {
 
 app.post("/api/cloud/disconnect", (_req, res) => {
   deleteCloudToken();
+  clearProfilesCache();
   res.json({ success: true });
 });
 
@@ -268,6 +302,102 @@ app.get("/api/cloud/status", async (_req, res) => {
   }
 });
 
+function sendProfileError(res: express.Response, error: unknown): void {
+  const cloudError = error as Error & { status?: number; body?: unknown };
+  res
+    .status(cloudError.status || 503)
+    .json(cloudError.body || { error: cloudError.message || "Profile request failed." });
+}
+
+app.get("/api/settings/profiles", async (_req, res) => {
+  res.json(await listProfiles());
+});
+
+app.post("/api/settings/profiles", async (req, res) => {
+  try {
+    const data = await createProfile(
+      String(req.body?.name || ""),
+      req.body?.is_default === true,
+    );
+    res.status(201).json(data);
+  } catch (error) {
+    sendProfileError(res, error);
+  }
+});
+
+app.put("/api/settings/profiles/:id", async (req, res) => {
+  try {
+    res.json(
+      await updateProfile(req.params.id, {
+        name: String(req.body?.name || ""),
+        revision: Number(req.body?.revision),
+        is_default: req.body?.is_default === true,
+      }),
+    );
+  } catch (error) {
+    sendProfileError(res, error);
+  }
+});
+
+app.delete("/api/settings/profiles/:id", async (req, res) => {
+  try {
+    await deleteProfile(req.params.id, Number(req.query.revision));
+    res.status(204).end();
+  } catch (error) {
+    sendProfileError(res, error);
+  }
+});
+
+app.post("/api/settings/profiles/:id/apply", async (req, res) => {
+  try {
+    const profile = await applyProfile(req.params.id);
+    res.json({ success: true, profile });
+  } catch (error) {
+    sendProfileError(res, error);
+  }
+});
+
+app.get("/api/settings/assignments", async (_req, res) => {
+  res.json(await listAssignments());
+});
+
+app.put("/api/settings/assignments", async (req, res) => {
+  try {
+    res.json(await assignProfile(String(req.body?.profile_id || "")));
+  } catch (error) {
+    sendProfileError(res, error);
+  }
+});
+
+app.delete("/api/settings/assignments", async (_req, res) => {
+  try {
+    await deleteAssignment();
+    res.status(204).end();
+  } catch (error) {
+    sendProfileError(res, error);
+  }
+});
+
+app.get("/api/settings/sync/status", (_req, res) => {
+  res.json(getSettingsProfileSyncStatus());
+});
+
+app.post("/api/settings/sync/conflict", async (req, res) => {
+  const resolution = req.body?.resolution;
+  if (resolution !== "use_remote" && resolution !== "use_local") {
+    res.status(400).json({
+      error: "Resolution must be use_remote or use_local.",
+    });
+    return;
+  }
+  try {
+    const profile = await resolveSettingsProfileSyncConflict(resolution);
+    res.json({ success: true, profile });
+  } catch (error) {
+    sendProfileError(res, error);
+  }
+});
+
 app.post("/api/cloud/settings/download", async (_req, res) => {
   const config = loadConfig();
   if (!getCloudToken()) {
@@ -290,7 +420,7 @@ app.post("/api/cloud/settings/download", async (_req, res) => {
     const settings = data.settings || {};
     const cloudVoiceId = normalizeManagedVoice(settings.voiceId);
     const cloudModel = normalizeManagedModel(settings.model);
-    const saved = saveConfig({
+    saveConfig({
       ttsEnabled:
         settings.ttsEnabled === undefined
           ? config.ttsEnabled
@@ -301,8 +431,27 @@ app.post("/api/cloud/settings/download", async (_req, res) => {
           : settings.pauseMediaDuringSpeech,
       spokenResponseDetail:
         settings.spokenResponseDetail ?? config.spokenResponseDetail,
-      voiceSettings: settings.voiceSettings,
-      autoListen: settings.autoListen,
+      ttsProvider: settings.ttsProvider ?? config.ttsProvider,
+      voiceId: settings.elevenLabs?.voiceId ?? config.voiceId,
+      model: settings.elevenLabs?.model ?? config.model,
+      voiceSettings: settings.voiceSettings ?? config.voiceSettings,
+      voicebox: {
+        ...config.voicebox,
+        ...(settings.voicebox || {}),
+      },
+      autoSubmit: {
+        ...config.autoSubmit,
+        ...(settings.autoSubmit || {}),
+      },
+      voiceInput: {
+        ...config.voiceInput,
+        ...(settings.voiceInput || {}),
+        handyCommand: config.voiceInput.handyCommand,
+      },
+      autoListen:
+        settings.autoListen === undefined
+          ? config.autoListen
+          : settings.autoListen,
       cloud: {
         ...config.cloud,
         voiceId: cloudVoiceId,
@@ -310,7 +459,7 @@ app.post("/api/cloud/settings/download", async (_req, res) => {
         settingsRevision: data.revision,
       },
     });
-    res.json({ success: true, revision: data.revision, config: saved });
+    res.json({ success: true, revision: data.revision });
   } catch {
     res.status(503).json({ error: "Could not download Cloud settings." });
   }
@@ -334,9 +483,31 @@ app.post("/api/cloud/settings/upload", async (_req, res) => {
             ttsEnabled: config.ttsEnabled,
             pauseMediaDuringSpeech: config.pauseMediaDuringSpeech,
             spokenResponseDetail: config.spokenResponseDetail,
+            ttsProvider: config.ttsProvider,
             voiceId: config.cloud.voiceId,
             model: config.cloud.model,
             voiceSettings: config.voiceSettings,
+            elevenLabs: {
+              voiceId: config.voiceId,
+              model: config.model,
+            },
+            voicebox: {
+              profile: config.voicebox.profile,
+              personality: config.voicebox.personality,
+            },
+            autoSubmit: config.autoSubmit,
+            voiceInput: {
+              enabled: config.voiceInput.enabled,
+              provider: config.voiceInput.provider,
+              silenceThreshold: config.voiceInput.silenceThreshold,
+              silenceDuration: config.voiceInput.silenceDuration,
+              wisprHotkey: config.voiceInput.wisprHotkey,
+              manualTriggerHotkey: config.voiceInput.manualTriggerHotkey,
+              wakeWordEnabled: config.voiceInput.wakeWordEnabled,
+              wakePhrase: config.voiceInput.wakePhrase,
+              wakeSensitivity: config.voiceInput.wakeSensitivity,
+              wakeChime: config.voiceInput.wakeChime,
+            },
             autoListen: config.autoListen,
           },
         }),
@@ -449,6 +620,7 @@ const isMainModule =
   fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 
 if (isMainModule) {
+  startSettingsProfileSyncPolling();
   app.listen(PORT, "127.0.0.1", () => {
     console.log(`\n  TalkToCursor Settings`);
     console.log(`  ───────────────────────`);

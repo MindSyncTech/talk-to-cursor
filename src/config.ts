@@ -102,6 +102,11 @@ export const DEFAULT_VOICEBOX: Config["voicebox"] = {
   personality: false,
 };
 
+export const DEFAULT_PRONUNCIATION: Config["pronunciation"] = {
+  enabled: true,
+  entries: [],
+};
+
 export const DEFAULT_CLOUD: Config["cloud"] = {
   apiUrl: "https://cloud.talktocursor.com",
   voiceId: MANAGED_TTS_DEFAULT_VOICE,
@@ -147,11 +152,18 @@ export const DEFAULT_CONFIG: Config = {
   model: "eleven_flash_v2_5",
   voiceSettings: { ...DEFAULT_VOICE_SETTINGS },
   voicebox: { ...DEFAULT_VOICEBOX },
+  pronunciation: { ...DEFAULT_PRONUNCIATION, entries: [] },
   cloud: { ...DEFAULT_CLOUD },
   autoSubmit: { ...DEFAULT_AUTO_SUBMIT },
   voiceInput: { ...DEFAULT_VOICE_INPUT },
   autoListen: true,
 };
+
+let runtimeConfigOverlay: ConfigUpdate | null = null;
+
+export function setRuntimeConfigOverlay(config: ConfigUpdate | null): void {
+  runtimeConfigOverlay = config ? structuredClone(config) : null;
+}
 
 export function loadConfig(): Config {
   migrateLegacyConfig();
@@ -181,6 +193,11 @@ export function loadConfig(): Config {
           ...DEFAULT_VOICEBOX,
           ...(parsed.voicebox || {}),
         },
+        pronunciation: {
+          ...DEFAULT_PRONUNCIATION,
+          ...(parsed.pronunciation || {}),
+          entries: parsed.pronunciation?.entries || [],
+        },
         cloud: {
           ...DEFAULT_CLOUD,
           ...(parsed.cloud || {}),
@@ -209,6 +226,7 @@ export function loadConfig(): Config {
     ...DEFAULT_CONFIG,
     voiceSettings: { ...DEFAULT_VOICE_SETTINGS },
     voicebox: { ...DEFAULT_VOICEBOX },
+    pronunciation: { ...DEFAULT_PRONUNCIATION, entries: [] },
     cloud: { ...DEFAULT_CLOUD },
     autoSubmit: { ...DEFAULT_AUTO_SUBMIT },
     voiceInput: { ...DEFAULT_VOICE_INPUT },
@@ -216,24 +234,36 @@ export function loadConfig(): Config {
   };
 }
 
-export function saveConfig(config: ConfigUpdate): Config {
-  const current = loadConfig();
-  const updated: Config = {
+function mergeConfig(current: Config, config: ConfigUpdate): Config {
+  return settingsSchema.parse({
     ...current,
     ...config,
     voiceSettings: { ...current.voiceSettings, ...(config.voiceSettings || {}) },
     voicebox: { ...current.voicebox, ...(config.voicebox || {}) },
+    pronunciation: {
+      ...current.pronunciation,
+      ...(config.pronunciation || {}),
+    },
     cloud: { ...current.cloud, ...(config.cloud || {}) },
     autoSubmit: { ...current.autoSubmit, ...(config.autoSubmit || {}) },
     voiceInput: { ...current.voiceInput, ...(config.voiceInput || {}) },
-  };
-  const validated = settingsSchema.parse(updated);
+  });
+}
+
+export function saveConfig(config: ConfigUpdate): Config {
+  const validated = mergeConfig(applyRuntimeConfigOverlay(loadConfig()), config);
   writePrivateJson(CONFIG_PATH, validated);
   return validated;
 }
 
+export function applyRuntimeConfigOverlay(localConfig: Config): Config {
+  return runtimeConfigOverlay
+    ? mergeConfig(localConfig, runtimeConfigOverlay)
+    : localConfig;
+}
+
 export function getEffectiveConfig(): Config {
-  const fileConfig = loadConfig();
+  const fileConfig = applyRuntimeConfigOverlay(loadConfig());
   return {
     ttsEnabled: fileConfig.ttsEnabled,
     pauseMediaDuringSpeech: fileConfig.pauseMediaDuringSpeech,
@@ -244,6 +274,7 @@ export function getEffectiveConfig(): Config {
     model: fileConfig.model || DEFAULT_CONFIG.model,
     voiceSettings: fileConfig.voiceSettings,
     voicebox: fileConfig.voicebox,
+    pronunciation: fileConfig.pronunciation,
     cloud: fileConfig.cloud,
     autoSubmit: fileConfig.autoSubmit,
     voiceInput: fileConfig.voiceInput,

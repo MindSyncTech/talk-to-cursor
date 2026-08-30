@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   normalizeServiceUrl,
+  pronunciationSettingsSchema,
   settingsUpdateSchema,
   voiceInputSettingsSchema,
 } from "../src/settings-schema.js";
@@ -108,5 +109,61 @@ describe("voiceInputSettingsSchema", () => {
         wakeChime: true,
       }),
     ).not.toHaveProperty("ttsDelay");
+  });
+});
+
+describe("pronunciationSettingsSchema", () => {
+  const entry = {
+    id: "00000000-0000-4000-8000-000000000001",
+    match: " API ",
+    speak: " A P I ",
+  };
+
+  it("trims text and applies entry defaults", () => {
+    expect(
+      pronunciationSettingsSchema.parse({
+        enabled: true,
+        entries: [entry],
+      }),
+    ).toEqual({
+      enabled: true,
+      entries: [
+        {
+          id: entry.id,
+          match: "API",
+          speak: "A P I",
+          matchMode: "word",
+          caseSensitive: false,
+          enabled: true,
+        },
+      ],
+    });
+  });
+
+  it("rejects unsafe output, excess entries, and objects over 16KB", () => {
+    expect(
+      pronunciationSettingsSchema.safeParse({
+        enabled: true,
+        entries: [{ ...entry, speak: "A & P" }],
+      }).success,
+    ).toBe(false);
+
+    const oversizedEntries = Array.from({ length: 50 }, (_, index) => ({
+      id: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+      match: "😀".repeat(32),
+      speak: "😀".repeat(64),
+    }));
+    expect(
+      pronunciationSettingsSchema.safeParse({
+        enabled: true,
+        entries: oversizedEntries,
+      }).success,
+    ).toBe(false);
+    expect(
+      pronunciationSettingsSchema.safeParse({
+        enabled: true,
+        entries: [...oversizedEntries, entry],
+      }).success,
+    ).toBe(false);
   });
 });

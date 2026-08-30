@@ -14,6 +14,12 @@ import { speakWithProvider } from "./providers/index.js";
 import { PACKAGE_NAME, PACKAGE_VERSION } from "./package-metadata.js";
 import { pauseMediaForSpeech } from "./media-control.js";
 import { segmentSentences } from "./sentence-segmentation.js";
+import {
+  resolveStartupSettingsProfile,
+  startSettingsProfileSyncPolling,
+} from "./settings-profiles.js";
+import { applyPronunciation } from "./pronunciation.js";
+import { checkForUpdates } from "./update-checker.js";
 
 // Create server instance
 const server = new McpServer({
@@ -95,9 +101,9 @@ async function processTTSQueue() {
         continue;
       }
 
-      const spokenText = formatSpokenResponse(
-        item.text,
-        config.spokenResponseDetail,
+      const spokenText = applyPronunciation(
+        formatSpokenResponse(item.text, config.spokenResponseDetail),
+        config.pronunciation,
       );
       console.error(
         `[TTS] Speaking ${spokenText.length} characters with ${config.ttsProvider}`,
@@ -271,6 +277,19 @@ server.registerTool(
 
 // Main function to start the server
 async function main() {
+  try {
+    const profile = await resolveStartupSettingsProfile();
+    if (profile) {
+      console.error(`[TTS] Settings profile: ${profile.name}`);
+    }
+  } catch (error) {
+    console.error(
+      `[TTS] Settings profile unavailable: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  startSettingsProfileSyncPolling();
   const config = getEffectiveConfig();
 
   console.error(`[TTS] Starting ${PACKAGE_NAME} MCP Server v${PACKAGE_VERSION}...`);
@@ -293,6 +312,14 @@ async function main() {
   await server.connect(transport);
 
   console.error("[TTS] Server running on stdio");
+
+  void checkForUpdates().then((status) => {
+    if (status.updateAvailable) {
+      console.error(
+        `[TTS] Update available: v${status.latestVersion} (installed v${status.currentVersion}). ${status.updateCommand}`,
+      );
+    }
+  });
 }
 
 main().catch((error) => {

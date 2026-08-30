@@ -103,6 +103,81 @@
       font-size: 15px;
     }
 
+    .header-update-check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .header-update-check span {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .update-banner {
+      display: none;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin: -16px 0 24px;
+      padding: 18px 20px;
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: var(--radius);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .update-banner.visible {
+      display: flex;
+    }
+
+    .update-banner strong {
+      display: block;
+      color: var(--warning);
+      margin-bottom: 4px;
+    }
+
+    .update-banner p {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .update-command {
+      display: block;
+      margin-top: 8px;
+      overflow-wrap: anywhere;
+    }
+
+    .update-banner .btn-row {
+      flex: 0 0 auto;
+      margin-top: 0;
+    }
+
+    .update-banner a.btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.4;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 640px) {
+      .update-banner.visible {
+        display: block;
+      }
+
+      .update-banner .btn-row {
+        margin-top: 14px;
+      }
+    }
+
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -564,9 +639,184 @@
       margin-bottom: 16px;
     }
 
+    #cloudUsageNotice.usage-critical {
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.24);
+    }
+
     .cloud-actions-help {
       margin-top: 12px;
       line-height: 1.45;
+    }
+
+    .profile-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .profile-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .profile-actions button {
+      min-height: 36px;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .profile-context {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .profile-context strong {
+      color: var(--text);
+    }
+
+    .sync-status {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+    }
+
+    .sync-status-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .sync-conflict {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .sync-conflict-paths {
+      margin: 8px 0 0 18px;
+      color: var(--text);
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 12px;
+    }
+
+    .sync-conflict-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .sync-conflict-actions button {
+      min-height: 36px;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .pronunciation-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .pronunciation-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 128px auto;
+      gap: 10px;
+      align-items: end;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+    }
+
+    .pronunciation-row .form-group {
+      margin-bottom: 0;
+    }
+
+    .pronunciation-options {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 40px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .pronunciation-options label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      text-transform: none;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .pronunciation-row-remove {
+      min-height: 40px;
+      padding: 8px 12px;
+    }
+
+    .pronunciation-empty,
+    .pronunciation-error {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .pronunciation-error {
+      color: var(--error);
+      border-color: rgba(239, 68, 68, 0.3);
+      text-align: left;
+    }
+
+    .pronunciation-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .pronunciation-count {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 640px) {
+      .profile-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .pronunciation-row {
+        grid-template-columns: 1fr;
+      }
+
+      .pronunciation-row-remove {
+        width: 100%;
+      }
     }
 
     .presets-grid {
@@ -908,7 +1158,23 @@
       <div class="icon">🔊</div>
       <h1>TalkToCursor Settings</h1>
       <p>Configure speech for your MCP coding assistant and hands-free voice input for Cursor on macOS</p>
+      <div class="header-update-check">
+        <button class="btn-secondary" id="checkForUpdatesBtn" type="button">Check for updates</button>
+        <span id="updateCheckStatus" role="status"></span>
+      </div>
     </header>
+
+    <div class="update-banner" id="updateBanner" role="status">
+      <div>
+        <strong id="updateTitle">TalkToCursor update available</strong>
+        <p id="updateMessage"></p>
+        <code class="update-command" id="updateCommand"></code>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" id="copyUpdateCommandBtn" type="button">Copy command</button>
+        <a class="btn-primary" id="viewReleaseBtn" href="https://github.com/MindSyncTech/talk-to-cursor/releases" target="_blank" rel="noopener noreferrer">View release</a>
+      </div>
+    </div>
 
     <!-- Spoken Responses + Listening Triggers -->
     <div class="card-row card-row--top">
@@ -952,7 +1218,7 @@
           <option value="elevenlabs">ElevenLabs (voice selection &amp; control)</option>
           <option value="voicebox">Voicebox (free &amp; local)</option>
         </select>
-        <div class="help-text">Use your own provider, choose free local speech, or connect TalkToCursor Cloud ($15/month with 100,000 included characters).</div>
+        <div class="help-text">Use your own provider, choose free local speech, or connect a free TalkToCursor Cloud account to pair devices and manually upload or download safe preferences. The optional $15/month plan adds managed TTS, up to 10 named project/host profiles with automatic conflict-safe sync and rollback, pronunciation rules, device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts.</div>
       </div>
       <div class="env-notice" id="elevenLabsProviderInfo" style="display: none; margin-top: 0;">
         <strong>ElevenLabs:</strong> Bring your own API key for the broadest voice library, models, presets, and detailed tuning.
@@ -963,7 +1229,7 @@
         locally, create a voice profile, then configure it below.
       </div>
       <div class="env-notice" id="cloudProviderInfo" style="margin-top: 0;">
-        <strong>TalkToCursor Cloud:</strong> Managed Google Cloud TTS for $15/month with 100,000 included characters, portable settings, and no provider API key.
+        <strong>TalkToCursor Cloud:</strong> Free device pairing and manual upload/download of safe portable preferences. The optional $15/month plan adds managed Google Cloud TTS with 100,000 included characters, up to 10 named project/host profiles, automatic conflict-safe sync with 30-version/90-day rollback, pronunciation rules, hard device budgets, up to 12 billing periods of analytics, CSV export, and in-app plus optional email allowance alerts, with no provider API key stored locally.
       </div>
     </div>
 
@@ -1361,7 +1627,84 @@
           <button class="btn-secondary" id="uploadCloudSettingsBtn" type="button">Upload</button>
           <button class="btn-secondary" id="disconnectCloudBtn" type="button">Disconnect</button>
         </div>
-        <div class="help-text cloud-actions-help">Upload and download are explicit so another device never silently overwrites your local preferences.</div>
+        <div class="help-text cloud-actions-help">Upload and download safe speech and hands-free preferences explicitly so another device never silently overwrites them. If Cloud has a newer revision, download it before uploading again. Automatic profile sync requires a paid plan. Credentials, local URLs, executable paths, spoken text, and generated audio are never synced or stored in Cloud.</div>
+      </div>
+    </div>
+
+    <div class="card" id="settingsProfilesCard">
+      <div class="card-title">
+        Settings Profiles
+        <span id="profilePlanBadge" class="badge badge-missing">Cloud</span>
+      </div>
+      <p class="help-text" id="profilePlanNotice" style="margin: 0 0 16px;">
+        Connect Cloud to view profiles for this project. Paid plans can save up to 10 named profiles, assign them by project and coding host, and sync them automatically with conflict resolution and rollback.
+      </p>
+      <div class="profile-toolbar">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="settingsProfileSelect">Profile</label>
+          <select id="settingsProfileSelect">
+            <option value="">No profiles available</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="settingsProfileName">Profile name</label>
+          <input id="settingsProfileName" type="text" maxlength="80" placeholder="e.g. Focused coding">
+        </div>
+      </div>
+      <div class="profile-context">
+        <span><strong id="profileProjectLabel">Current project</strong> · <span id="profileHostLabel">Cursor</span></span>
+        <span id="profileAssignmentLabel">Uses default profile</span>
+      </div>
+      <div class="profile-actions">
+        <button class="btn-primary" id="createProfileBtn" type="button">Save as new</button>
+        <button class="btn-secondary" id="updateProfileBtn" type="button">Update</button>
+        <button class="btn-secondary" id="applyProfileBtn" type="button">Apply</button>
+        <button class="btn-secondary" id="assignProfileBtn" type="button">Assign here</button>
+        <button class="btn-secondary" id="deleteProfileBtn" type="button">Delete</button>
+      </div>
+      <div class="sync-status" aria-live="polite">
+        <div class="sync-status-header">
+          <span>Profile sync</span>
+          <span id="profileSyncBadge" class="badge badge-missing">Checking</span>
+        </div>
+        <p class="help-text" id="profileSyncMessage">Checking this device's profile sync status…</p>
+        <div class="sync-conflict" id="profileSyncConflict" style="display: none;">
+          <p class="help-text">Cloud and this device changed the following settings:</p>
+          <ul class="sync-conflict-paths" id="profileSyncConflictPaths"></ul>
+          <div class="sync-conflict-actions">
+            <button class="btn-secondary" id="useCloudSettingsBtn" type="button">Use Cloud version</button>
+            <button class="btn-secondary" id="keepLocalSettingsBtn" type="button">Keep this device version</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="pronunciationCard">
+      <div class="card-title">
+        Pronunciation Dictionary
+        <span id="pronunciationPlanBadge" class="badge badge-missing">Paid</span>
+      </div>
+      <p class="help-text" id="pronunciationPlanNotice" style="margin: 0 0 16px;">
+        Editing pronunciation dictionaries requires an active paid plan. Up to 50 explicit replacements sync with the active paid profile; spoken text and audio are never synced.
+      </p>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Enable Pronunciations</span>
+          <span class="toggle-desc">Apply enabled dictionary entries before speech is generated</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="pronunciationEnabled" aria-describedby="pronunciationPlanNotice">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div id="pronunciationError" class="pronunciation-error" role="alert" style="display: none;"></div>
+      <div id="pronunciationEntries" class="pronunciation-list"></div>
+      <div class="pronunciation-footer">
+        <span id="pronunciationCount" class="pronunciation-count">0 of 50 entries</span>
+        <div class="profile-actions" style="margin-top: 0;">
+          <button class="btn-secondary" id="addPronunciationBtn" type="button">Add entry</button>
+          <button class="btn-primary" id="savePronunciationBtn" type="button">Save dictionary</button>
+        </div>
       </div>
     </div>
 
@@ -1381,6 +1724,7 @@
 
       <div class="btn-row">
         <button class="btn-primary" id="installBackgroundServiceBtn" type="button">Install &amp; Start Cursor Helper</button>
+        <button class="btn-primary" id="updateBackgroundServiceBtn" type="button" style="display: none;">Update Helper</button>
         <button class="btn-primary" id="startBackgroundServiceBtn" type="button" style="display: none;">Start</button>
         <button class="btn-secondary" id="restartBackgroundServiceBtn" type="button" style="display: none;">Restart</button>
         <button class="btn-secondary" id="stopBackgroundServiceBtn" type="button" style="display: none;">Stop</button>
@@ -1726,6 +2070,32 @@
     const cloudUserCode = document.getElementById('cloudUserCode');
     const cloudUsageNotice = document.getElementById('cloudUsageNotice');
     const cloudAutoSubmitRow = document.getElementById('cloudAutoSubmitRow');
+    const profilePlanBadge = document.getElementById('profilePlanBadge');
+    const profilePlanNotice = document.getElementById('profilePlanNotice');
+    const settingsProfileSelect = document.getElementById('settingsProfileSelect');
+    const settingsProfileName = document.getElementById('settingsProfileName');
+    const profileProjectLabel = document.getElementById('profileProjectLabel');
+    const profileHostLabel = document.getElementById('profileHostLabel');
+    const profileAssignmentLabel = document.getElementById('profileAssignmentLabel');
+    const createProfileBtn = document.getElementById('createProfileBtn');
+    const updateProfileBtn = document.getElementById('updateProfileBtn');
+    const applyProfileBtn = document.getElementById('applyProfileBtn');
+    const assignProfileBtn = document.getElementById('assignProfileBtn');
+    const deleteProfileBtn = document.getElementById('deleteProfileBtn');
+    const profileSyncBadge = document.getElementById('profileSyncBadge');
+    const profileSyncMessage = document.getElementById('profileSyncMessage');
+    const profileSyncConflict = document.getElementById('profileSyncConflict');
+    const profileSyncConflictPaths = document.getElementById('profileSyncConflictPaths');
+    const useCloudSettingsBtn = document.getElementById('useCloudSettingsBtn');
+    const keepLocalSettingsBtn = document.getElementById('keepLocalSettingsBtn');
+    const pronunciationPlanBadge = document.getElementById('pronunciationPlanBadge');
+    const pronunciationPlanNotice = document.getElementById('pronunciationPlanNotice');
+    const pronunciationEnabled = document.getElementById('pronunciationEnabled');
+    const pronunciationEntries = document.getElementById('pronunciationEntries');
+    const pronunciationError = document.getElementById('pronunciationError');
+    const pronunciationCount = document.getElementById('pronunciationCount');
+    const addPronunciationBtn = document.getElementById('addPronunciationBtn');
+    const savePronunciationBtn = document.getElementById('savePronunciationBtn');
     const voiceboxBaseUrl = document.getElementById('voiceboxBaseUrl');
     const voiceboxProfile = document.getElementById('voiceboxProfile');
     const voiceboxPersonality = document.getElementById('voiceboxPersonality');
@@ -1754,9 +2124,18 @@
     const resetSettingsBtn = document.getElementById('resetSettingsBtn');
     const autoListenEnabled = document.getElementById('autoListenEnabled');
     const saveListeningTriggersBtn = document.getElementById('saveListeningTriggersBtn');
+    const updateBanner = document.getElementById('updateBanner');
+    const updateTitle = document.getElementById('updateTitle');
+    const updateMessage = document.getElementById('updateMessage');
+    const updateCommand = document.getElementById('updateCommand');
+    const copyUpdateCommandBtn = document.getElementById('copyUpdateCommandBtn');
+    const viewReleaseBtn = document.getElementById('viewReleaseBtn');
+    const checkForUpdatesBtn = document.getElementById('checkForUpdatesBtn');
+    const updateCheckStatus = document.getElementById('updateCheckStatus');
     const backgroundServiceBadge = document.getElementById('backgroundServiceBadge');
     const backgroundServiceNotice = document.getElementById('backgroundServiceNotice');
     const installBackgroundServiceBtn = document.getElementById('installBackgroundServiceBtn');
+    const updateBackgroundServiceBtn = document.getElementById('updateBackgroundServiceBtn');
     const startBackgroundServiceBtn = document.getElementById('startBackgroundServiceBtn');
     const restartBackgroundServiceBtn = document.getElementById('restartBackgroundServiceBtn');
     const stopBackgroundServiceBtn = document.getElementById('stopBackgroundServiceBtn');
@@ -1815,6 +2194,12 @@
     let currentPreviewAudio = null;
     let currentCloudPreviewVoice = null;
     let cloudPollTimer = null;
+    let settingsProfiles = [];
+    let currentProfileAssignment = null;
+    let profilesEntitled = false;
+    let pronunciation = { enabled: true, entries: [] };
+    let pronunciationDirty = false;
+    let syncStatusTimer = null;
     const managedCloudVoices = new Set([
       'Alnilam', 'Charon', 'Puck', 'Sadaltager', 'Umbriel', 'Sadachbia',
       'Achird', 'Algenib', 'Enceladus', 'Iapetus',
@@ -1823,6 +2208,7 @@
     ]);
     const backgroundServiceButtons = [
       installBackgroundServiceBtn,
+      updateBackgroundServiceBtn,
       startBackgroundServiceBtn,
       restartBackgroundServiceBtn,
       stopBackgroundServiceBtn,
@@ -1830,11 +2216,61 @@
       checkBackgroundPermissionsBtn,
     ];
 
+    async function refreshUpdateStatus(force = false) {
+      checkForUpdatesBtn.disabled = true;
+      updateCheckStatus.textContent = 'Checking…';
+      try {
+        const response = await fetch(
+          force ? '/api/update/status?refresh=1' : '/api/update/status',
+        );
+        if (!response.ok) throw new Error('Update check failed');
+        const status = await response.json();
+        updateCheckStatus.textContent = status.checkFailed
+          ? 'Could not reach npm; using the last successful check.'
+          : status.updateAvailable
+            ? 'Update available.'
+            : `Up to date (${status.currentVersion}).`;
+        if (!status.updateAvailable) {
+          updateBanner.classList.remove('visible');
+          return;
+        }
+
+        updateTitle.textContent =
+          `TalkToCursor ${status.latestVersion} is available`;
+        updateMessage.textContent =
+          `You are running ${status.currentVersion}. Update using the ${status.installationMethod} installation instructions below, then restart your coding host.`;
+        updateCommand.textContent = status.updateCommand;
+        viewReleaseBtn.href = status.releasesUrl;
+        updateBanner.classList.add('visible');
+      } catch {
+        updateCheckStatus.textContent = 'Could not check npm for updates.';
+      } finally {
+        checkForUpdatesBtn.disabled = false;
+      }
+    }
+
+    checkForUpdatesBtn.addEventListener('click', () => {
+      refreshUpdateStatus(true);
+    });
+
+    copyUpdateCommandBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(updateCommand.textContent).then(() => {
+        showToast('Update command copied', 'success');
+      }).catch(() => {
+        showToast('Could not copy the update command', 'error');
+      });
+    });
+
     function renderBackgroundService(status) {
       if (!status.supported) {
         backgroundServiceBadge.textContent = 'Unsupported';
         backgroundServiceBadge.className = 'badge badge-missing';
         backgroundServiceNotice.textContent = 'The background helper is currently available only on macOS.';
+      } else if (status.updateAvailable) {
+        backgroundServiceBadge.textContent = 'Update Available';
+        backgroundServiceBadge.className = 'badge badge-missing';
+        backgroundServiceNotice.textContent =
+          `Helper ${status.installedVersion || 'from an older release'} is installed. Update it to match TalkToCursor ${status.currentVersion}.`;
       } else if (status.running) {
         backgroundServiceBadge.textContent = 'Running';
         backgroundServiceBadge.className = 'badge badge-set';
@@ -1850,8 +2286,12 @@
       }
 
       installBackgroundServiceBtn.style.display = status.supported && !status.installed ? '' : 'none';
-      startBackgroundServiceBtn.style.display = status.supported && status.installed && !status.running ? '' : 'none';
-      restartBackgroundServiceBtn.style.display = status.running ? '' : 'none';
+      updateBackgroundServiceBtn.style.display =
+        status.supported && status.updateAvailable ? '' : 'none';
+      startBackgroundServiceBtn.style.display =
+        status.supported && status.installed && !status.running && !status.updateAvailable ? '' : 'none';
+      restartBackgroundServiceBtn.style.display =
+        status.running && !status.updateAvailable ? '' : 'none';
       stopBackgroundServiceBtn.style.display = status.running ? '' : 'none';
       removeBackgroundServiceBtn.style.display = status.installed ? '' : 'none';
       checkBackgroundPermissionsBtn.style.display =
@@ -1908,6 +2348,9 @@
 
     installBackgroundServiceBtn.addEventListener('click', () => {
       runBackgroundServiceAction('install', 'Installing dependencies and starting the background helper…');
+    });
+    updateBackgroundServiceBtn.addEventListener('click', () => {
+      runBackgroundServiceAction('update', 'Refreshing files, dependencies, and the Background Helper…');
     });
     startBackgroundServiceBtn.addEventListener('click', () => {
       runBackgroundServiceAction('start', 'Starting the background helper…');
@@ -2224,7 +2667,7 @@
     });
 
     // Load current config on page load
-    async function loadConfig() {
+    async function loadConfig(forcePronunciationReload = false) {
       try {
         const res = await fetch('/api/config');
         const data = await res.json();
@@ -2328,6 +2771,18 @@
           styleSlider.value = vs.style ?? 0.0;
           styleValue.textContent = parseFloat(styleSlider.value).toFixed(2);
         }
+
+        if ((!pronunciationDirty || forcePronunciationReload) && data.pronunciation) {
+          pronunciation = {
+            enabled: data.pronunciation.enabled !== false,
+            entries: Array.isArray(data.pronunciation.entries)
+              ? data.pronunciation.entries.map(entry => ({ ...entry }))
+              : [],
+          };
+          pronunciationDirty = false;
+          setPronunciationError();
+          renderPronunciation();
+        }
       } catch (error) {
         showToast('Failed to load config', 'error');
       }
@@ -2345,9 +2800,16 @@
         const res = await fetch('/api/cloud/status');
         const data = await res.json();
         setCloudConnectionState(!!data.connected);
+        cloudUsageNotice.classList.remove('usage-critical');
         if (data.usage) {
+          const alertCopy = data.usage.alertLevel === 'critical'
+            ? ' At least 95% of the allowance has been used.'
+            : data.usage.alertLevel === 'warning'
+              ? ' At least 80% of the allowance has been used.'
+              : '';
           cloudUsageNotice.textContent =
-            `${data.usage.remaining.toLocaleString()} of ${data.usage.included.toLocaleString()} characters remaining this billing period.`;
+            `${data.usage.remaining.toLocaleString()} of ${data.usage.included.toLocaleString()} characters remaining this billing period.${alertCopy}`;
+          cloudUsageNotice.classList.toggle('usage-critical', data.usage.alertLevel === 'critical');
         } else if (data.error) {
           cloudUsageNotice.textContent = data.error.message || data.error;
         }
@@ -2355,6 +2817,429 @@
         cloudUsageNotice.textContent = 'Cloud status is temporarily unavailable.';
       }
     }
+
+    function setPronunciationError(message = '') {
+      pronunciationError.textContent = message;
+      pronunciationError.style.display = message ? 'block' : 'none';
+    }
+
+    function markPronunciationDirty() {
+      pronunciationDirty = true;
+      setPronunciationError();
+    }
+
+    function renderPronunciation() {
+      pronunciationEntries.replaceChildren();
+      const canEdit = profilesEntitled;
+
+      if (!pronunciation.entries.length) {
+        const empty = document.createElement('div');
+        empty.className = 'pronunciation-empty';
+        empty.textContent = canEdit
+          ? 'No pronunciations yet. Add an entry to define one.'
+          : 'No pronunciations are saved on this device.';
+        pronunciationEntries.append(empty);
+      }
+
+      pronunciation.entries.forEach((entry, index) => {
+        const row = document.createElement('div');
+        row.className = 'pronunciation-row';
+        row.setAttribute('role', 'group');
+        row.setAttribute('aria-label', `Pronunciation entry ${index + 1}`);
+
+        const addTextField = (labelText, value, maxLength, property) => {
+          const group = document.createElement('div');
+          group.className = 'form-group';
+          const label = document.createElement('label');
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.id = `pronunciation-${property}-${entry.id}`;
+          input.value = value;
+          input.maxLength = maxLength;
+          input.disabled = !canEdit;
+          input.spellcheck = false;
+          label.htmlFor = input.id;
+          label.textContent = labelText;
+          input.addEventListener('input', () => {
+            entry[property] = input.value;
+            markPronunciationDirty();
+          });
+          group.append(label, input);
+          row.append(group);
+        };
+
+        addTextField('Match', entry.match, 64, 'match');
+        addTextField('Speak as', entry.speak, 128, 'speak');
+
+        const modeGroup = document.createElement('div');
+        modeGroup.className = 'form-group';
+        const modeLabel = document.createElement('label');
+        const modeSelect = document.createElement('select');
+        modeSelect.id = `pronunciation-mode-${entry.id}`;
+        modeLabel.htmlFor = modeSelect.id;
+        modeLabel.textContent = 'Mode';
+        [['word', 'Word'], ['substring', 'Substring']].forEach(([value, text]) => {
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = text;
+          modeSelect.append(option);
+        });
+        modeSelect.value = entry.matchMode;
+        modeSelect.disabled = !canEdit;
+        modeSelect.addEventListener('change', () => {
+          entry.matchMode = modeSelect.value;
+          markPronunciationDirty();
+        });
+        modeGroup.append(modeLabel, modeSelect);
+        row.append(modeGroup);
+
+        const actions = document.createElement('div');
+        const options = document.createElement('div');
+        options.className = 'pronunciation-options';
+        const addCheckbox = (labelText, property) => {
+          const label = document.createElement('label');
+          const input = document.createElement('input');
+          input.type = 'checkbox';
+          input.checked = entry[property];
+          input.disabled = !canEdit;
+          input.addEventListener('change', () => {
+            entry[property] = input.checked;
+            markPronunciationDirty();
+          });
+          label.append(input, document.createTextNode(labelText));
+          options.append(label);
+        };
+        addCheckbox('Case sensitive', 'caseSensitive');
+        addCheckbox('Enabled', 'enabled');
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'btn-secondary pronunciation-row-remove';
+        remove.textContent = 'Remove';
+        remove.disabled = !canEdit;
+        remove.setAttribute('aria-label', `Remove pronunciation entry ${index + 1}`);
+        remove.addEventListener('click', () => {
+          pronunciation.entries.splice(index, 1);
+          markPronunciationDirty();
+          renderPronunciation();
+        });
+        actions.append(options, remove);
+        row.append(actions);
+        pronunciationEntries.append(row);
+      });
+
+      pronunciationEnabled.checked = pronunciation.enabled;
+      pronunciationEnabled.disabled = !canEdit;
+      addPronunciationBtn.disabled = !canEdit || pronunciation.entries.length >= 50;
+      savePronunciationBtn.disabled = !canEdit || !pronunciationDirty;
+      pronunciationCount.textContent = `${pronunciation.entries.length} of 50 entries`;
+      pronunciationPlanBadge.textContent = canEdit ? 'Paid' : 'Locked';
+      pronunciationPlanBadge.className = canEdit ? 'badge badge-set' : 'badge badge-missing';
+      pronunciationPlanNotice.textContent = canEdit
+        ? 'Up to 50 explicit replacements sync with the active paid profile; spoken text and audio are never synced.'
+        : 'An active paid plan is required to add, edit, remove, enable, or save pronunciations.';
+    }
+
+    pronunciationEnabled.addEventListener('change', () => {
+      pronunciation.enabled = pronunciationEnabled.checked;
+      markPronunciationDirty();
+      renderPronunciation();
+    });
+
+    addPronunciationBtn.addEventListener('click', () => {
+      if (!profilesEntitled || pronunciation.entries.length >= 50) return;
+      pronunciation.entries.push({
+        id: crypto.randomUUID(),
+        match: '',
+        speak: '',
+        matchMode: 'word',
+        caseSensitive: false,
+        enabled: true,
+      });
+      markPronunciationDirty();
+      renderPronunciation();
+      const newInput = pronunciationEntries.querySelector('.pronunciation-row:last-child input[type="text"]');
+      newInput?.focus();
+    });
+
+    savePronunciationBtn.addEventListener('click', async () => {
+      if (!profilesEntitled) return;
+      const invalidEntry = pronunciation.entries.find(entry =>
+        !entry.match.trim() || !entry.speak.trim() || /[<>&]/u.test(entry.speak)
+      );
+      if (invalidEntry) {
+        setPronunciationError(
+          !invalidEntry.match.trim() || !invalidEntry.speak.trim()
+            ? 'Match and Speak as are required for every entry.'
+            : 'Speak as cannot contain <, >, or &.'
+        );
+        return;
+      }
+      savePronunciationBtn.disabled = true;
+      savePronunciationBtn.innerHTML = '<span class="spinner"></span> Saving…';
+      try {
+        const response = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pronunciation: {
+              enabled: pronunciation.enabled,
+              entries: pronunciation.entries.map(entry => ({
+                ...entry,
+                match: entry.match.trim(),
+                speak: entry.speak.trim(),
+              })),
+            },
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error?.message || data.error || 'Could not save pronunciation dictionary');
+        }
+        pronunciation = data.config?.pronunciation || pronunciation;
+        pronunciationDirty = false;
+        setPronunciationError();
+        renderPronunciation();
+        showToast('Pronunciation dictionary saved', 'success');
+      } catch (error) {
+        setPronunciationError(error.message || 'Could not save pronunciation dictionary.');
+      } finally {
+        savePronunciationBtn.textContent = 'Save dictionary';
+        savePronunciationBtn.disabled = !profilesEntitled || !pronunciationDirty;
+      }
+    });
+
+    function renderSyncStatus(data) {
+      const state = data.status || 'inactive';
+      const labels = {
+        inactive: 'Inactive',
+        pending: 'Pending',
+        syncing: 'Syncing',
+        synced: 'Synced',
+        error: 'Error',
+        conflict: 'Conflict',
+      };
+      const messages = {
+        inactive: data.entitled
+          ? 'Assign a profile to enable automatic sync on this device.'
+          : 'Automatic profile sync requires a paid settings profile.',
+        pending: 'Local changes are waiting to sync.',
+        syncing: 'Synchronizing this device with Cloud…',
+        synced: 'This device matches the active Cloud profile.',
+        error: data.last_error || 'Profile sync could not complete.',
+        conflict: 'Choose which version should replace the conflicting settings.',
+      };
+      profileSyncBadge.textContent = labels[state] || 'Unknown';
+      profileSyncBadge.className =
+        `badge ${state === 'synced' ? 'badge-set' : 'badge-missing'}`;
+      profileSyncMessage.textContent = messages[state] || 'Profile sync status is unavailable.';
+      profileSyncConflict.style.display = state === 'conflict' ? 'block' : 'none';
+      profileSyncConflictPaths.replaceChildren();
+      if (state === 'conflict') {
+        const paths = Array.isArray(data.conflict?.paths) ? data.conflict.paths : [];
+        paths.forEach(path => {
+          const item = document.createElement('li');
+          item.textContent = String(path);
+          profileSyncConflictPaths.append(item);
+        });
+        if (!paths.length) {
+          const item = document.createElement('li');
+          item.textContent = 'Conflicting profile settings';
+          profileSyncConflictPaths.append(item);
+        }
+      }
+    }
+
+    async function refreshSyncStatus() {
+      try {
+        const response = await fetch('/api/settings/sync/status');
+        const data = await response.json();
+        if (!response.ok) throw new Error('Status unavailable');
+        renderSyncStatus(data);
+      } catch {
+        renderSyncStatus({ status: 'error', last_error: 'Profile sync status is unavailable.' });
+      }
+    }
+
+    async function resolveSyncConflict(resolution) {
+      if (
+        resolution === 'use_local' &&
+        !window.confirm('Keep this device version and overwrite the conflicting Cloud profile settings?')
+      ) {
+        return;
+      }
+      useCloudSettingsBtn.disabled = true;
+      keepLocalSettingsBtn.disabled = true;
+      try {
+        const response = await fetch('/api/settings/sync/conflict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ resolution }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error?.message || data.error || 'Could not resolve sync conflict');
+        }
+        pronunciationDirty = false;
+        await Promise.all([loadConfig(true), refreshSettingsProfiles()]);
+        await refreshSyncStatus();
+        showToast(
+          resolution === 'use_remote' ? 'Cloud version applied' : 'This device version kept',
+          'success'
+        );
+      } catch (error) {
+        showToast(error.message || 'Could not resolve sync conflict', 'error');
+        await refreshSyncStatus();
+      } finally {
+        useCloudSettingsBtn.disabled = false;
+        keepLocalSettingsBtn.disabled = false;
+      }
+    }
+
+    useCloudSettingsBtn.addEventListener('click', () => resolveSyncConflict('use_remote'));
+    keepLocalSettingsBtn.addEventListener('click', () => resolveSyncConflict('use_local'));
+
+    function selectedProfile() {
+      return settingsProfiles.find(profile => profile.id === settingsProfileSelect.value);
+    }
+
+    function renderSettingsProfiles(source = 'remote') {
+      const selectedId = settingsProfileSelect.value;
+      settingsProfileSelect.innerHTML = settingsProfiles.length
+        ? settingsProfiles.map(profile =>
+            `<option value="${escapeHtml(profile.id)}">${escapeHtml(profile.name)}${profile.is_default ? ' · default' : ''}</option>`
+          ).join('')
+        : '<option value="">No profiles available</option>';
+      if (settingsProfiles.some(profile => profile.id === selectedId)) {
+        settingsProfileSelect.value = selectedId;
+      } else if (currentProfileAssignment) {
+        settingsProfileSelect.value = currentProfileAssignment.profile_id;
+      }
+      const profile = selectedProfile();
+      settingsProfileName.value = profile?.name || '';
+      profilePlanBadge.textContent = profilesEntitled ? 'Paid' : 'View only';
+      profilePlanBadge.className = profilesEntitled ? 'badge badge-set' : 'badge badge-missing';
+      profilePlanNotice.textContent = profilesEntitled
+        ? `Up to 10 profiles sync automatically by project and coding host, with conflict resolution and 30-version/90-day rollback${source === 'cache' ? '; showing the last local cache while offline.' : '.'}`
+        : 'Settings profiles are included with a paid plan. You can view existing profiles, but profile controls are disabled.';
+      [settingsProfileName, createProfileBtn, updateProfileBtn, applyProfileBtn, assignProfileBtn]
+        .forEach(control => { control.disabled = !profilesEntitled; });
+      updateProfileBtn.disabled ||= !profile;
+      applyProfileBtn.disabled ||= !profile;
+      assignProfileBtn.disabled ||= !profile;
+      deleteProfileBtn.disabled = !profile;
+      const assignedProfile = settingsProfiles.find(profile => profile.id === currentProfileAssignment?.profile_id);
+      profileAssignmentLabel.textContent = assignedProfile
+        ? `Assigned: ${assignedProfile.name}`
+        : 'Uses default profile';
+      renderPronunciation();
+    }
+
+    async function refreshSettingsProfiles() {
+      try {
+        const [profilesResponse, assignmentsResponse] = await Promise.all([
+          fetch('/api/settings/profiles'),
+          fetch('/api/settings/assignments'),
+        ]);
+        const profilesData = await profilesResponse.json();
+        const assignmentsData = await assignmentsResponse.json();
+        settingsProfiles = profilesData.profiles || [];
+        currentProfileAssignment = assignmentsData.assignments?.[0] || null;
+        profilesEntitled = profilesData.entitled === true;
+        if (assignmentsData.context) {
+          profileProjectLabel.textContent = assignmentsData.context.projectLabel;
+          profileHostLabel.textContent = assignmentsData.context.hostId;
+        }
+        renderSettingsProfiles(profilesData.source);
+      } catch {
+        settingsProfiles = [];
+        currentProfileAssignment = null;
+        profilesEntitled = false;
+        renderSettingsProfiles('cache');
+      }
+      await refreshSyncStatus();
+    }
+
+    settingsProfileSelect.addEventListener('change', () => {
+      settingsProfileName.value = selectedProfile()?.name || '';
+    });
+
+    createProfileBtn.addEventListener('click', async () => {
+      const name = settingsProfileName.value.trim();
+      if (!name) return showToast('Enter a profile name', 'error');
+      const response = await fetch('/api/settings/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const data = await response.json();
+      if (!response.ok) return showToast(data.error?.message || data.error || 'Could not create profile', 'error');
+      await refreshSettingsProfiles();
+      settingsProfileSelect.value = data.profile.id;
+      renderSettingsProfiles();
+      showToast('Settings profile created', 'success');
+    });
+
+    updateProfileBtn.addEventListener('click', async () => {
+      const profile = selectedProfile();
+      const name = settingsProfileName.value.trim();
+      if (!profile || !name) return;
+      const response = await fetch(`/api/settings/profiles/${encodeURIComponent(profile.id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          revision: profile.revision,
+          is_default: profile.is_default,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) return showToast(data.error?.message || data.error || 'Could not update profile', 'error');
+      await refreshSettingsProfiles();
+      showToast('Profile updated from current settings', 'success');
+    });
+
+    applyProfileBtn.addEventListener('click', async () => {
+      const profile = selectedProfile();
+      if (!profile) return;
+      const response = await fetch(`/api/settings/profiles/${encodeURIComponent(profile.id)}/apply`, { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) return showToast(data.error?.message || data.error || 'Could not apply profile', 'error');
+      await loadConfig();
+      await refreshSyncStatus();
+      showToast(`Applied ${profile.name}`, 'success');
+    });
+
+    assignProfileBtn.addEventListener('click', async () => {
+      const profile = selectedProfile();
+      if (!profile) return;
+      const response = await fetch('/api/settings/assignments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_id: profile.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) return showToast(data.error?.message || data.error || 'Could not assign profile', 'error');
+      currentProfileAssignment = data.assignment;
+      renderSettingsProfiles();
+      await refreshSyncStatus();
+      showToast(`Assigned ${profile.name} to this project`, 'success');
+    });
+
+    deleteProfileBtn.addEventListener('click', async () => {
+      const profile = selectedProfile();
+      if (!profile || !window.confirm(`Delete "${profile.name}"?`)) return;
+      const response = await fetch(
+        `/api/settings/profiles/${encodeURIComponent(profile.id)}?revision=${profile.revision}`,
+        { method: 'DELETE' },
+      );
+      if (!response.ok) {
+        const data = await response.json();
+        return showToast(data.error?.message || data.error || 'Could not delete profile', 'error');
+      }
+      await refreshSettingsProfiles();
+      showToast('Profile deleted', 'success');
+    });
 
     async function pollCloudConnection(deviceCode, expiresIn) {
       const expiresAt = Date.now() + expiresIn * 1000;
@@ -2390,6 +3275,7 @@
           connectCloudBtn.disabled = false;
           setCloudConnectionState(true);
           await refreshCloudStatus();
+          await refreshSettingsProfiles();
           showToast('TalkToCursor Cloud connected', 'success');
         } catch (error) {
           connectCloudBtn.disabled = false;
@@ -2423,6 +3309,7 @@
       clearTimeout(cloudPollTimer);
       await fetch('/api/cloud/disconnect', { method: 'POST' });
       setCloudConnectionState(false);
+      await refreshSettingsProfiles();
       showToast('Cloud account disconnected', 'success');
     });
 
@@ -2905,8 +3792,23 @@
       });
     }
 
+    const baseFetch = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      const response = await baseFetch(input, init);
+      const url = typeof input === 'string' ? input : input?.url;
+      if (url === '/api/config' && (init?.method || 'GET').toUpperCase() === 'POST') {
+        window.setTimeout(refreshSyncStatus, 0);
+      }
+      return response;
+    };
+
     // Init
+    renderPronunciation();
     loadConfig();
+    refreshUpdateStatus();
+    refreshSettingsProfiles();
+    refreshSyncStatus();
+    syncStatusTimer = window.setInterval(refreshSyncStatus, 5000);
     refreshBackgroundService().catch(() => {
       backgroundServiceNotice.textContent = 'Could not read background helper status.';
     });
