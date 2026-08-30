@@ -21,6 +21,10 @@ const mocks = vi.hoisted(() => {
       profile: "",
       personality: false,
     },
+    pronunciation: {
+      enabled: true,
+      entries: [],
+    },
     cloud: {
       apiUrl: "https://cloud.talktocursor.com",
       voiceId: "Kore",
@@ -61,6 +65,9 @@ const mocks = vi.hoisted(() => {
     cloudToken: null as string | null,
     saveCloudToken: vi.fn(),
     deleteCloudToken: vi.fn(),
+    runtimeOverlay: null as Record<string, unknown> | null,
+    checkForUpdates: vi.fn(),
+    startBackgroundService: vi.fn(),
   };
 });
 
@@ -71,6 +78,7 @@ vi.mock("../src/config.js", () => ({
     const nestedKeys = [
       "voiceSettings",
       "voicebox",
+      "pronunciation",
       "cloud",
       "autoSubmit",
       "voiceInput",
@@ -87,6 +95,10 @@ vi.mock("../src/config.js", () => ({
     mocks.config = next;
     return mocks.config;
   },
+  setRuntimeConfigOverlay: (overlay: Record<string, unknown> | null) => {
+    mocks.runtimeOverlay = overlay;
+  },
+  writePrivateJson: vi.fn(),
 }));
 
 vi.mock("../src/credentials.js", () => ({
@@ -100,6 +112,24 @@ vi.mock("../src/credentials.js", () => ({
     mocks.cloudToken = null;
     mocks.deleteCloudToken();
   },
+}));
+
+vi.mock("../src/update-checker.js", () => ({
+  checkForUpdates: mocks.checkForUpdates,
+}));
+
+vi.mock("../src/background-service.js", () => ({
+  checkBackgroundServicePermissions: vi.fn(),
+  getBackgroundServiceLog: vi.fn(() => ""),
+  getBackgroundServiceStatus: vi.fn(() => ({
+    supported: true,
+    installed: true,
+    running: true,
+  })),
+  installBackgroundService: vi.fn(),
+  startBackgroundService: mocks.startBackgroundService,
+  stopBackgroundService: vi.fn(),
+  uninstallBackgroundService: vi.fn(),
 }));
 
 vi.mock("@elevenlabs/elevenlabs-js", () => ({
@@ -137,11 +167,32 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   mocks.config = structuredClone(mocks.defaults);
   mocks.cloudToken = null;
   mocks.saveCloudToken.mockReset();
   mocks.deleteCloudToken.mockReset();
-  vi.restoreAllMocks();
+  mocks.runtimeOverlay = null;
+  mocks.checkForUpdates.mockReset();
+  mocks.checkForUpdates.mockResolvedValue({
+    currentVersion: "1.3.0",
+    latestVersion: "1.4.0",
+    updateAvailable: true,
+    checkedAt: "2026-08-29T12:00:00.000Z",
+    checkFailed: false,
+    installationMethod: "npx",
+    updateCommand: "npx -y --prefer-online talktocursor@latest",
+    releasesUrl: "https://github.com/MindSyncTech/talk-to-cursor/releases",
+  });
+  mocks.startBackgroundService.mockReset();
+  mocks.startBackgroundService.mockResolvedValue({
+    supported: true,
+    installed: true,
+    running: true,
+    installedVersion: "1.3.0",
+    currentVersion: "1.3.0",
+    updateAvailable: false,
+  });
 });
 
 function api(path: string, init?: RequestInit) {
@@ -160,6 +211,24 @@ function post(path: string, body: unknown, headers?: Record<string, string>) {
 }
 
 describe("local settings server API", () => {
+  it("returns update status and supports a forced registry refresh", async () => {
+    const response = await api("/api/update/status?refresh=1");
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.updateAvailable).toBe(true);
+    expect(mocks.checkForUpdates).toHaveBeenCalledWith(true);
+  });
+
+  it("refreshes and restarts the installed Background Helper", async () => {
+    const response = await post("/api/background-service/update", {});
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.installedVersion).toBe("1.3.0");
+    expect(mocks.startBackgroundService).toHaveBeenCalledOnce();
+  });
+
   it("returns configuration without exposing the full API key", async () => {
     const response = await api("/api/config");
     const body = await response.json();
@@ -303,5 +372,208 @@ describe("local settings server API", () => {
         }),
       }),
     );
+  });
+
+  it("downloads all portable preferences while preserving local-only values", async () => {
+    mocks.cloudToken = "ttc_live_secret";
+    mocks.config.voicebox.baseUrl = "http://127.0.0.1:9999";
+    mocks.config.voiceInput.handyCommand = "/local/path/to/handy";
+    mocks.config.pronunciation.entries = [
+      {
+        id: "00000000-0000-4000-8000-000000000001",
+        match: "local",
+        speak: "low call",
+        matchMode: "word",
+        caseSensitive: false,
+        enabled: true,
+      },
+    ];
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      Response.json({
+        schema_version: 2,
+        revision: 7,
+        settings: {
+          ttsEnabled: false,
+          pauseMediaDuringSpeech: true,
+          spokenResponseDetail: "detailed",
+          ttsProvider: "voicebox",
+          voiceId: "Charon",
+          model: "gemini-2.5-flash-tts",
+          voiceSettings: {
+            speed: 0.9,
+            stability: 0.6,
+            similarityBoost: 0.8,
+            style: 0.7,
+          },
+          elevenLabs: {
+            voiceId: "remote-elevenlabs-voice",
+            model: "eleven_multilingual_v2",
+          },
+          voicebox: {
+            profile: "Narrator",
+            personality: true,
+          },
+          pronunciation: {
+            enabled: false,
+            entries: [],
+          },
+          autoSubmit: {
+            ...mocks.config.autoSubmit,
+            enabled: true,
+            mode: "smart",
+          },
+          voiceInput: {
+            enabled: true,
+            provider: "handy",
+            silenceThreshold: 0.01,
+            silenceDuration: 2.5,
+            wisprHotkey: "shift+ctrl",
+            manualTriggerHotkey: "ctrl+shift+v",
+            wakeWordEnabled: true,
+            wakePhrase: "hey google",
+            wakeSensitivity: 0.8,
+            wakeChime: false,
+          },
+          autoListen: false,
+        },
+      }),
+    );
+
+    const response = await post("/api/cloud/settings/download", {});
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ success: true, revision: 7 });
+    expect(mocks.config).toMatchObject({
+      ttsEnabled: false,
+      pauseMediaDuringSpeech: true,
+      spokenResponseDetail: "detailed",
+      ttsProvider: "voicebox",
+      voiceId: "remote-elevenlabs-voice",
+      model: "eleven_multilingual_v2",
+      voicebox: {
+        baseUrl: "http://127.0.0.1:9999",
+        profile: "Narrator",
+        personality: true,
+      },
+      autoSubmit: { enabled: true, mode: "smart" },
+      voiceInput: {
+        handyCommand: "/local/path/to/handy",
+        wakePhrase: "hey google",
+      },
+      cloud: { voiceId: "Charon", settingsRevision: 7 },
+      autoListen: false,
+    });
+    expect(mocks.config.apiKey).toBe("sk-secret-value");
+    expect(mocks.config.pronunciation.entries[0]?.match).toBe("local");
+  });
+
+  it("uploads portable preferences without secrets or machine-local paths", async () => {
+    mocks.cloudToken = "ttc_live_secret";
+    mocks.config.voiceInput.handyCommand = "/local/path/to/handy";
+    mocks.config.voicebox.baseUrl = "http://127.0.0.1:9999";
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      Response.json({ revision: 3 }),
+    );
+
+    const response = await post("/api/cloud/settings/upload", {});
+
+    expect(response.status).toBe(200);
+    const cloudRequest = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(cloudRequest.body));
+    expect(payload.settings).toMatchObject({
+      ttsProvider: "elevenlabs",
+      elevenLabs: {
+        voiceId: "voice-1",
+        model: "eleven_flash_v2_5",
+      },
+      autoSubmit: mocks.defaults.autoSubmit,
+      voiceInput: {
+        wakePhrase: "hey cursor",
+      },
+    });
+    expect(JSON.stringify(payload)).not.toContain("sk-secret-value");
+    expect(JSON.stringify(payload)).not.toContain("/local/path/to/handy");
+    expect(JSON.stringify(payload)).not.toContain("127.0.0.1:9999");
+    expect(payload.settings).not.toHaveProperty("pronunciation");
+  });
+
+  it("applies an assigned profile before establishing its sync baseline", async () => {
+    mocks.cloudToken = "ttc_live_secret";
+    mocks.config.voiceInput.handyCommand = "/local/path/to/handy";
+    const profileSettings = {
+      ttsEnabled: false,
+      pauseMediaDuringSpeech: true,
+      spokenResponseDetail: "detailed",
+      ttsProvider: "voicebox",
+      voiceId: "Kore",
+      model: "gemini-2.5-flash-tts",
+      voiceSettings: { ...mocks.defaults.voiceSettings, speed: 0.9 },
+      elevenLabs: {
+        voiceId: "assigned-voice",
+        model: "eleven_multilingual_v2",
+      },
+      voicebox: { profile: "Assigned", personality: true },
+      autoSubmit: mocks.defaults.autoSubmit,
+      voiceInput: {
+        enabled: true,
+        provider: "handy",
+        silenceThreshold: 0.005,
+        silenceDuration: 2,
+        wisprHotkey: "shift+ctrl",
+        manualTriggerHotkey: "ctrl+shift+l",
+        wakeWordEnabled: true,
+        wakePhrase: "hey cursor",
+        wakeSensitivity: 0.5,
+        wakeChime: true,
+      },
+      pronunciation: mocks.defaults.pronunciation,
+      autoListen: false,
+    };
+    const assignedProfile = {
+      id: "11111111-1111-4111-8111-111111111111",
+      name: "Assigned",
+      is_default: false,
+      revision: 4,
+      settings: profileSettings,
+    };
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        Response.json({
+          entitled: true,
+          assignment: {
+            profile_id: assignedProfile.id,
+            host_id: "cursor",
+            project_key: "project-key",
+            project_label: "Project",
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ entitled: true, profile: assignedProfile }),
+      );
+
+    const response = await api("/api/settings/assignments", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile_id: assignedProfile.id }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.config).toMatchObject({
+      ttsEnabled: false,
+      pauseMediaDuringSpeech: true,
+      voiceId: "assigned-voice",
+      voiceSettings: { speed: 0.9 },
+      voicebox: { profile: "Assigned" },
+      voiceInput: {
+        handyCommand: "/local/path/to/handy",
+        wakeWordEnabled: true,
+      },
+      autoListen: false,
+    });
+    expect(mocks.runtimeOverlay).toMatchObject({
+      ttsEnabled: false,
+      voicebox: { profile: "Assigned" },
+    });
   });
 });

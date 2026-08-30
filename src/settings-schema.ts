@@ -90,6 +90,37 @@ export const voiceboxSettingsSchema = z.object({
   personality: z.boolean(),
 });
 
+export const pronunciationEntrySchema = z.object({
+  id: z.string().uuid(),
+  match: z.string().trim().min(1).max(64),
+  speak: z
+    .string()
+    .trim()
+    .min(1)
+    .max(128)
+    .refine((value) => !/[<>&]/u.test(value), {
+      message: "Pronunciation output cannot contain <, >, or &",
+    }),
+  matchMode: z.enum(["word", "substring"]).default("word"),
+  caseSensitive: z.boolean().default(false),
+  enabled: z.boolean().default(true),
+});
+
+const pronunciationSettingsObjectSchema = z.object({
+  enabled: z.boolean().default(true),
+  entries: z.array(pronunciationEntrySchema).max(50).default([]),
+});
+
+export const pronunciationSettingsSchema =
+  pronunciationSettingsObjectSchema.superRefine((value, context) => {
+    if (new TextEncoder().encode(JSON.stringify(value)).byteLength > 16 * 1024) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Pronunciation settings cannot exceed 16KB",
+      });
+    }
+  });
+
 export const cloudSettingsSchema = z.object({
   apiUrl: serviceUrlSchema("Cloud URL"),
   voiceId: z.preprocess(
@@ -159,6 +190,7 @@ export const settingsSchema = z
     model: z.string().trim().min(1).max(200),
     voiceSettings: voiceSettingsSchema,
     voicebox: voiceboxSettingsSchema,
+    pronunciation: pronunciationSettingsSchema,
     cloud: cloudSettingsSchema,
     autoSubmit: autoSubmitSettingsSchema,
     voiceInput: voiceInputSettingsSchema,
@@ -170,6 +202,7 @@ export const settingsUpdateSchema = settingsSchema
   .extend({
     voiceSettings: voiceSettingsSchema.partial(),
     voicebox: voiceboxSettingsSchema.partial(),
+    pronunciation: pronunciationSettingsObjectSchema.partial(),
     cloud: cloudSettingsSchema.partial(),
     autoSubmit: autoSubmitSettingsSchema.partial(),
     voiceInput: voiceInputSettingsSchema.partial(),

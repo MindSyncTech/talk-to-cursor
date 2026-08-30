@@ -13,6 +13,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { USER_DATA_DIR } from "./config.js";
+import { PACKAGE_VERSION } from "./package-metadata.js";
+import { isNewerVersion } from "./update-checker.js";
 
 const execFileAsync = promisify(execFile);
 const LABEL = "com.mindsynctech.talktocursor.background";
@@ -21,6 +23,7 @@ const HELPER_DIR = join(USER_DATA_DIR, "background-helper");
 const RUNTIME_DIR = join(HELPER_DIR, "runtime");
 const VENV_DIR = join(HELPER_DIR, "venv");
 const LOG_DIR = join(HELPER_DIR, "logs");
+const VERSION_PATH = join(HELPER_DIR, "version");
 const PYTHON_PATH = join(VENV_DIR, "bin", "python");
 const PLIST_PATH = join(
   homedir(),
@@ -46,6 +49,9 @@ export interface BackgroundServiceStatus {
   running: boolean;
   dependenciesReady: boolean;
   launchesAtLogin: boolean;
+  installedVersion: string | null;
+  currentVersion: string;
+  updateAvailable: boolean;
   logPath: string;
 }
 
@@ -54,6 +60,17 @@ export interface BackgroundPermissionStatus {
   inputMonitoring: string;
   microphone: string;
   applicationPath: string;
+}
+
+export function helperUpdateAvailable(
+  installed: boolean,
+  installedVersion: string | null,
+  currentVersion = PACKAGE_VERSION,
+): boolean {
+  return (
+    installed &&
+    (!installedVersion || isNewerVersion(currentVersion, installedVersion))
+  );
 }
 
 function escapeXml(value: string): string {
@@ -76,12 +93,21 @@ function serviceIsRunning(): boolean {
 
 export function getBackgroundServiceStatus(): BackgroundServiceStatus {
   const installed = existsSync(PLIST_PATH);
+  let installedVersion: string | null = null;
+  try {
+    installedVersion = readFileSync(VERSION_PATH, "utf8").trim() || null;
+  } catch {
+    // Helpers installed before version tracking are treated as outdated.
+  }
   return {
     supported: platform() === "darwin",
     installed,
     running: serviceIsRunning(),
     dependenciesReady: existsSync(PYTHON_PATH),
     launchesAtLogin: installed,
+    installedVersion,
+    currentVersion: PACKAGE_VERSION,
+    updateAvailable: helperUpdateAvailable(installed, installedVersion),
     logPath: join(LOG_DIR, "background-helper.log"),
   };
 }
@@ -117,6 +143,13 @@ function copyRuntimeFiles() {
   );
 }
 
+function writeInstalledVersion() {
+  writeFileSync(VERSION_PATH, `${PACKAGE_VERSION}\n`, {
+    encoding: "utf8",
+    mode: 0o600,
+  });
+}
+
 function runtimeRequirementsChanged(): boolean {
   const source = join(PACKAGE_ROOT, "requirements.txt");
   const installed = join(RUNTIME_DIR, "requirements.txt");
@@ -141,12 +174,10 @@ async function installDependencies() {
   );
 }
 
-function writeLaunchAgent() {
-  mkdirSync(dirname(PLIST_PATH), { recursive: true });
-  mkdirSync(LOG_DIR, { recursive: true, mode: 0o700 });
+function launchAgentContents(): string {
   const logPath = join(LOG_DIR, "background-helper.log");
   const errorLogPath = join(LOG_DIR, "background-helper-error.log");
-  const plist = `<?xml version="1.0" encoding="UTF-8"?>
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -181,8 +212,17 @@ function writeLaunchAgent() {
 </dict>
 </plist>
 `;
+}
+
+function writeLaunchAgent(): boolean {
+  mkdirSync(dirname(PLIST_PATH), { recursive: true });
+  mkdirSync(LOG_DIR, { recursive: true, mode: 0o700 });
+  const plist = launchAgentContents();
+  const changed =
+    !existsSync(PLIST_PATH) || readFileSync(PLIST_PATH, "utf8") !== plist;
   writeFileSync(PLIST_PATH, plist, { encoding: "utf8", mode: 0o644 });
   chmodSync(PLIST_PATH, 0o644);
+  return changed;
 }
 
 function bootOut() {
@@ -204,11 +244,17 @@ export async function startBackgroundService() {
   if (dependenciesChanged || !existsSync(PYTHON_PATH)) {
     await installDependencies();
   }
-  if (serviceIsRunning()) {
+  const wasRunning = serviceIsRunning();
+  const launchAgentChanged = writeLaunchAgent();
+  if (wasRunning && launchAgentChanged) {
+    await run("/bin/launchctl", ["bootout", SERVICE_TARGET], 30_000);
+    await run("/bin/launchctl", ["bootstrap", SERVICE_DOMAIN, PLIST_PATH], 30_000);
+  } else if (wasRunning) {
     await run("/bin/launchctl", ["kickstart", "-k", SERVICE_TARGET], 30_000);
   } else {
     await run("/bin/launchctl", ["bootstrap", SERVICE_DOMAIN, PLIST_PATH], 30_000);
   }
+  writeInstalledVersion();
   return getBackgroundServiceStatus();
 }
 
@@ -256,6 +302,7 @@ export function stopBackgroundService() {
 export function uninstallBackgroundService() {
   bootOut();
   rmSync(PLIST_PATH, { force: true });
+  rmSync(HELPER_DIR, { force: true, recursive: true });
   return getBackgroundServiceStatus();
 }
 
