@@ -7,14 +7,14 @@ Follow these steps to configure TalkToCursor after installing it.
 Follow the host-specific MCP instructions in [INSTALL.md](INSTALL.md#choose-your-coding-host):
 
 - Cursor uses `~/.cursor/mcp.json`
-- Claude Code uses `claude mcp add --scope user talktocursor -- npx -y talktocursor`
+- Claude Code uses `claude mcp add --scope user talktocursor -- npx -y --prefer-online talktocursor@latest`
 - Codex uses `~/.codex/config.toml` or `codex mcp add`
 - Antigravity uses the active raw configuration opened from its MCP management screen
 - Other hosts must support local stdio MCP servers
 
 ## Step 1: Choose Your Text-to-Speech Provider
 
-- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Managed Google Cloud TTS for $15/month with 100,000 included characters and portable settings. No provider API key is stored locally.
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Create a free account to pair devices and manually upload or download portable preferences. The optional $15/month plan adds managed Google Cloud TTS with 100,000 characters, up to 10 project/host profiles with automatic conflict-safe sync and rollback, pronunciation rules, device budgets, up to 12 billing periods of analytics, CSV export, and in-app plus optional email allowance alerts. No provider API key is stored locally.
 - **[ElevenLabs](https://try.elevenlabs.io/talktocursor):** Create an API key for full voice and model controls.
 - **[Voicebox](https://github.com/jamiepine/voicebox) (free & local):** Install and run Voicebox, download a model, and create a voice profile.
 
@@ -72,7 +72,7 @@ Completely quit and restart the coding host so it reloads the MCP server.
 1. Install and open [Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended) or [Handy](https://github.com/cjpais/Handy) (free and private)
 2. Select it under **Voice Input Provider** in the TalkToCursor settings UI
 3. Install PortAudio with `brew install portaudio` and turn on **Enable Voice Input**
-4. Click **Install & Start** under **Cursor Hands-Free Background Helper**. It creates
+4. Click **Install & Start Background Helper** under **Cursor Hands-Free Background Helper**. It creates
    a private Python environment, runs invisibly, and starts at login.
 5. Grant Accessibility, Input Monitoring, and Microphone permissions to the helper.
 6. Optionally enable **Wake Phrase** and choose a phrase such as "Hey Cursor."
