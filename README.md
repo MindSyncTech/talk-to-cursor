@@ -12,7 +12,11 @@ A voice interface for Cursor and compatible MCP coding assistants. Your agent sp
 - **Smart Auto-Submit** - Distinguish finished prompts from thinking pauses with a small local audio model
 - **Local Wake Phrases** - Start Wispr or Handy with a selectable phrase such as "Hey Cursor"
 - **Provider-Aware Controls** - Cloud voice selection, ElevenLabs presets and tuning, and Voicebox profiles
-- **Portable Cloud Settings** - Sync managed voice preferences across connected devices
+- **Free Cloud Settings Sync** - Pair devices and manually upload/download safe speech and hands-free preferences without a subscription
+- **Paid Cloud Profiles & Analytics** - Save up to 10 named project/host profiles and review daily or per-device managed TTS usage for up to 12 billing periods
+- **Automatic Profile Sync** - Assign paid profiles by project and coding host, merge non-overlapping changes safely, and use 30-version/90-day history with rollback
+- **Pronunciation Dictionaries** - Add up to 50 explicit word or phrase replacements to paid profiles
+- **Paid Cloud Usage Controls** - Set hard per-device billing-period budgets and receive in-app warnings at 80%/95% of the included allowance, with optional email alerts
 
 ## Coding Host Guides
 
@@ -30,7 +34,7 @@ Support for an unlisted IDE is not implied. It must support local stdio MCP serv
 
 TalkToCursor handles text-to-speech responses from the connected coding agent. Choose the provider that fits your priorities:
 
-- **[TalkToCursor Cloud](https://cloud.talktocursor.com) (recommended for easiest setup)** - Managed Google Cloud TTS for $15/month with 100,000 included characters, portable settings, and no provider API key stored locally.
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com) (recommended for easiest setup)** - Create a free account to pair devices and manually upload/download portable preferences. The optional $15/month subscription adds managed TTS with 100,000 characters, up to 10 named project/host profiles, automatic conflict-safe sync, 30-version/90-day rollback, pronunciation rules, hard device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts. Signed-in users can export usage as CSV. No provider API key is required.
 - **[ElevenLabs](https://try.elevenlabs.io/talktocursor) (best for voice selection and control)** - Bring your own API key for a broad voice library, models, presets, and detailed tuning.
 - **[Voicebox](https://github.com/jamiepine/voicebox) (free, private, and local)** - Run speech synthesis and voice cloning on your computer with manual setup.
 
@@ -92,7 +96,7 @@ Recommended `npx` configuration:
   "mcpServers": {
     "talktocursor": {
       "command": "npx",
-      "args": ["-y", "talktocursor"]
+      "args": ["-y", "--prefer-online", "talktocursor@latest"]
     }
   }
 }
@@ -101,13 +105,13 @@ Recommended `npx` configuration:
 For OpenAI Codex:
 
 ```bash
-codex mcp add talktocursor -- npx -y talktocursor
+codex mcp add talktocursor -- npx -y --prefer-online talktocursor@latest
 ```
 
 For Claude Code:
 
 ```bash
-claude mcp add --scope user talktocursor -- npx -y talktocursor
+claude mcp add --scope user talktocursor -- npx -y --prefer-online talktocursor@latest
 ```
 
 For Google Antigravity, open its MCP management screen and add the same JSON entry shown for Cursor to the active raw configuration. Antigravity’s config path varies by release.
@@ -147,7 +151,7 @@ For example:
 
 ### 4. Choose a text-to-speech provider
 
-- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Connect an account for managed Google Cloud TTS without storing a provider API key locally.
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Create a free account to pair devices and manually upload/download portable preferences. The optional $15/month plan adds managed Google Cloud TTS with 100,000 characters, up to 10 named project/host profiles with automatic conflict-safe sync and rollback, pronunciation rules, device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts—without storing a provider API key locally. Signed-in users can export usage as CSV.
 - **[ElevenLabs](https://try.elevenlabs.io/talktocursor):** Sign up and create an API key for full voice and model controls.
 - **[Voicebox](https://github.com/jamiepine/voicebox) (free & local):** Install and run Voicebox, download a TTS model, and create a voice profile.
 
@@ -156,7 +160,7 @@ For example:
 Open the settings UI for the recommended `npx` setup:
 
 ```bash
-npx -y --package talktocursor talktocursor-settings
+npx -y --prefer-online --package talktocursor@latest talktocursor-settings
 ```
 
 For a global install:
@@ -265,7 +269,36 @@ fixed text delay. The helper can still be run manually with
 - **Codex:** `~/.codex/config.toml` and optional global or project `AGENTS.md`
 - **Antigravity:** use its MCP management screen for the active config; global rules use `~/.gemini/GEMINI.md` and workspace rules live under `.agents/rules`
 
-Cloud device credentials are stored in the macOS Keychain when available, with a mode-0600 user-data file fallback. They are never returned by the local settings API.
+Free manual Cloud sync includes provider choices and tuning, spoken-response
+controls, auto-submit, Smart Turn, voice-input, wake-phrase, and hotkey
+preferences. Uploads are revision-checked; if another device changed the
+Cloud copy, download it before uploading again.
+Provider credentials, Cloud tokens, local service URLs, and executable paths
+remain on each device. Cloud device credentials are stored in the macOS
+Keychain when available, with a mode-0600 user-data file fallback. They are
+never returned by the local settings API.
+
+Paid profiles can include up to 50 pronunciation replacements. These entries
+are explicit metadata authored by the user. Credentials, local paths, spoken
+text, and generated audio are never synced or stored in Cloud.
+
+## Updates
+
+TalkToCursor checks npm for a newer release at most once every 24 hours. The
+check runs in the background, never blocks MCP startup, and shows an
+install-specific update command in the local settings dashboard when a release
+is available. Use **Check for updates** to bypass the cache. The macOS
+Background Helper also reports when its copied runtime needs to be refreshed.
+
+Committed changes reach users only after a new package version is published to
+npm. Global and source installations still require the update command shown in
+the dashboard. Recommended `npx` installations request `@latest` when the
+coding host restarts.
+
+If installation detection is wrong in an unusual environment, set
+`TALKTOCURSOR_INSTALL_METHOD` to `npx`, `global`, `npm`, or `source` in the MCP
+server environment. Extracted source installations receive download
+instructions instead of an invalid `git pull` command.
 
 ## Troubleshooting
 

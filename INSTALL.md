@@ -44,7 +44,7 @@ Add to `~/.cursor/mcp.json`:
   "mcpServers": {
     "talktocursor": {
       "command": "npx",
-      "args": ["-y", "talktocursor"]
+      "args": ["-y", "--prefer-online", "talktocursor@latest"]
     }
   }
 }
@@ -55,7 +55,7 @@ Add to `~/.cursor/mcp.json`:
 Register TalkToCursor at user scope so it is available across projects:
 
 ```bash
-claude mcp add --scope user talktocursor -- npx -y talktocursor
+claude mcp add --scope user talktocursor -- npx -y --prefer-online talktocursor@latest
 ```
 
 Omit `--scope user` to use Claude Code’s default local project scope. Run `claude mcp list` to confirm the server is registered.
@@ -65,7 +65,7 @@ Omit `--scope user` to use Claude Code’s default local project scope. Run `cla
 Use Codex’s MCP command:
 
 ```bash
-codex mcp add talktocursor -- npx -y talktocursor
+codex mcp add talktocursor -- npx -y --prefer-online talktocursor@latest
 ```
 
 Or add the equivalent entry to `~/.codex/config.toml`:
@@ -88,7 +88,7 @@ Open Antigravity’s MCP Store and choose **Manage MCP servers** or **View raw c
   "mcpServers": {
     "talktocursor": {
       "command": "npx",
-      "args": ["-y", "talktocursor"]
+      "args": ["-y", "--prefer-online", "talktocursor@latest"]
     }
   }
 }
@@ -157,14 +157,14 @@ args = ["/ABSOLUTE/PATH/TO/talk-to-cursor/build/index.js"]
 
 ## Choose a TTS Provider
 
-- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Managed Google Cloud TTS for $15/month with 100,000 included characters and portable settings. No provider credential is stored locally.
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Create a free account to pair devices and manually upload/download portable speech and hands-free preferences. The optional $15/month subscription adds managed Google Cloud TTS with 100,000 characters, up to 10 named project/host profiles, automatic conflict-safe sync, 30-version/90-day rollback, pronunciation rules, hard device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts, while storing no provider credential locally. Signed-in users can export usage as CSV.
 - **[ElevenLabs](https://try.elevenlabs.io/talktocursor):** Sign up and create an API key for full voice and model controls.
 - **[Voicebox](https://github.com/jamiepine/voicebox) (free & local):** Install and run Voicebox, download a TTS model, and create a voice profile.
 
 ## Configure via the Settings UI
 
 ```bash
-npx -y --package talktocursor talktocursor-settings
+npx -y --prefer-online --package talktocursor@latest talktocursor-settings
 ```
 
 Open **http://localhost:3847** in your browser, then:
@@ -177,13 +177,30 @@ For a global install, use `talktocursor-settings`. For a source install, use
 `npm run settings`. Remote provider URLs must use
 HTTPS; plain HTTP is accepted only for localhost services such as Voicebox.
 
+Free manual Cloud sync includes provider choices and tuning, spoken-response
+controls, auto-submit, Smart Turn, voice-input, wake-phrase, and hotkey
+preferences. Uploads are revision-checked; if another device changed the
+Cloud copy, download it before uploading again.
+Secrets and machine-specific values—including provider credentials, Cloud
+tokens, local service URLs, and executable paths—remain local. Spoken text and
+generated audio are never synced or stored.
+
+Paid profiles support up to 50 explicit user-authored pronunciation
+replacements.
+
+Paid accounts can save up to 10 named profiles and assign them by project and
+coding host. Active profiles sync automatically, merge changes made to
+different settings, and pause for an explicit local-or-Cloud choice when the
+same setting changed on both sides. Profile history retains up to 30 prior
+versions for 90 days and supports rollback.
+
 > **Alternatively**, you can set your API key via environment variable:
 > ```json
 > {
 >   "mcpServers": {
 >     "talktocursor": {
 >       "command": "npx",
->       "args": ["-y", "talktocursor"],
+>       "args": ["-y", "--prefer-online", "talktocursor@latest"],
 >       "env": {
 >         "ELEVENLABS_API_KEY": "your-api-key-here"
 >       }
@@ -353,6 +370,30 @@ When Smart Turn is selected, the first managed dictation downloads the pinned
 Smart Turn v3.2 CPU model (about 8.7 MB), verifies its SHA-256 checksum, and
 caches it locally. Audio inference stays on the Mac. If download or inference
 fails, the helper uses the configured maximum-silence fallback.
+
+---
+
+## Updating TalkToCursor
+
+Committed changes become installable only after a new package version is
+published to npm. TalkToCursor checks npm at most once every 24 hours without
+blocking startup. When an update is available, the local settings dashboard
+shows the installed and latest versions plus instructions for the detected
+installation method. Use **Check for updates** in Settings to bypass the
+24-hour cache.
+
+- Recommended `npx` configurations update after the coding host restarts.
+- Global installs use `npm install -g talktocursor@latest`.
+- Source installs pull or download the latest source, then run `npm install`
+  and `npm run build`.
+- An outdated macOS Background Helper can be refreshed with **Update Helper**
+  in the local settings dashboard.
+
+Settings remain in the stable per-user data directory during updates.
+If detection is wrong in an unusual environment, set
+`TALKTOCURSOR_INSTALL_METHOD` to `npx`, `global`, `npm`, or `source` in the MCP
+server environment. Extracted source installations receive download
+instructions rather than `git pull`.
 
 ---
 

@@ -1,6 +1,6 @@
 {
   "name": "talktocursor",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Text-to-speech for Cursor, Claude Code, Codex, Antigravity, and compatible MCP coding assistants.",
   "type": "module",
   "main": "build/index.js",
@@ -47,6 +47,10 @@
   "homepage": "https://talktocursor.com",
   "bugs": {
     "url": "https://github.com/MindSyncTech/talk-to-cursor/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "files": [
     "build/",
