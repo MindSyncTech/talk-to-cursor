@@ -14,6 +14,8 @@ import { join } from "path";
 import { USER_DATA_DIR, type Config } from "./config.js";
 import type { PcmChunk } from "./audio-output.js";
 import { streamWithProvider } from "./providers/index.js";
+import { ACKNOWLEDGEMENTS } from "./agent-speech.js";
+import { applyPronunciation } from "./pronunciation.js";
 
 export const ACK_CACHE_DIR = join(USER_DATA_DIR, "ack-cache");
 const MAX_CACHED_PHRASES = 300;
@@ -44,6 +46,48 @@ export function voiceFingerprint(config: Config): string | null {
     ]);
   }
   return null;
+}
+
+/** The phrases Instant Feedback can speak for the current style, as they will be spoken. */
+export function acknowledgementPhrases(config: Config): string[] {
+  const phrases = Object.values(ACKNOWLEDGEMENTS[config.agentSpeech.speakingStyle]).flat();
+  return [...new Set(phrases.map((text) => applyPronunciation(text, config.pronunciation)))];
+}
+
+function instantFeedbackActive(config: Config): boolean {
+  return config.agentSpeech.instantFeedback && config.ttsEnabled && voiceFingerprint(config) !== null;
+}
+
+function prewarmLockPath(config: Config, dir: string): string | null {
+  const fingerprint = voiceFingerprint(config);
+  return fingerprint ? join(dir, `.prewarm-${hash(fingerprint)}`) : null;
+}
+
+/** How many of the current voice's phrases are ready, for the settings page. */
+export function acknowledgementCacheStatus(config: Config, dir = ACK_CACHE_DIR) {
+  if (!instantFeedbackActive(config)) return { active: false, total: 0, cached: 0, preparing: false };
+  const phrases = acknowledgementPhrases(config);
+  const cached = phrases.filter((text) => existsSync(ackCachePath(text, config, dir)!)).length;
+  let preparing = false;
+  try {
+    preparing = Date.now() - statSync(prewarmLockPath(config, dir)!).mtimeMs < PREWARM_LOCK_MS;
+  } catch {
+    // No prewarm running.
+  }
+  return { active: true, total: phrases.length, cached, preparing };
+}
+
+/** Start caching the current voice's phrases in the background, if any are missing. */
+export function prewarmCurrentVoice(
+  config: Config,
+  log: (message: string) => void = console.error,
+): Promise<number> {
+  if (!instantFeedbackActive(config)) return Promise.resolve(0);
+  return prewarmAcknowledgements(acknowledgementPhrases(config), config, AbortSignal.timeout(120_000))
+    .then((cached) => {
+      if (cached) log(`[TTS] Cached ${cached} acknowledgement phrases`);
+      return cached;
+    });
 }
 
 function hash(value: string): string {
@@ -120,7 +164,7 @@ export async function prewarmAcknowledgements(
   const missing = phrases.filter((text) => !existsSync(ackCachePath(text, config, dir)!));
   if (!missing.length) return 0;
   mkdirSync(dir, { recursive: true, mode: 0o700 });
-  const lock = join(dir, `.prewarm-${hash(fingerprint)}`);
+  const lock = prewarmLockPath(config, dir)!;
   try {
     if (Date.now() - statSync(lock).mtimeMs < PREWARM_LOCK_MS) return 0;
     unlinkSync(lock);

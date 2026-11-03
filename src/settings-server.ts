@@ -3,7 +3,8 @@
 import express from "express";
 import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
-import { loadConfig, saveConfig } from "./config.js";
+import { getEffectiveConfig, loadConfig, saveConfig } from "./config.js";
+import { acknowledgementCacheStatus, prewarmCurrentVoice } from "./ack-cache.js";
 import {
   normalizeManagedModel,
   normalizeManagedVoice,
@@ -119,6 +120,7 @@ app.post("/api/config", (req, res) => {
 
   const saved = saveConfig(parsed.data);
   scheduleSettingsProfileSync(saved);
+  prepareInstantFeedback();
   res.json({
     success: true,
     config: {
@@ -167,6 +169,19 @@ app.get("/api/fluidvoice/hotkey", async (_req, res) => {
 
 app.get("/api/background-service/status", (_req, res) => {
   res.json(getBackgroundServiceStatus());
+});
+
+/** Cache Instant Feedback phrases for a new voice now, rather than on the agent's next check. */
+function prepareInstantFeedback() {
+  prewarmCurrentVoice(getEffectiveConfig(), console.log).catch((error) => {
+    console.error(
+      `[TTS] Could not cache acknowledgements: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  });
+}
+
+app.get("/api/instant-feedback/status", (_req, res) => {
+  res.json(acknowledgementCacheStatus(getEffectiveConfig()));
 });
 
 app.get("/api/prompt-hooks", (_req, res) => {

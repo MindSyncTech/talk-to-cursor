@@ -23,13 +23,12 @@ import { checkForUpdates } from "./update-checker.js";
 import { HelperIpcClient, type HelperMessage } from "./helper-ipc.js";
 import { playCompletionSound, soundFeedbackFor, type SpeechKind } from "./completion-sound.js";
 import {
-  ACKNOWLEDGEMENTS,
   acknowledgementDelayMs,
   acknowledgementFor,
   ProgressGate,
   speakToolDescription,
 } from "./agent-speech.js";
-import { acknowledgementAudio, prewarmAcknowledgements, voiceFingerprint } from "./ack-cache.js";
+import { acknowledgementAudio, prewarmCurrentVoice, voiceFingerprint } from "./ack-cache.js";
 import { playPcm } from "./audio-output.js";
 import type { Config } from "./config.js";
 // Create server instance
@@ -443,19 +442,12 @@ function refreshAgentSpeech(config: Config) {
     return;
   }
   prewarmedFor = key;
-  const phrases = Object.values(ACKNOWLEDGEMENTS[config.agentSpeech.speakingStyle])
-    .flat()
-    .map((text) => applyPronunciation(text, config.pronunciation));
-  void prewarmAcknowledgements(phrases, config, AbortSignal.timeout(120_000))
-    .then((cached) => {
-      if (cached) console.error(`[TTS] Cached ${cached} acknowledgement phrases`);
-    })
-    .catch((error) => {
-      prewarmedFor = null;
-      console.error(
-        `[TTS] Could not cache acknowledgements: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    });
+  prewarmCurrentVoice(config).catch((error) => {
+    prewarmedFor = null;
+    console.error(
+      `[TTS] Could not cache acknowledgements: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  });
 }
 
 // Register the listen tool

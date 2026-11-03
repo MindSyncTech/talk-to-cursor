@@ -32,6 +32,8 @@
   Helper; Settings can install a Cursor or Claude Code prompt hook for typed
   prompts. The acknowledgement waits for the send sound to finish, then for
   a short, adjustable pause (0.3 seconds by default) so it sounds natural.
+  After a voice change, Settings starts preparing the new voice's phrases
+  right away and shows their progress.
 - Added a **Progress Updates** setting (all tasks, longer tasks only, or off)
   and a **Speaking Style** setting (casual or professional). Both are passed to
   the agent with the `speak` tool, and TalkToCursor holds back progress updates

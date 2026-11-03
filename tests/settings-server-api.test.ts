@@ -71,7 +71,13 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+vi.mock("../src/ack-cache.js", () => ({
+  acknowledgementCacheStatus: () => ({ active: false, total: 0, cached: 0, preparing: false }),
+  prewarmCurrentVoice: () => Promise.resolve(0),
+}));
+
 vi.mock("../src/config.js", () => ({
+  getEffectiveConfig: () => mocks.config,
   USER_DATA_DIR: "/tmp/talktocursor-tests",
   loadConfig: () => mocks.config,
   saveConfig: (update: Record<string, unknown>) => {

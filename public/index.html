@@ -1787,6 +1787,7 @@
             <span class="switch-slider"></span>
           </label>
         </div>
+        <div class="help-text" id="instantFeedbackStatus" role="status" hidden></div>
         <div id="promptHookRow" style="margin-top: 10px;">
           <div class="cloud-voice-picker">
             <button class="btn-secondary" id="cursorPromptHookBtn" type="button">Install Cursor hook</button>
@@ -3418,6 +3419,29 @@
     function updateInstantFeedbackRows() {
       promptHookRow.style.display = instantFeedback.checked ? 'block' : 'none';
       instantFeedbackDelayRow.style.display = instantFeedback.checked ? '' : 'none';
+      refreshInstantFeedbackStatus();
+    }
+
+    const instantFeedbackStatus = document.getElementById('instantFeedbackStatus');
+    let instantFeedbackStatusTimer = null;
+
+    // Voice and style changes are saved from many places, so poll while clips are missing.
+    async function refreshInstantFeedbackStatus() {
+      clearTimeout(instantFeedbackStatusTimer);
+      let status;
+      try {
+        status = await (await fetch('/api/instant-feedback/status')).json();
+      } catch {
+        status = null;
+      }
+      const missing = status?.active && status.cached < status.total;
+      instantFeedbackStatus.hidden = !missing;
+      if (missing) {
+        instantFeedbackStatus.innerHTML = status.preparing
+          ? `<span class="spinner" style="width: 10px; height: 10px; vertical-align: -1px;"></span> Preparing acknowledgements for this voice… ${status.cached} of ${status.total} ready`
+          : `${status.cached} of ${status.total} acknowledgements ready for this voice. The rest are generated the first time they’re needed.`;
+      }
+      instantFeedbackStatusTimer = setTimeout(refreshInstantFeedbackStatus, missing ? 1500 : 5000);
     }
 
     async function saveAgentSpeech(message) {
