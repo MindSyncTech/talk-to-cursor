@@ -11,6 +11,7 @@ export type PromptKind =
 
 type Style = Config["agentSpeech"]["speakingStyle"];
 
+/** TalkToCursor Cloud generates exactly these phrases without using the allowance. */
 export const ACKNOWLEDGEMENTS: Record<Style, Record<PromptKind, readonly string[]>> = {
   casual: {
     question: ["Good question, let me check.", "Let me look into that.", "Hmm, let me find out."],

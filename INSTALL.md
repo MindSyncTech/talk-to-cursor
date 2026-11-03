@@ -329,7 +329,7 @@ Do not read code, paths, logs, or stack traces aloud.
 
 These three settings are under **Speech** in Settings:
 
-- **Instant Feedback** speaks a short acknowledgement ("let me take a look") the moment a prompt is sent, before the agent starts working. The phrase depends on the kind of prompt (a question, a fix, a build) and is cached for your voice, so it plays right away. Prompts sent by voice are acknowledged through the Background Helper (macOS). For typed prompts, click **Install Cursor hook** or **Install Claude Code hook**. This adds a prompt-submit hook to `~/.cursor/hooks.json` or `~/.claude/settings.json` and leaves your other hooks alone.
+- **Instant Feedback** speaks a short acknowledgement ("let me take a look") the moment a prompt is sent, before the agent starts working. The phrase depends on the kind of prompt (a question, a fix, a build) and is cached for your voice, so it plays right away. With TalkToCursor Cloud, these phrases don't use your speech allowance. Prompts sent by voice are acknowledged through the Background Helper (macOS). For typed prompts, click **Install Cursor hook** or **Install Claude Code hook**. This adds a prompt-submit hook to `~/.cursor/hooks.json` or `~/.claude/settings.json` and leaves your other hooks alone.
 - **Progress Updates** can be on for all tasks, only for tasks longer than about a minute, or off. TalkToCursor enforces the choice even if your rule asks for milestone updates. Questions and the final summary are always spoken.
 - **Speaking Style** is Casual or Professional. It sets the tone of acknowledgements and is passed to the agent with the `speak` tool, so changing it doesn't require editing your rules.
 

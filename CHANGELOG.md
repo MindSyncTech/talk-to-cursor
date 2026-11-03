@@ -19,7 +19,8 @@
   sounds.
 - Added **Instant Feedback**: TalkToCursor speaks a short acknowledgement
   ("let me take a look") the moment a prompt is sent, chosen by the kind of
-  prompt and cached for your voice. Voice prompts work through the Background
+  prompt and cached for your voice. With TalkToCursor Cloud, these phrases
+  don't use the speech allowance. Voice prompts work through the Background
   Helper; Settings can install a Cursor or Claude Code prompt hook for typed
   prompts.
 - Added a **Progress Updates** setting (all tasks, longer tasks only, or off)

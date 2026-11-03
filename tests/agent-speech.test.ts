@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { describe, expect, it } from "vitest";
 import {
   acknowledgementFor,
@@ -28,6 +29,15 @@ describe("prompt classification", () => {
   it("skips prompts that only say thanks", () => {
     expect(classifyPrompt("Thanks!")).toBeNull();
     expect(acknowledgementFor("thank you", "casual")).toBeNull();
+  });
+
+  it("matches the phrase list TalkToCursor Cloud generates without using the allowance", () => {
+    const phrases = [
+      ...new Set(Object.values(ACKNOWLEDGEMENTS).flatMap((style) => Object.values(style).flat())),
+    ];
+    const fingerprint = createHash("sha256").update(phrases.sort().join("\n")).digest("hex");
+    // Changing a phrase? Update Cloud's acknowledgement list and its fingerprint too.
+    expect(fingerprint.slice(0, 16)).toBe("dc917b0c5d1ec8c1");
   });
 
   it("rotates through the phrases for the chosen style", () => {
