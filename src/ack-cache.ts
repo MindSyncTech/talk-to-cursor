@@ -23,6 +23,8 @@ const PREWARM_LOCK_MS = 10 * 60_000;
 // Cloud's speech provider limits requests per minute, so a burst of phrases
 // would crowd out the agent's own speech.
 const PREWARM_SPACING_MS = 6_000;
+const PREWARM_RETRY_MS = 30_000;
+const PREWARM_MAX_FAILURES = 3;
 
 /** Everything that changes how a phrase sounds; null when audio can't be cached. */
 export function voiceFingerprint(config: Config): string | null {
@@ -162,6 +164,7 @@ export async function prewarmAcknowledgements(
   signal: AbortSignal,
   dir = ACK_CACHE_DIR,
   spacingMs = PREWARM_SPACING_MS,
+  retryMs = PREWARM_RETRY_MS,
 ): Promise<number> {
   const fingerprint = voiceFingerprint(config);
   if (!fingerprint) return 0;
@@ -181,17 +184,27 @@ export async function prewarmAcknowledgements(
     return 0;
   }
   let cached = 0;
+  let failures = 0;
   try {
-    for (const text of missing) {
-      if (cached > 0) await new Promise((resolve) => setTimeout(resolve, spacingMs));
+    for (let index = 0; index < missing.length; ) {
+      if (failures) await new Promise((resolve) => setTimeout(resolve, retryMs));
+      else if (cached > 0) await new Promise((resolve) => setTimeout(resolve, spacingMs));
       if (signal.aborted) break;
+      const text = missing[index];
       const source = streamWithProvider(text, config, signal);
       if (!source) break;
       const chunks: PcmChunk[] = [];
-      for await (const chunk of source) chunks.push(chunk);
+      try {
+        for await (const chunk of source) chunks.push(chunk);
+      } catch (error) {
+        if (signal.aborted || ++failures >= PREWARM_MAX_FAILURES) throw error;
+        continue;
+      }
       if (signal.aborted || !chunks.length) break;
       writeCache(ackCachePath(text, config, dir)!, chunks, dir);
       cached += 1;
+      failures = 0;
+      index += 1;
     }
   } finally {
     try {
