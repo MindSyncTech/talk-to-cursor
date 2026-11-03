@@ -1,6 +1,7 @@
 import {
   chmodSync,
   copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -169,6 +170,9 @@ function copyRuntimeFiles() {
     join(PACKAGE_ROOT, "requirements.txt"),
     join(RUNTIME_DIR, "requirements.txt"),
   );
+  cpSync(join(PACKAGE_ROOT, "sounds"), join(RUNTIME_DIR, "sounds"), {
+    recursive: true,
+  });
 }
 
 function writeInstalledVersion() {

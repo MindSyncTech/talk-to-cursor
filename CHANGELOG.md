@@ -10,8 +10,12 @@
 - The Cloud Account card shows dictation minutes left alongside characters.
 - Added an optional **Send Sound** that plays when TalkToCursor sends your
   message, after “send it” or Auto-Submit, with a choice of sounds.
-- The Activation Chime can now use any macOS system sound instead of the
-  built-in two-note chime.
+- The Activation Chime can now use a different sound instead of the built-in
+  two-note chime.
+- Added 29 TalkToCursor UI sounds (clicks, confirmations, dings, message sent,
+  pending review, question/error, and success jingles). The task completion,
+  send, and activation sound pickers list them separately from the macOS
+  sounds.
 - If `config.json` has a setting this version doesn't support, only that
   setting falls back to its default instead of every setting.
 

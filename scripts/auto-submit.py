@@ -21,6 +21,7 @@ import base64
 import time
 import json
 import os
+import re
 import sys
 import threading
 import subprocess
@@ -199,10 +200,30 @@ SUBMIT_PHRASE = config['autoSubmit']['submitPhrase']
 SYSTEM_SOUNDS = (
     'Hero', 'Glass', 'Ping', 'Pop', 'Purr', 'Tink', 'Submarine', 'Bottle', 'Blow', 'Funk',
 )
+
+
+def sound_file(name):
+    """The file for a macOS or bundled TalkToCursor sound, or None if unknown."""
+    if name in SYSTEM_SOUNDS:
+        return f'/System/Library/Sounds/{name}.aiff'
+    if not isinstance(name, str) or not re.fullmatch(r'ttc-[a-z0-9-]+', name):
+        return None
+    here = Path(__file__).resolve().parent
+    for directory in (here / 'sounds', here.parent / 'sounds'):
+        candidate = directory / f'{name}.mp3'
+        if candidate.is_file():
+            return str(candidate)
+    return None
+
+
+def valid_sound(name):
+    return name == 'Chime' or sound_file(name) is not None
+
+
 SEND_SOUND = (
     config['autoSubmit']['sendSound']
     if config['autoSubmit'].get('sendSoundEnabled') is True
-    and config['autoSubmit'].get('sendSound') in ('Chime', *SYSTEM_SOUNDS)
+    and valid_sound(config['autoSubmit'].get('sendSound'))
     else None
 )
 
@@ -220,7 +241,7 @@ WAKE_SENSITIVITY = config['voiceInput']['wakeSensitivity']
 WAKE_CHIME = config['voiceInput']['wakeChime']
 WAKE_CHIME_SOUND = (
     config['voiceInput'].get('wakeChimeSound')
-    if config['voiceInput'].get('wakeChimeSound') in SYSTEM_SOUNDS
+    if valid_sound(config['voiceInput'].get('wakeChimeSound'))
     else 'Chime'
 )
 BARGE_IN = config['voiceInput']['bargeIn']
@@ -1186,8 +1207,8 @@ def chime_pcm():
 system_sound_cache = {}
 
 
-def system_sound_pcm(name):
-    """A macOS system sound as 24 kHz mono PCM, without its silent tail."""
+def sound_pcm(name):
+    """A macOS or bundled sound as 24 kHz mono PCM, without its silent tail."""
     import wave
 
     import numpy as np
@@ -1195,13 +1216,16 @@ def system_sound_pcm(name):
     if name in system_sound_cache:
         return system_sound_cache[name]
     pcm = None
+    source = sound_file(name)
     with tempfile.TemporaryDirectory() as directory:
         target = os.path.join(directory, 'sound.wav')
         try:
+            if source is None:
+                raise OSError(f'unknown sound {name}')
             subprocess.run(
                 [
                     'afconvert', '-f', 'WAVE', '-d', 'LEI16@24000', '-c', '1',
-                    f'/System/Library/Sounds/{name}.aiff', target,
+                    source, target,
                 ],
                 check=True,
                 capture_output=True,
@@ -1221,16 +1245,19 @@ def system_sound_pcm(name):
 def play_sound(name):
     """Play the built-in chime or a system sound; returns its length if known."""
     if helper_audio is not None:
-        pcm = chime_pcm() if name == 'Chime' else system_sound_pcm(name)
+        pcm = chime_pcm() if name == 'Chime' else sound_pcm(name)
         if pcm:
             stream_id = f"chime-{time.monotonic_ns()}"
             helper_audio.begin_stream(stream_id)
             helper_audio.write(stream_id, pcm)
             helper_audio.end_stream(stream_id)
             return len(pcm) / 2 / 24000
+    source = sound_file('Glass' if name == 'Chime' else name)
+    if source is None:
+        return None
     try:
         subprocess.Popen(
-            ['afplay', f"/System/Library/Sounds/{'Glass' if name == 'Chime' else name}.aiff"],
+            ['afplay', source],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True,
@@ -1525,10 +1552,10 @@ def main():
                 provider_shortcut_watch = setup_provider_shortcut_watch()
         except Exception as error:
             print(f'[send-it] Listening for "{SUBMIT_PHRASE}" after dictation is unavailable: {error}')
-    cached_sounds = {WAKE_CHIME_SOUND if WAKE_CHIME else None, SEND_SOUND} & set(SYSTEM_SOUNDS)
+    cached_sounds = {WAKE_CHIME_SOUND if WAKE_CHIME else None, SEND_SOUND} - {None, 'Chime'}
     if helper_audio is not None and cached_sounds:
         threading.Thread(
-            target=lambda: [system_sound_pcm(name) for name in cached_sounds],
+            target=lambda: [sound_pcm(name) for name in cached_sounds],
             daemon=True,
         ).start()
     if VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin' and BUILTIN_MODEL == 'cloud':

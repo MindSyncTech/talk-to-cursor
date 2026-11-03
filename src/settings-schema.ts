@@ -135,7 +135,7 @@ export const cloudSettingsSchema = z.object({
   settingsRevision: z.number().int().nonnegative(),
 });
 
-export const COMPLETION_SOUNDS = [
+export const MACOS_SOUNDS = [
   "Hero",
   "Glass",
   "Ping",
@@ -148,7 +148,42 @@ export const COMPLETION_SOUNDS = [
   "Funk",
 ] as const;
 
-/** "Chime" is the helper's built-in two-note tone; the rest are macOS sounds. */
+/** Bundled UI sounds; each is sounds/<id>.mp3 in the package. */
+export const TTC_SOUNDS = [
+  "ttc-click-1",
+  "ttc-click-2",
+  "ttc-confirmation-1",
+  "ttc-confirmation-2",
+  "ttc-confirmation-3",
+  "ttc-confirmation-4",
+  "ttc-confirmation-5",
+  "ttc-confirmation-6",
+  "ttc-confirmation-7",
+  "ttc-confirmation-8",
+  "ttc-confirmation-ping-1",
+  "ttc-confirmation-ping-2",
+  "ttc-confirmation-ping-3",
+  "ttc-ding-1",
+  "ttc-ding-2",
+  "ttc-ding-3",
+  "ttc-ding-4",
+  "ttc-message-sent-1",
+  "ttc-message-sent-2",
+  "ttc-message-sent-3",
+  "ttc-message-sent-4",
+  "ttc-pending-review-1",
+  "ttc-pending-review-2",
+  "ttc-question-error-1",
+  "ttc-question-error-2",
+  "ttc-question-error-3",
+  "ttc-question-error-4",
+  "ttc-success-jingle-1",
+  "ttc-success-jingle-2",
+] as const;
+
+export const COMPLETION_SOUNDS = [...MACOS_SOUNDS, ...TTC_SOUNDS] as const;
+
+/** "Chime" is the helper's built-in two-note tone. */
 export const CHIME_SOUNDS = ["Chime", ...COMPLETION_SOUNDS] as const;
 
 export const autoSubmitSettingsSchema = z.object({

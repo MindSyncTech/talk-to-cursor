@@ -1717,18 +1717,7 @@
         </select>
         <div id="completionSoundRow" style="display: none; margin-top: 10px;">
           <div class="cloud-voice-picker">
-            <select id="completionSound" aria-label="Completion sound">
-              <option value="Hero">Hero</option>
-              <option value="Glass">Glass</option>
-              <option value="Ping">Ping</option>
-              <option value="Pop">Pop</option>
-              <option value="Purr">Purr</option>
-              <option value="Tink">Tink</option>
-              <option value="Submarine">Submarine</option>
-              <option value="Bottle">Bottle</option>
-              <option value="Blow">Blow</option>
-              <option value="Funk">Funk</option>
-            </select>
+            <select id="completionSound" data-sound-options aria-label="Completion sound"></select>
             <button class="btn-secondary" id="completionSoundPreviewBtn" type="button"><span aria-hidden="true">&#9654;</span> Preview</button>
           </div>
         </div>
@@ -2490,7 +2479,7 @@
       </div>
       <div class="form-group" id="wakeChimeSoundRow" style="display: none;">
         <div class="cloud-voice-picker">
-          <select id="wakeChimeSound" data-sound-options aria-label="Activation chime sound"></select>
+          <select id="wakeChimeSound" data-sound-options="chime" aria-label="Activation chime sound"></select>
           <button class="btn-secondary" type="button" data-sound-preview="wakeChimeSound"><span aria-hidden="true">&#9654;</span> Preview</button>
         </div>
       </div>
@@ -2538,7 +2527,7 @@
       </div>
       <div class="form-group" id="sendSoundRow" style="display: none;">
         <div class="cloud-voice-picker">
-          <select id="sendSound" data-sound-options aria-label="Send sound"></select>
+          <select id="sendSound" data-sound-options="chime" aria-label="Send sound"></select>
           <button class="btn-secondary" type="button" data-sound-preview="sendSound"><span aria-hidden="true">&#9654;</span> Preview</button>
         </div>
       </div>
@@ -3291,9 +3280,31 @@
     }
 
     completionSoundPreviewBtn.addEventListener('click', () => previewSound(completionSound.value, completionSoundPreviewBtn));
+    const MACOS_SOUNDS = ['Hero', 'Glass', 'Ping', 'Pop', 'Purr', 'Tink', 'Submarine', 'Bottle', 'Blow', 'Funk'];
+    const TTC_SOUNDS = [
+      'click-1', 'click-2',
+      'confirmation-1', 'confirmation-2', 'confirmation-3', 'confirmation-4',
+      'confirmation-5', 'confirmation-6', 'confirmation-7', 'confirmation-8',
+      'confirmation-ping-1', 'confirmation-ping-2', 'confirmation-ping-3',
+      'ding-1', 'ding-2', 'ding-3', 'ding-4',
+      'message-sent-1', 'message-sent-2', 'message-sent-3', 'message-sent-4',
+      'pending-review-1', 'pending-review-2',
+      'question-error-1', 'question-error-2', 'question-error-3', 'question-error-4',
+      'success-jingle-1', 'success-jingle-2',
+    ];
+    function ttcSoundLabel(id) {
+      const words = id.replace('question-error', 'question/error').replace(/-/g, ' ');
+      return words.charAt(0).toUpperCase() + words.slice(1);
+    }
     document.querySelectorAll('select[data-sound-options]').forEach((select) => {
-      select.add(new Option('Chime (built-in)', 'Chime'));
-      for (const option of completionSound.options) select.add(new Option(option.text, option.value));
+      const ttc = document.createElement('optgroup');
+      ttc.label = 'TalkToCursor';
+      if (select.dataset.soundOptions === 'chime') ttc.append(new Option('Chime (built-in)', 'Chime'));
+      for (const id of TTC_SOUNDS) ttc.append(new Option(ttcSoundLabel(id), `ttc-${id}`));
+      const macos = document.createElement('optgroup');
+      macos.label = 'macOS';
+      for (const name of MACOS_SOUNDS) macos.append(new Option(name, name));
+      select.append(ttc, macos);
     });
     document.querySelectorAll('[data-sound-preview]').forEach((button) => {
       button.addEventListener('click', () => previewSound(document.getElementById(button.dataset.soundPreview).value, button));

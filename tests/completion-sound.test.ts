@@ -1,7 +1,15 @@
+import { existsSync } from "fs";
 import { describe, expect, it } from "vitest";
-import { completionFeedbackFor } from "../src/completion-sound.js";
+import { completionFeedbackFor, soundPath } from "../src/completion-sound.js";
 import { DEFAULT_CONFIG, type Config } from "../src/config.js";
-import { settingsSchema, settingsUpdateSchema } from "../src/settings-schema.js";
+import { settingsSchema, settingsUpdateSchema, TTC_SOUNDS } from "../src/settings-schema.js";
+
+describe("sound files", () => {
+  it("bundles every TalkToCursor sound and resolves macOS sounds", () => {
+    for (const sound of TTC_SOUNDS) expect(existsSync(soundPath(sound))).toBe(true);
+    expect(soundPath("Glass")).toBe("/System/Library/Sounds/Glass.aiff");
+  });
+});
 
 function withMode(mode: Config["completionFeedback"]["mode"]): Config {
   return { ...DEFAULT_CONFIG, completionFeedback: { mode, sound: "Glass" } };
