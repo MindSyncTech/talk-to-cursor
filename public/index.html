@@ -2500,17 +2500,19 @@
         </label>
       </div>
 
-      <div class="slider-group">
-        <div class="slider-label">
-          <label for="noSpeechTimeout">Stop Listening After</label>
-          <span class="slider-value" id="noSpeechTimeoutValue">30s</span>
+      <div class="auto-submit-details" id="noSpeechTimeoutDetails">
+        <div class="slider-group">
+          <div class="slider-label">
+            <label for="noSpeechTimeout">Stop Listening After</label>
+            <span class="slider-value" id="noSpeechTimeoutValue">30s</span>
+          </div>
+          <input type="range" id="noSpeechTimeout" min="5" max="120" step="5" value="30">
+          <div class="slider-range-labels">
+            <span>5s</span>
+            <span>2 min</span>
+          </div>
+          <div class="help-text">How long to wait for you to start speaking, after Auto-Listen, the wake phrase, or the hotkey, before listening stops.</div>
         </div>
-        <input type="range" id="noSpeechTimeout" min="5" max="120" step="5" value="30">
-        <div class="slider-range-labels">
-          <span>5s</span>
-          <span>2 min</span>
-        </div>
-        <div class="help-text">How long to wait for you to start speaking, after Auto-Listen, the wake phrase, or the hotkey, before listening stops.</div>
       </div>
 
       <div class="toggle-row">
@@ -3013,6 +3015,11 @@
     const silenceDurationValue = document.getElementById('silenceDurationValue');
     const noSpeechTimeoutSlider = document.getElementById('noSpeechTimeout');
     const noSpeechTimeoutValue = document.getElementById('noSpeechTimeoutValue');
+    const noSpeechTimeoutDetails = document.getElementById('noSpeechTimeoutDetails');
+    // People press the hotkey when they're ready to speak, so only these triggers need the timeout.
+    function updateNoSpeechTimeoutVisibility() {
+      noSpeechTimeoutDetails.classList.toggle('open', autoListenEnabled.checked || wakeWordEnabled.checked);
+    }
     const wisprHotkeyInput = document.getElementById('wisprHotkey');
     const fluidVoiceHotkeyInput = document.getElementById('fluidVoiceHotkey');
     const handyCommandInput = document.getElementById('handyCommand');
@@ -3603,6 +3610,7 @@
     // Auto-submit toggle and sliders
     // Auto-listen toggle - save immediately on change
     autoListenEnabled.addEventListener('change', async () => {
+      updateNoSpeechTimeoutVisibility();
       try {
         const res = await fetch('/api/config', {
           method: 'POST',
@@ -3875,6 +3883,7 @@
 
     wakeWordEnabled.addEventListener('change', () => {
       wakeWordDetails.classList.toggle('open', wakeWordEnabled.checked);
+      updateNoSpeechTimeoutVisibility();
       saveListeningTriggers(wakeWordEnabled.checked ? 'Wake phrase turned on' : 'Wake phrase turned off');
     });
 
@@ -4086,6 +4095,7 @@
           manualTriggerHotkeyInput.value = vi.manualTriggerHotkey || 'ctrl+shift+l';
           wakeWordEnabled.checked = !!vi.wakeWordEnabled;
           wakeWordDetails.classList.toggle('open', !!vi.wakeWordEnabled);
+          updateNoSpeechTimeoutVisibility();
           wakePhrase.value = vi.wakePhrase || 'hey cursor';
           wakeSensitivitySlider.value = vi.wakeSensitivity ?? 0.5;
           wakeSensitivityValue.textContent = parseFloat(wakeSensitivitySlider.value).toFixed(2);
