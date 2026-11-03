@@ -186,6 +186,8 @@ class DuplexAudio:
         self._levels = collections.deque(maxlen=15)
         self._stream = None
         self._output_latency = 0.0
+        self._output_underflows = 0
+        self._input_overflows = 0
         self._aec = None
         if input_enabled and (echo_cancellation or noise_suppression):
             try:
@@ -230,6 +232,7 @@ class DuplexAudio:
         else:
             self._output_latency = float(latency)
         threading.Thread(target=self._event_loop, daemon=True).start()
+        threading.Thread(target=self._report_dropouts, daemon=True).start()
         if self.input_enabled:
             threading.Thread(target=self._capture_loop, daemon=True).start()
         mode = "duplex" if self.input_enabled else "output"
@@ -321,10 +324,33 @@ class DuplexAudio:
             output += bytes(needed - len(output))
         return np.frombuffer(bytes(output), dtype=np.int16)
 
-    def _output_callback(self, outdata, frames, _time, _status):
+    def _output_callback(self, outdata, frames, _time, status):
+        self._note_status(status)
         outdata[:, 0] = self._fill(frames)
 
-    def _duplex_callback(self, indata, outdata, frames, _time, _status):
+    def _note_status(self, status):
+        if status.output_underflow:
+            self._output_underflows += 1
+        if status.input_overflow:
+            self._input_overflows += 1
+
+    def _report_dropouts(self):
+        """Log audio dropouts; the audio callback itself must not print."""
+        reported = (0, 0)
+        while True:
+            time.sleep(1.0)
+            current = (self._output_underflows, self._input_overflows)
+            if current != reported:
+                print(
+                    f"[audio] {time.strftime('%H:%M:%S')} dropouts: "
+                    f"{current[0] - reported[0]} output underflow(s), "
+                    f"{current[1] - reported[1]} input overflow(s)"
+                    f"{' during playback' if self.is_playing() else ''}"
+                )
+                reported = current
+
+    def _duplex_callback(self, indata, outdata, frames, _time, status):
+        self._note_status(status)
         playback = self._fill(frames)
         outdata[:, 0] = playback
         try:
