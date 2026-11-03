@@ -1146,6 +1146,11 @@ def do_submit(new_text, managed=False, fresh_text=None, fallback=False):
         send_it=command_requested,
     )
 
+def text_field_monitor_needed():
+    """Built-in transcripts submit themselves; watching the field would treat typing as dictation."""
+    return AUTO_SUBMIT_ENABLED and not (VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin')
+
+
 def monitor_text_field():
     """Poll the focused text field for changes (auto-submit monitor)."""
     global last_text, last_change_time, text_at_change_start, submit_timer, monitoring
@@ -1748,7 +1753,7 @@ def main():
 """)
 
     # Start monitors in separate threads
-    if AUTO_SUBMIT_ENABLED:
+    if text_field_monitor_needed():
         managed_input_observer = setup_managed_input_observer()
         text_monitor = threading.Thread(target=monitor_text_field, daemon=True)
         text_monitor.start()

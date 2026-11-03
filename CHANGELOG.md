@@ -23,6 +23,10 @@
   voice activity, and spoken submit command models now load once when the
   Background Helper starts instead of on every activation, so listening also
   starts a little sooner.
+- Fixed Auto-Submit pressing Enter and playing Instant Feedback when you typed
+  or text changed in Cursor while using Built-in voice input. Built-in
+  transcripts submit on their own, so the text field monitor now runs only for
+  other dictation apps.
 - Added 29 TalkToCursor UI sounds (clicks, confirmations, dings, message sent,
   pending review, question/error, and success jingles), loudness-matched to
   the macOS sounds and CC0-licensed from Freesound. The task completion,
