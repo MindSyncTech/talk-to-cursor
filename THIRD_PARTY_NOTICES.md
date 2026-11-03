@@ -105,6 +105,14 @@ International License (CC BY 4.0):
 
 License: https://creativecommons.org/licenses/by/4.0/
 
+## TalkToCursor UI Sounds
+
+The sounds in `sounds/` come from [Freesound](https://freesound.org) and are
+dedicated to the public domain under CC0 1.0. TalkToCursor renamed them and
+normalized their loudness.
+
+License: https://creativecommons.org/publicdomain/zero/1.0/
+
 ## LiveKit
 
 Echo cancellation uses the

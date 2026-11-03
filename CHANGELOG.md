@@ -13,7 +13,8 @@
 - The Activation Chime can now use a different sound instead of the built-in
   two-note chime.
 - Added 29 TalkToCursor UI sounds (clicks, confirmations, dings, message sent,
-  pending review, question/error, and success jingles). The task completion,
+  pending review, question/error, and success jingles), loudness-matched to
+  the macOS sounds and CC0-licensed from Freesound. The task completion,
   send, and activation sound pickers list them separately from the macOS
   sounds.
 - If `config.json` has a setting this version doesn't support, only that
