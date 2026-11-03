@@ -14,6 +14,7 @@ import {
   DEFAULT_AGENT_SPEECH as SCHEMA_AGENT_SPEECH,
   DEFAULT_COMPLETION_FEEDBACK as SCHEMA_COMPLETION_FEEDBACK,
   DEFAULT_QUESTION_FEEDBACK as SCHEMA_QUESTION_FEEDBACK,
+  DEFAULT_REPLY_FEEDBACK as SCHEMA_REPLY_FEEDBACK,
   MANAGED_TTS_DEFAULT_VOICE,
   MANAGED_TTS_MODEL,
   parseSettingsLeniently,
@@ -161,6 +162,10 @@ export const DEFAULT_COMPLETION_FEEDBACK: Config["completionFeedback"] = {
   ...SCHEMA_COMPLETION_FEEDBACK,
 };
 
+export const DEFAULT_REPLY_FEEDBACK: Config["replyFeedback"] = {
+  ...SCHEMA_REPLY_FEEDBACK,
+};
+
 export const DEFAULT_QUESTION_FEEDBACK: Config["questionFeedback"] = {
   ...SCHEMA_QUESTION_FEEDBACK,
 };
@@ -184,6 +189,7 @@ export const DEFAULT_CONFIG: Config = {
   autoSubmit: { ...DEFAULT_AUTO_SUBMIT },
   voiceInput: { ...DEFAULT_VOICE_INPUT },
   completionFeedback: { ...DEFAULT_COMPLETION_FEEDBACK },
+  replyFeedback: { ...DEFAULT_REPLY_FEEDBACK },
   questionFeedback: { ...DEFAULT_QUESTION_FEEDBACK },
   agentSpeech: { ...DEFAULT_AGENT_SPEECH },
   autoListen: true,
@@ -244,6 +250,12 @@ export function loadConfig(): Config {
           ...DEFAULT_COMPLETION_FEEDBACK,
           ...(parsed.completionFeedback || {}),
         },
+        replyFeedback: {
+          ...DEFAULT_REPLY_FEEDBACK,
+          // Until chosen, quick replies use the same mode as task completion.
+          mode: parsed.completionFeedback?.mode ?? DEFAULT_REPLY_FEEDBACK.mode,
+          ...(parsed.replyFeedback || {}),
+        },
         questionFeedback: {
           ...DEFAULT_QUESTION_FEEDBACK,
           ...(parsed.questionFeedback || {}),
@@ -281,6 +293,7 @@ export function loadConfig(): Config {
     autoSubmit: { ...DEFAULT_AUTO_SUBMIT },
     voiceInput: { ...DEFAULT_VOICE_INPUT },
     completionFeedback: { ...DEFAULT_COMPLETION_FEEDBACK },
+    replyFeedback: { ...DEFAULT_REPLY_FEEDBACK },
     questionFeedback: { ...DEFAULT_QUESTION_FEEDBACK },
     agentSpeech: { ...DEFAULT_AGENT_SPEECH },
     autoListen: DEFAULT_CONFIG.autoListen,
@@ -308,6 +321,7 @@ function mergeConfig(current: Config, config: ConfigUpdate): Config {
       ...current.questionFeedback,
       ...(config.questionFeedback || {}),
     },
+    replyFeedback: { ...current.replyFeedback, ...(config.replyFeedback || {}) },
     agentSpeech: { ...current.agentSpeech, ...(config.agentSpeech || {}) },
   });
 }
@@ -341,6 +355,7 @@ export function getEffectiveConfig(): Config {
     autoSubmit: fileConfig.autoSubmit,
     voiceInput: fileConfig.voiceInput,
     completionFeedback: fileConfig.completionFeedback,
+    replyFeedback: fileConfig.replyFeedback,
     questionFeedback: fileConfig.questionFeedback,
     agentSpeech: fileConfig.agentSpeech,
     autoListen: fileConfig.autoListen,

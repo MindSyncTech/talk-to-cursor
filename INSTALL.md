@@ -265,10 +265,14 @@ with a concise completion summary and `"completion": true`:
 `{ "text": "...", "completion": true }`. Do this even if a task-start update
 was already spoken.
 
+If the final response only answers a question, follows up, or reports a quick
+fix, pass `"reply": true` instead of `"completion": true`:
+`{ "text": "...", "reply": true }`.
+
 When you need the user's answer or decision before you can continue, pass
 `"question": true` with that speech: `{ "text": "...", "question": true }`.
 
-Immediately after completion speech, call the `listen` tool. It safely does
+Immediately after completion or reply speech, call the `listen` tool. It safely does
 nothing when Auto-Listen is disabled. Never call `listen` after task-start or
 milestone speech.
 ```
@@ -283,7 +287,7 @@ Add to the global `~/.claude/CLAUDE.md` or a project’s `CLAUDE.md`:
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
 Pass the words in the `text` argument: `{ "text": "..." }`.
-For the completion update, also pass `"completion": true`.
+For the completion update, also pass `"completion": true`; for an answer, follow-up, or quick fix, pass `"reply": true` instead.
 When you need an answer before you can continue, pass `"question": true`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
@@ -299,7 +303,7 @@ Add to the applicable global `~/.codex/AGENTS.md` or project `AGENTS.md`:
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
 Pass the words in the `text` argument: `{ "text": "..." }`.
-For the completion update, also pass `"completion": true`.
+For the completion update, also pass `"completion": true`; for an answer, follow-up, or quick fix, pass `"reply": true` instead.
 When you need an answer before you can continue, pass `"question": true`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
@@ -315,7 +319,7 @@ Add to the global `~/.gemini/GEMINI.md`, or create an Always On Workspace Rule f
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
 Pass the words in the `text` argument: `{ "text": "..." }`.
-For the completion update, also pass `"completion": true`.
+For the completion update, also pass `"completion": true`; for an answer, follow-up, or quick fix, pass `"reply": true` instead.
 When you need an answer before you can continue, pass `"question": true`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
@@ -440,6 +444,8 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `spokenResponseDetail` | Spoken update length (`minimal`, `brief`, or `detailed`) | `brief` |
 | `completionFeedback.mode` | Final summary on macOS (`speech`, `sound`, or `both`) | `speech` |
 | `completionFeedback.sound` | Task completion sound: a macOS sound (`Hero`, `Glass`, `Ping`, `Pop`, `Purr`, `Tink`, `Submarine`, `Bottle`, `Blow`, `Funk`) or a TalkToCursor sound (`ttc-ding-1`, `ttc-message-sent-2`, and others listed in Settings) | `ttc-success-jingle-1` |
+| `replyFeedback.mode` | Answers, follow-ups, and quick fixes on macOS (`speech`, `sound`, or `both`) | Same as `completionFeedback.mode` until set |
+| `replyFeedback.sound` | Quick-reply sound, from the same list as `completionFeedback.sound` | `ttc-ding-1` |
 | `questionFeedback.mode` | When the agent needs your answer, on macOS (`speech`, `sound`, or `both`) | `both` |
 | `questionFeedback.sound` | Answers-needed sound, from the same list as `completionFeedback.sound` | `ttc-pending-review-1` |
 | `agentSpeech.instantFeedback` | Speak an acknowledgement as soon as a prompt is sent | `true` |

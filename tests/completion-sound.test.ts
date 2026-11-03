@@ -1,5 +1,7 @@
-import { existsSync } from "fs";
-import { describe, expect, it } from "vitest";
+import { existsSync, mkdtempSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { describe, expect, it, vi } from "vitest";
 import { completionFeedbackFor, soundFeedbackFor, soundPath } from "../src/completion-sound.js";
 import { DEFAULT_CONFIG, type Config } from "../src/config.js";
 import { settingsSchema, settingsUpdateSchema, TTC_SOUNDS } from "../src/settings-schema.js";
@@ -38,6 +40,35 @@ describe("completion feedback", () => {
       mode: "both",
       sound: "ttc-pending-review-1",
     });
+  });
+
+  it("uses the quick-reply sound for replies and keeps the jingle for completions", () => {
+    const config = {
+      ...DEFAULT_CONFIG,
+      completionFeedback: { mode: "sound" as const, sound: "ttc-success-jingle-1" as const },
+      replyFeedback: { mode: "sound" as const, sound: "ttc-ding-1" as const },
+    };
+    expect(soundFeedbackFor(config, "reply", "darwin").sound).toBe("ttc-ding-1");
+    expect(soundFeedbackFor(config, "completion", "darwin").sound).toBe("ttc-success-jingle-1");
+  });
+
+  it("starts quick replies with the completion mode the user already chose", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "ttc-reply-"));
+    writeFileSync(
+      join(dir, "config.json"),
+      JSON.stringify({ completionFeedback: { mode: "sound", sound: "Hero" } }),
+    );
+    const previous = process.env.TALKTOCURSOR_DATA_DIR;
+    process.env.TALKTOCURSOR_DATA_DIR = dir;
+    try {
+      vi.resetModules();
+      const { loadConfig } = await import("../src/config.js");
+      expect(loadConfig().replyFeedback).toEqual({ mode: "sound", sound: "ttc-ding-1" });
+    } finally {
+      if (previous === undefined) delete process.env.TALKTOCURSOR_DATA_DIR;
+      else process.env.TALKTOCURSOR_DATA_DIR = previous;
+      vi.resetModules();
+    }
   });
 
   it("uses the answers-needed sound only for question speech", () => {

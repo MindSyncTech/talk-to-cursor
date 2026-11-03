@@ -315,7 +315,13 @@ const speakTool = server.registerTool(
         .boolean()
         .optional()
         .describe(
-          "Set true for the final task-completion summary. The user may have chosen a completion sound instead of, or before, this speech.",
+          "Set true for the final summary of a finished task or feature. The user may have chosen a completion sound instead of, or before, this speech.",
+        ),
+      reply: z
+        .boolean()
+        .optional()
+        .describe(
+          "Set true instead of completion for a final message that answers a question, follows up, or reports a quick fix. The user may have chosen a quick-reply sound instead of, or before, this speech.",
         ),
       question: z
         .boolean()
@@ -348,10 +354,16 @@ const speakTool = server.registerTool(
     lastSpeechError = null;
 
     const kind: SpeechKind =
-      args.completion === true ? "completion" : args.question === true ? "question" : "update";
+      args.reply === true
+        ? "reply"
+        : args.completion === true
+          ? "completion"
+          : args.question === true
+            ? "question"
+            : "update";
     const config = getEffectiveConfig();
     refreshAgentSpeech(config);
-    if (kind === "completion") progress.taskEnded();
+    if (kind === "completion" || kind === "reply") progress.taskEnded();
     if (kind === "update" && !progress.allowUpdate(config.agentSpeech.progressUpdates)) {
       return {
         content: [
@@ -419,7 +431,7 @@ server.registerTool(
   "listen",
   {
     description:
-      "Signal the background script to start listening with the configured voice input provider once queued speech has finished playing. Always call this immediately after final task-completion speech; it returns right away and safely does nothing when Auto-Listen is disabled. Never call it after task-start or milestone speech.",
+      "Signal the background script to start listening with the configured voice input provider once queued speech has finished playing. Always call this immediately after final completion or reply speech; it returns right away and safely does nothing when Auto-Listen is disabled. Never call it after task-start or milestone speech.",
     inputSchema: {},
   },
   async () => {

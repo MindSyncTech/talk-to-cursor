@@ -26,6 +26,11 @@
   and a **Speaking Style** setting (casual or professional). Both are passed to
   the agent with the `speak` tool, and TalkToCursor holds back progress updates
   you've turned off.
+- Added a **Quick Replies** sound, separate from task completion: agents pass
+  `"reply": true` for answers, follow-ups, and quick fixes (Ding 1 by default),
+  and keep `"completion": true` and the success jingle for finished tasks and
+  features. Quick replies start with the same speech-or-sound mode as Task
+  Completion.
 - Added an **Answers Needed** sound: agents pass `"question": true` to `speak`
   when they need your answer to continue, and a sound (Pending review 1 by
   default) plays before or instead of the question. The voice-feedback rule

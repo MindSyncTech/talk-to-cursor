@@ -121,7 +121,7 @@ const PROGRESS_GUIDANCE: Record<Config["agentSpeech"]["progressUpdates"], string
 export function speakToolDescription(config: Config): string {
   const parts = [
     "Speak text aloud using text-to-speech. Speech is queued and the tool returns immediately, so keep working or write the final chat response while it plays.",
-    "Pass completion: true on the final task-completion summary, or question: true when you need the user's answer to continue. After final completion speech, call the listen tool; it waits for playback before Auto-Listen starts.",
+    "On the final message, pass completion: true when a task or feature is finished, or reply: true when you answered a question, followed up, or made a quick fix. Pass question: true when you need the user's answer to continue. After final speech, call the listen tool; it waits for playback before Auto-Listen starts.",
     "State task-start actions and factual answers explicitly; keep routine completion updates concise. The user's Spoken Response Detail setting applies at playback.",
   ];
   if (config.agentSpeech.instantFeedback) {

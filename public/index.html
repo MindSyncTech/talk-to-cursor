@@ -274,7 +274,21 @@
     }
 
     .card-row > .card {
+      display: flex;
+      flex-direction: column;
       margin-bottom: 0;
+    }
+
+    .card-row > .card > .btn-row:last-child {
+      margin-top: auto;
+    }
+
+    .card-row > .card > .card-title {
+      min-height: 26px;
+    }
+
+    .card-row > .card > :not(.card-title):not(.btn-row) {
+      margin-bottom: 24px;
     }
 
     @media (max-width: 820px) {
@@ -1721,7 +1735,22 @@
             <button class="btn-secondary" id="completionSoundPreviewBtn" type="button"><span aria-hidden="true">&#9654;</span> Preview</button>
           </div>
         </div>
-        <div class="help-text">On macOS, a sound can replace or precede the final spoken summary. "Play a sound only" still plays when Spoken Responses are off. Progress updates are still spoken.</div>
+        <div class="help-text">On macOS, plays when a task or feature is finished. "Play a sound only" still plays when Spoken Responses are off. Progress updates are still spoken.</div>
+      </div>
+      <div class="form-group">
+        <label for="replyFeedbackMode">Quick Replies</label>
+        <select id="replyFeedbackMode">
+          <option value="speech">Speak the reply</option>
+          <option value="sound">Play a sound only</option>
+          <option value="both">Play a sound, then speak the reply</option>
+        </select>
+        <div id="replySoundRow" style="display: none; margin-top: 10px;">
+          <div class="cloud-voice-picker">
+            <select id="replySound" data-sound-options aria-label="Quick reply sound"></select>
+            <button class="btn-secondary" type="button" data-sound-preview="replySound"><span aria-hidden="true">&#9654;</span> Preview</button>
+          </div>
+        </div>
+        <div class="help-text">On macOS, plays when the agent answers a question, follows up, or makes a quick fix, so it sounds different from a finished task.</div>
       </div>
       <div class="form-group">
         <label for="questionFeedbackMode">Answers Needed</label>
@@ -1846,6 +1875,10 @@
         </div>
       </div>
 
+      <div id="voicesList" style="display: none;">
+        <div class="voices-grid" id="voicesGrid"></div>
+      </div>
+
       <div class="btn-row">
         <button class="btn-secondary" id="loadVoicesBtn" type="button">
           Load My Voices
@@ -1853,10 +1886,6 @@
         <button class="btn-primary" id="saveVoiceBtn" type="button">
           Save Voice
         </button>
-      </div>
-
-      <div id="voicesList" style="display: none;">
-        <div class="voices-grid" id="voicesGrid"></div>
       </div>
     </div>
     </div>
@@ -3326,6 +3355,34 @@
     questionFeedbackMode.addEventListener('change', saveQuestionFeedback);
     questionSound.addEventListener('change', saveQuestionFeedback);
 
+    const replyFeedbackMode = document.getElementById('replyFeedbackMode');
+    const replySoundRow = document.getElementById('replySoundRow');
+    const replySound = document.getElementById('replySound');
+
+    function updateReplySoundRow() {
+      replySoundRow.style.display = replyFeedbackMode.value === 'speech' ? 'none' : 'block';
+    }
+
+    async function saveReplyFeedback() {
+      updateReplySoundRow();
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            replyFeedback: { mode: replyFeedbackMode.value, sound: replySound.value },
+          }),
+        });
+        const data = await res.json();
+        showToast(data.success ? 'Quick reply feedback saved' : 'Could not save quick reply feedback', data.success ? 'success' : 'error');
+      } catch (error) {
+        showToast('Could not save quick reply feedback', 'error');
+      }
+    }
+
+    replyFeedbackMode.addEventListener('change', saveReplyFeedback);
+    replySound.addEventListener('change', saveReplyFeedback);
+
     const instantFeedback = document.getElementById('instantFeedback');
     const promptHookRow = document.getElementById('promptHookRow');
     const progressUpdates = document.getElementById('progressUpdates');
@@ -3854,6 +3911,9 @@
         completionSound.value = data.completionFeedback?.sound || 'ttc-success-jingle-1';
         questionFeedbackMode.value = data.questionFeedback?.mode || 'both';
         questionSound.value = data.questionFeedback?.sound || 'ttc-pending-review-1';
+        replyFeedbackMode.value = data.replyFeedback?.mode || 'speech';
+        replySound.value = data.replyFeedback?.sound || 'ttc-ding-1';
+        updateReplySoundRow();
         updateQuestionSoundRow();
         updateCompletionSoundRow();
         instantFeedback.checked = data.agentSpeech?.instantFeedback !== false;

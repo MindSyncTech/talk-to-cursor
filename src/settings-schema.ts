@@ -256,6 +256,16 @@ export const DEFAULT_COMPLETION_FEEDBACK = {
   sound: "ttc-success-jingle-1",
 } as const;
 
+export const replyFeedbackSchema = z.object({
+  mode: z.enum(["speech", "sound", "both"]).default("speech"),
+  sound: z.enum(COMPLETION_SOUNDS).default("ttc-ding-1"),
+});
+
+export const DEFAULT_REPLY_FEEDBACK = {
+  mode: "speech",
+  sound: "ttc-ding-1",
+} as const;
+
 export const DEFAULT_QUESTION_FEEDBACK = {
   mode: "both",
   sound: "ttc-pending-review-1",
@@ -289,6 +299,7 @@ export const settingsSchema = z
     autoSubmit: autoSubmitSettingsSchema,
     voiceInput: voiceInputSettingsSchema,
     completionFeedback: completionFeedbackSchema.default(DEFAULT_COMPLETION_FEEDBACK),
+    replyFeedback: replyFeedbackSchema.default(DEFAULT_REPLY_FEEDBACK),
     questionFeedback: questionFeedbackSchema.default(DEFAULT_QUESTION_FEEDBACK),
     agentSpeech: agentSpeechSchema.default(DEFAULT_AGENT_SPEECH),
     autoListen: z.boolean(),
@@ -304,6 +315,7 @@ export const settingsUpdateSchema = settingsSchema
     autoSubmit: autoSubmitSettingsSchema.partial(),
     voiceInput: voiceInputSettingsSchema.partial(),
     completionFeedback: completionFeedbackSchema.partial(),
+    replyFeedback: replyFeedbackSchema.partial(),
     questionFeedback: questionFeedbackSchema.partial(),
     agentSpeech: agentSpeechSchema.partial(),
   })
