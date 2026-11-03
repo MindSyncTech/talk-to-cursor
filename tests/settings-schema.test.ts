@@ -111,6 +111,13 @@ describe("settingsUpdateSchema", () => {
     expect(() => settingsUpdateSchema.parse({ autoSubmit: { minWords: 0 } })).toThrow();
   });
 
+  it("gives Cloud its own natural voice style, separate from ElevenLabs", () => {
+    const { cloudStyle: _omitted, ...legacy } = DEFAULT_CONFIG.voiceSettings;
+    const parsed = settingsSchema.parse({ ...DEFAULT_CONFIG, voiceSettings: legacy });
+    expect(parsed.voiceSettings.cloudStyle).toBe(0.5);
+    expect(parsed.voiceSettings.style).toBe(0);
+  });
+
   it("accepts when the send sound plays, rejecting unknown triggers", () => {
     for (const sendSoundTrigger of ["both", "sendIt", "autoSubmit"]) {
       expect(settingsUpdateSchema.parse({ autoSubmit: { sendSoundTrigger } })).toEqual({

@@ -83,6 +83,7 @@ export const voiceSettingsSchema = z.object({
   stability: z.number().finite().min(0).max(1),
   similarityBoost: z.number().finite().min(0).max(1),
   style: z.number().finite().min(0).max(1),
+  cloudStyle: z.number().finite().min(0).max(1).default(0.5),
 });
 
 export const voiceboxSettingsSchema = z.object({

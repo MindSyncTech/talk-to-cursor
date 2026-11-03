@@ -60,7 +60,7 @@ function requestInit(text: string, config: Config, token: string, signal: AbortS
       model: config.cloud.model,
       voiceSettings: {
         speed: config.voiceSettings.cloudSpeed,
-        style: config.voiceSettings.style,
+        style: config.voiceSettings.cloudStyle,
       },
     }),
     signal,

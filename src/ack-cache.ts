@@ -42,7 +42,7 @@ export function voiceFingerprint(config: Config): string | null {
       config.cloud.voiceId,
       config.cloud.model,
       voiceSettings.cloudSpeed,
-      voiceSettings.style,
+      voiceSettings.cloudStyle,
     ]);
   }
   return null;

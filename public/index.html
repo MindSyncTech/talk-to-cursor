@@ -4082,7 +4082,7 @@
           speedValue.textContent = parseFloat(speedSlider.value).toFixed(2);
           cloudSpeedSlider.value = vs.cloudSpeed ?? 1.2;
           cloudSpeedValue.textContent = `${parseFloat(cloudSpeedSlider.value).toFixed(2)}x`;
-          cloudStyleSlider.value = vs.style ?? 0.5;
+          cloudStyleSlider.value = vs.cloudStyle ?? 0.5;
           cloudStyleValue.textContent = cloudStyleLabel(parseFloat(cloudStyleSlider.value));
           stabilitySlider.value = vs.stability ?? 0.5;
           stabilityValue.textContent = parseFloat(stabilitySlider.value).toFixed(2);
@@ -4710,7 +4710,7 @@
           cloud,
           voiceSettings: {
             cloudSpeed: parseFloat(cloudSpeedSlider.value),
-            style: parseFloat(cloudStyleSlider.value),
+            cloudStyle: parseFloat(cloudStyleSlider.value),
           },
         }),
       });

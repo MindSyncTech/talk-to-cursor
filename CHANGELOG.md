@@ -13,6 +13,9 @@
   Auto-Submit, or both.
 - The Activation Chime can now use a different sound instead of the built-in
   two-note chime.
+- Cloud voices sound more natural by default: Cloud's **Voice Style** is now
+  its own setting, defaulting to 0.5 (Natural) instead of sharing ElevenLabs'
+  style of 0, which asked for a flat, neutral delivery.
 - Auto-Submit now requires a minimum number of words (2 by default) instead
   of 15 characters, so short questions like “how much HTML?” are sent.
   **Minimum Words** replaces **Min Text Length** in Settings.

@@ -458,9 +458,10 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `model` | TTS model | `eleven_flash_v2_5` |
 | `voiceSettings.speed` | ElevenLabs speech speed (0.7-1.2) | 1.0 |
 | `voiceSettings.cloudSpeed` | Cloud speech speed (0.7-2.0) | 1.2 |
+| `voiceSettings.cloudStyle` | Cloud voice style, from steady (0) to expressive (1) | 0.5 |
 | `voiceSettings.stability` | Voice stability (0-1) | 0.5 |
 | `voiceSettings.similarityBoost` | Voice similarity (0-1) | 0.75 |
-| `voiceSettings.style` | Style exaggeration (0-1) | 0.0 |
+| `voiceSettings.style` | ElevenLabs style exaggeration (0-1) | 0.0 |
 | `voicebox.baseUrl` | Local Voicebox API URL | `http://127.0.0.1:17493` |
 | `voicebox.profile` | Voicebox profile name or ID | default binding |
 | `voicebox.personality` | Use the Voicebox profile personality | false |

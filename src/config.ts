@@ -100,6 +100,7 @@ export const DEFAULT_VOICE_SETTINGS: Config["voiceSettings"] = {
   stability: 0.5,
   similarityBoost: 0.75,
   style: 0.0,
+  cloudStyle: 0.5,
 };
 
 export const DEFAULT_VOICEBOX: Config["voicebox"] = {
