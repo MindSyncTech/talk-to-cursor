@@ -69,7 +69,7 @@ Completely quit and restart the coding host so it reloads the MCP server.
 
 ## Step 5: Try Voice-to-Voice Coding
 
-1. Install and open [Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended) or [Handy](https://github.com/cjpais/Handy) (free and private), or skip this and use **Built-in** on-device transcription
+1. Install and open [Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended), [FluidVoice](https://fluidvoice.com/) or [Handy](https://github.com/cjpais/Handy) (free and local), or skip this and use **Built-in** on-device transcription
 2. Select it under **Voice Input Provider** in the TalkToCursor settings UI
 3. Install PortAudio with `brew install portaudio` and turn on **Enable Voice Input**
 4. Click **Install & Start Background Helper** under **Cursor Hands-Free Background Helper**. It creates

@@ -9,8 +9,9 @@ A voice interface for Cursor and compatible MCP coding assistants. Your agent sp
 - **Text-to-Speech Providers** - Choose managed TalkToCursor Cloud, your own ElevenLabs key, or local Voicebox
 - **Settings UI** - Connect providers, choose voices, and manage speech and hands-free settings
 - **Spoken Response Detail** - Choose minimal “Done,” brief summaries, or detailed spoken updates
+- **Task Completion Sound** - On macOS, play a short sound instead of, or before, the final spoken summary
 - **Smart Auto-Submit** - Distinguish finished prompts from thinking pauses with a small local audio model
-- **Local Wake Phrases** - Start Wispr or Handy with a selectable phrase such as "Hey Cursor"
+- **Local Wake Phrases** - Start voice input with a selectable phrase such as "Hey Cursor"
 - **Provider-Aware Controls** - Cloud voice selection, ElevenLabs presets and tuning, and Voicebox profiles
 - **Free Cloud Settings Sync** - Pair devices and manually upload/download safe speech and hands-free preferences without a subscription
 - **Paid Cloud Profiles & Analytics** - Save up to 10 named project/host profiles and review daily or per-device managed TTS usage for up to 12 billing periods
@@ -43,6 +44,7 @@ TalkToCursor handles text-to-speech responses from the connected coding agent. C
 For optional speech-to-text and the hands-free conversational loop:
 
 - **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended for easiest setup)** - Polished voice dictation with minimal configuration.
+- **[FluidVoice](https://fluidvoice.com/) (free and local)** - Open-source on-device dictation for macOS 15 or later.
 - **[Handy](https://github.com/cjpais/Handy) (free, private, and local)** - Open-source transcription using Whisper or Parakeet.
 
 ## Installation
@@ -175,7 +177,8 @@ For a source install, use `npm run settings`.
 
 Then open http://localhost:3847 in your browser and:
 1. Select **TalkToCursor Cloud**, **ElevenLabs**, or **Voicebox** under Text-to-Speech Provider
-2. Connect your Cloud account, save an ElevenLabs key, or connect local Voicebox
+2. Connect your Cloud account on the **Cloud** page, save an ElevenLabs key, or connect local Voicebox.
+   A free Cloud account can sync your preferences with any speech provider.
 3. (Optional) Enable Auto-Submit if you want hands-free dictation
 
 ### 6. Choose a voice input provider (optional)
@@ -183,14 +186,15 @@ Then open http://localhost:3847 in your browser and:
 For the full hands-free conversational loop, choose one of these providers:
 
 - **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended)** — A polished voice-to-text experience with minimal setup.
+- **[FluidVoice](https://fluidvoice.com/) (free & local)** — Open-source on-device dictation for macOS 15 or later. Keep its shortcut in toggle mode and enter the same shortcut in TalkToCursor (default Right Option).
 - **[Handy](https://github.com/cjpais/Handy) (free & private)** — Open-source transcription that runs locally using Whisper or Parakeet, must be installed manually.
 - **Built-in (free & private)** — On-device transcription inside the Background Helper. **Parakeet** (the default) is the most accurate and transcribes when you finish (about 480 MB model); **Streaming** transcribes while you speak and is less accurate (about 100 MB). Models download once on first use.
 
-For Wispr Flow or Handy, install and launch your provider first. Then select a provider under **Voice Input Provider**, select it under **Voice Input Provider**,
+For Wispr Flow, FluidVoice, or Handy, install and launch the app first. Then select it under **Voice Input Provider**,
 turn on **Enable Voice Input**, then click **Install & Start** under
 **Cursor Hands-Free Background Helper**. The helper runs invisibly and starts at login.
 
-After each task, your assistant speaks the result, starts the selected provider for your next command, and submits the transcription. You can also enable a local wake phrase to trigger Wispr or Handy at any time. The first wake-phrase launch downloads an English keyword model of about 20 MB. The automatic loop currently requires macOS and is designed for Cursor; Codex and Antigravity users may prefer native voice input.
+After each task, your assistant speaks the result, starts the selected provider for your next command, and submits the transcription. You can also enable a local wake phrase to start voice input at any time. The first wake-phrase launch downloads an English keyword model of about 20 MB. The automatic loop currently requires macOS and is designed for Cursor; Codex and Antigravity users may prefer native voice input.
 
 ### 7. Restart your coding host
 
@@ -244,7 +248,7 @@ talking over it.
 
 ## Auto-Submit (Optional)
 
-For completely hands-free dictation with Wispr Flow or Handy:
+For completely hands-free dictation with any voice input provider:
 
 1. Enable "Auto-Submit" in the settings UI
 2. Choose **Fixed Pause** or **Smart Turn**
@@ -263,8 +267,9 @@ sounds unfinished, and submits quickly when it sounds complete. The verified
 application data. You can also say **"send it"** to finish immediately; the
 helper removes that trailing command before submission. The "send it" command
 has its own switch and works even with Auto-Submit off, so you can submit only
-when you say it. With built-in voice input, you can also say "send it" after
-the text is typed in; the helper keeps listening for just that phrase until the
+when you say it. You can also say "send it" after the text is typed in, with
+built-in voice input, Wispr Flow, FluidVoice, or Handy, including when you start
+Wispr or FluidVoice with their own shortcut. The helper keeps listening for just that phrase until the
 text is sent, you press Enter or Escape, move to another field, or leave Cursor.
 
 The helper monitors the text field and automatically presses Enter when

@@ -8,6 +8,7 @@ microphone can stay open while the agent speaks (barge-in).
 
 import collections
 import queue
+import sys
 import threading
 import time
 
@@ -16,6 +17,45 @@ import numpy as np
 SAMPLE_RATE = 24000
 FRAME_SAMPLES = 240  # 10 ms, required by the WebRTC audio processing module
 PREROLL_SECONDS = 2.0
+
+_input_channel = 1
+
+
+def configure_input_channel(channel):
+    """Choose which channel (1-based) of the default input device to record."""
+    global _input_channel
+    try:
+        _input_channel = max(1, int(channel))
+    except (TypeError, ValueError):
+        _input_channel = 1
+    if _input_channel == 1:
+        return 1
+    if sys.platform != "darwin":
+        print("[audio] Choosing an input channel is supported on macOS only; using channel 1")
+        _input_channel = 1
+        return 1
+    try:
+        import sounddevice as sd
+
+        available = int(sd.query_devices(kind="input")["max_input_channels"])
+    except Exception:
+        return _input_channel
+    if _input_channel > available:
+        print(
+            f"[audio] Input channel {_input_channel} isn't available on this device "
+            f"({available} channels); using channel 1"
+        )
+        _input_channel = 1
+    return _input_channel
+
+
+def input_stream_settings():
+    """Extra sounddevice arguments that record the configured input channel."""
+    if _input_channel <= 1:
+        return {}
+    import sounddevice as sd
+
+    return {"extra_settings": sd.CoreAudioSettings(channel_map=[_input_channel - 1])}
 
 
 def resample_frame(samples, target_rate):
@@ -27,14 +67,17 @@ def resample_frame(samples, target_rate):
     return np.interp(positions, np.arange(len(samples)), samples).astype(np.float32)
 
 
-class _EchoCanceller:
-    def __init__(self):
+class _AudioProcessor:
+    """WebRTC echo cancellation and/or steady-noise suppression for 10 ms frames."""
+
+    def __init__(self, echo_cancellation=True, noise_suppression=True):
         from livekit import rtc
 
         self._rtc = rtc
+        self.echo_cancellation = echo_cancellation
         self._apm = rtc.AudioProcessingModule(
-            echo_cancellation=True,
-            noise_suppression=True,
+            echo_cancellation=echo_cancellation,
+            noise_suppression=noise_suppression,
             high_pass_filter=True,
             auto_gain_control=False,
         )
@@ -47,8 +90,9 @@ class _EchoCanceller:
 
     def process(self, capture, playback):
         rtc = self._rtc
-        reverse = rtc.AudioFrame(playback.tobytes(), SAMPLE_RATE, 1, FRAME_SAMPLES)
-        self._apm.process_reverse_stream(reverse)
+        if self.echo_cancellation:
+            reverse = rtc.AudioFrame(playback.tobytes(), SAMPLE_RATE, 1, FRAME_SAMPLES)
+            self._apm.process_reverse_stream(reverse)
         frame = rtc.AudioFrame(bytearray(capture.tobytes()), SAMPLE_RATE, 1, FRAME_SAMPLES)
         self._apm.process_stream(frame)
         return np.frombuffer(frame.data, dtype=np.int16).copy()
@@ -123,6 +167,7 @@ class DuplexAudio:
         echo_cancellation=True,
         input_gain_db=0.0,
         on_playback_event=None,
+        noise_suppression=True,
     ):
         self.input_enabled = input_enabled
         self._input_gain = 10 ** (float(input_gain_db) / 20) if input_gain_db else 1.0
@@ -142,20 +187,22 @@ class DuplexAudio:
         self._stream = None
         self._output_latency = 0.0
         self._aec = None
-        if input_enabled and echo_cancellation:
+        if input_enabled and (echo_cancellation or noise_suppression):
             try:
-                self._aec = _EchoCanceller()
+                self._aec = _AudioProcessor(echo_cancellation, noise_suppression)
             except Exception as error:
-                print(f"[audio] Echo cancellation unavailable: {error}")
+                print(f"[audio] Echo cancellation and noise suppression unavailable: {error}")
+        self._noise_suppression = self._aec is not None and noise_suppression
 
     @property
     def aec_active(self):
-        return self._aec is not None
+        return self._aec is not None and self._aec.echo_cancellation
 
     def start(self):
         import sounddevice as sd
 
         if self.input_enabled:
+            input_settings = input_stream_settings().get("extra_settings")
             self._stream = sd.Stream(
                 samplerate=SAMPLE_RATE,
                 blocksize=FRAME_SAMPLES,
@@ -163,6 +210,7 @@ class DuplexAudio:
                 dtype="int16",
                 latency="low",
                 callback=self._duplex_callback,
+                extra_settings=(input_settings, None) if input_settings else None,
             )
         else:
             self._stream = sd.OutputStream(
@@ -186,8 +234,9 @@ class DuplexAudio:
             threading.Thread(target=self._capture_loop, daemon=True).start()
         mode = "duplex" if self.input_enabled else "output"
         aec = "on" if self.aec_active else "off"
+        noise = ", noise suppression on" if self._aec is not None and self._noise_suppression else ""
         boost = f", input boost +{20 * np.log10(self._input_gain):.0f} dB" if self._input_gain != 1.0 else ""
-        print(f"[audio] Started {mode} audio (echo cancellation {aec}{boost})")
+        print(f"[audio] Started {mode} audio (echo cancellation {aec}{noise}{boost})")
 
     def stop(self):
         if self._stream is not None:
@@ -346,7 +395,7 @@ class DuplexAudio:
                 try:
                     capture = self._aec.process(capture, playback)
                 except Exception as error:
-                    print(f"[audio] Echo cancellation failed; continuing without it: {error}")
+                    print(f"[audio] Audio processing failed; continuing without it: {error}")
                     self._aec = None
             samples = capture.astype(np.float32) / 32768.0
             level = (

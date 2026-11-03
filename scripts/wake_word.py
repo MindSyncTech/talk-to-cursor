@@ -232,11 +232,14 @@ def listen_for_wake_phrase(
     def open_microphone():
         if audio_source is not None:
             return audio_source.open_reader(sample_rate=sample_rate)
+        from audio_io import input_stream_settings
+
         return sd.InputStream(
             channels=1,
             dtype="float32",
             samplerate=sample_rate,
             blocksize=samples_per_read,
+            **input_stream_settings(),
         )
 
     detector = StreamingKeywordDetector(

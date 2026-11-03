@@ -62,9 +62,12 @@ class SilenceDetector:
             print(f"[silence-detector] Threshold: {self.silence_threshold:.4f}, Silence duration: {self.silence_duration}s")
         
         # Open the microphone stream
-        with sd.InputStream(samplerate=self.sample_rate, 
-                           channels=1, 
-                           blocksize=self.chunk_size) as stream:
+        from audio_io import input_stream_settings
+
+        with sd.InputStream(samplerate=self.sample_rate,
+                           channels=1,
+                           blocksize=self.chunk_size,
+                           **input_stream_settings()) as stream:
             
             while self.state != State.DONE:
                 # Read audio chunk

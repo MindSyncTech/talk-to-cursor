@@ -170,7 +170,8 @@ npx -y --prefer-online --package talktocursor@latest talktocursor-settings
 Open **http://localhost:3847** in your browser, then:
 
 1. Select **ElevenLabs**, **Voicebox**, or **TalkToCursor Cloud** under Text-to-Speech Provider
-2. Connect your Cloud account, save an ElevenLabs key, or connect local Voicebox
+2. Connect your Cloud account on the **Cloud** page, save an ElevenLabs key, or connect local Voicebox.
+   A free Cloud account can sync your preferences with any speech provider.
 3. (Optional) Enable Auto-Listen for the hands-free voice loop
 
 For a global install, use `talktocursor-settings`. For a source install, use
@@ -222,6 +223,11 @@ Fully quit and reopen Cursor, Codex, Antigravity, or your other MCP host so it r
 
 In Claude Code, use `claude mcp list`. In Codex, use `codex mcp list`. In Antigravity, use the MCP management panel.
 
+**Cursor approval prompts:** Cursor's Auto-review sometimes mistakes a `speak` call
+for an unrequested notification and asks you to approve it. When that prompt
+appears, click **Always Run** to add the tool to your allowlist, and do the same
+for `listen`. Both tools only play audio or start dictation on your own machine.
+
 ---
 
 ## Configure Automatic Voice Feedback
@@ -255,8 +261,9 @@ Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 
 Before sending every final response, call the `speak` tool in the same turn
-with a concise completion summary. Do this even if a task-start update was
-already spoken.
+with a concise completion summary and `"completion": true`:
+`{ "text": "...", "completion": true }`. Do this even if a task-start update
+was already spoken.
 
 Immediately after completion speech, call the `listen` tool. It safely does
 nothing when Auto-Listen is disabled. Never call `listen` after task-start or
@@ -273,6 +280,7 @@ Add to the global `~/.claude/CLAUDE.md` or a project’s `CLAUDE.md`:
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
 Pass the words in the `text` argument: `{ "text": "..." }`.
+For the completion update, also pass `"completion": true`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
@@ -287,6 +295,7 @@ Add to the applicable global `~/.codex/AGENTS.md` or project `AGENTS.md`:
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
 Pass the words in the `text` argument: `{ "text": "..." }`.
+For the completion update, also pass `"completion": true`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
@@ -301,6 +310,7 @@ Add to the global `~/.gemini/GEMINI.md`, or create an Always On Workspace Rule f
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
 Pass the words in the `text` argument: `{ "text": "..." }`.
+For the completion update, also pass `"completion": true`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
@@ -354,6 +364,7 @@ repository `.venv`.
 Choose a voice input provider:
 
 - **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended):** Install Wispr Flow and configure its dictation hotkey.
+- **[FluidVoice](https://fluidvoice.com/) (free & local):** Install FluidVoice (macOS 15 or later), keep its dictation shortcut in toggle mode rather than press-and-hold, and enter the same shortcut as the FluidVoice Shortcut (or click **Use FluidVoice's**). FluidVoice's default is Right Option (`right_option`).
 - **[Handy](https://github.com/cjpais/Handy) (free & private):** Install and launch Handy, download a transcription model, and grant Microphone, Accessibility, and Input Monitoring permissions.
 - **Built-in (free & private):** Nothing else to install. Choose **Parakeet** (the default, about 480 MB, most accurate) or **Streaming** (about 100 MB, transcribes while you speak). Until the model finishes downloading, the hotkey and wake phrase play an error sound instead of starting a turn. The model downloads and is checksum-verified on first use.
 
@@ -361,7 +372,7 @@ Then:
 
 1. Select your provider under **Voice Input Provider** in the settings UI
 2. Turn on **Enable Voice Input**
-3. For Wispr Flow, configure the hotkey to match your Wispr settings
+3. For Wispr Flow or FluidVoice, set the Wispr or FluidVoice Shortcut to match the app's dictation shortcut. TalkToCursor presses it for you; the **Start Listening Hotkey** is the key you press, and the two must be different.
 4. For Handy, leave the command blank for auto-detection or enter its executable path
 5. Install PortAudio with `brew install portaudio` (the Python packages are
    already listed in `requirements.txt`)
@@ -413,6 +424,8 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `ttsEnabled` | Allow spoken task updates and completions | `true` |
 | `pauseMediaDuringSpeech` | Pause Apple Music or Spotify during speech on macOS | `false` |
 | `spokenResponseDetail` | Spoken update length (`minimal`, `brief`, or `detailed`) | `brief` |
+| `completionFeedback.mode` | Final summary on macOS (`speech`, `sound`, or `both`) | `speech` |
+| `completionFeedback.sound` | macOS system sound for task completion | `Hero` |
 | `ttsProvider` | Text-to-speech provider (`elevenlabs`, `voicebox`, or `cloud`) | `cloud` |
 | `apiKey` | ElevenLabs API key | required for ElevenLabs |
 | `voiceId` | ElevenLabs voice ID | Rachel |
@@ -438,11 +451,13 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `autoSubmit.smartTextDelay` | Text stability delay after Smart Turn | `0.2` |
 | `autoSubmit.submitCommandEnabled` | Enable the spoken `send it` command | `true` |
 | `voiceInput.enabled` | Automatic voice input loop | false |
-| `voiceInput.provider` | Voice input provider (`wispr` or `handy`) | `wispr` |
+| `voiceInput.provider` | Voice input provider (`builtin`, `wispr`, `fluidvoice`, or `handy`) | `wispr` |
 | `voiceInput.wisprHotkey` | Wispr Flow recording shortcut | `shift+ctrl` |
+| `voiceInput.fluidVoiceHotkey` | FluidVoice dictation shortcut | `right_option` |
+| `voiceInput.inputChannel` | Input device channel to record (macOS); stays on this Mac | `1` |
 | `voiceInput.handyCommand` | Optional Handy executable path | auto-detect |
 | `voiceInput.wakeWordEnabled` | Always listen locally for a wake phrase | `false` |
-| `voiceInput.wakePhrase` | Phrase that starts Wispr or Handy | `hey cursor` |
+| `voiceInput.wakePhrase` | Phrase that starts voice input | `hey cursor` |
 | `voiceInput.wakeSensitivity` | Wake-phrase detection sensitivity (0-1) | `0.5` |
 | `voiceInput.wakeChime` | Play a sound before dictation starts | `true` |
 
@@ -468,6 +483,10 @@ voice or model.
 - Open settings: `talktocursor-settings` (or `npm run settings` from source)
 - Enter your API key and save
 - Restart the coding host
+
+### Cursor asks to approve `speak` or `listen`
+- Cursor's Auto-review can occasionally flag these calls as unrequested notifications
+- Click **Always Run** on the prompt to allowlist the tool so it isn't asked again
 
 ### No audio output
 - Check system volume and speaker output

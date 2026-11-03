@@ -4,7 +4,7 @@ Auto-Submit and Voice Input Loop for TalkToCursor
 
 Combines two features:
 1. Auto-submit: Detects when text appears in the focused field and auto-presses Enter
-2. Voice input loop: Triggers Wispr Flow or Handy after TTS and stops after silence
+2. Voice input loop: Triggers Wispr Flow, FluidVoice, or Handy after TTS and stops after silence
 
 How it works:
   - Monitors the focused text field via Accessibility API for auto-submit
@@ -147,6 +147,7 @@ def load_config():
             'silenceThreshold': 0.005,
             'silenceDuration': 2.0,
             'wisprHotkey': 'shift+ctrl',
+            'fluidVoiceHotkey': 'right_option',
             'handyCommand': '',
             'manualTriggerHotkey': 'ctrl+shift+l',
             'wakeWordEnabled': False,
@@ -157,6 +158,8 @@ def load_config():
             'builtinModel': 'parakeet',
             'echoCancellation': True,
             'inputGainDb': 0,
+            'inputChannel': 1,
+            'noiseSuppression': True,
         },
     }
     try:
@@ -190,6 +193,7 @@ VOICE_INPUT_PROVIDER = config['voiceInput']['provider']
 SILENCE_THRESHOLD = config['voiceInput']['silenceThreshold']
 SILENCE_DURATION = config['voiceInput']['silenceDuration']
 WISPR_HOTKEY = config['voiceInput']['wisprHotkey']
+FLUIDVOICE_HOTKEY = config['voiceInput']['fluidVoiceHotkey']
 HANDY_COMMAND = config['voiceInput']['handyCommand']
 MANUAL_TRIGGER_HOTKEY = config['voiceInput']['manualTriggerHotkey']
 WAKE_WORD_ENABLED = config['voiceInput']['wakeWordEnabled']
@@ -200,6 +204,8 @@ BARGE_IN = config['voiceInput']['bargeIn']
 BUILTIN_MODEL = 'streaming' if config['voiceInput']['builtinModel'] == 'streaming' else 'parakeet'
 ECHO_CANCELLATION = config['voiceInput']['echoCancellation'] is not False
 INPUT_GAIN_DB = min(30.0, max(0.0, float(config['voiceInput']['inputGainDb'] or 0)))
+INPUT_CHANNEL = config['voiceInput'].get('inputChannel') or 1
+NOISE_SUPPRESSION = config['voiceInput'].get('noiseSuppression') is not False
 WAKE_CHIME_GUARD_SECONDS = 1.7
 HELPER_CHIME_GUARD_SECONDS = 0.3
 
@@ -214,6 +220,8 @@ monitoring = True
 voice_input_active = threading.Event()
 pending_send = None
 pending_send_element = None
+dictation_watch = None
+last_provider_toggle_at = 0.0
 builtin_stt_loading = threading.Event()
 voice_input_lock = threading.Lock()
 submit_action_lock = threading.Lock()
@@ -324,22 +332,25 @@ def remove_spoken_submit_phrase(observed_text=None):
     return True
 
 
+HOTKEY_ALIASES = {
+    'control': 'ctrl', 'option': 'alt', 'command': 'cmd',
+    'return': 'enter', 'escape': 'esc',
+    'right_shift': 'shift_r', 'right_ctrl': 'ctrl_r', 'right_control': 'ctrl_r',
+    'right_option': 'alt_r', 'right_alt': 'alt_r',
+    'right_cmd': 'cmd_r', 'right_command': 'cmd_r',
+}
+
+
 def parse_hotkey(hotkey_str):
-    """Parse a hotkey string like 'shift+ctrl' into Key objects."""
-    parts = hotkey_str.lower().split('+')
+    """Parse a hotkey string like 'shift+ctrl' or 'right_option' into Key objects."""
     keys = []
-    for part in parts:
-        part = part.strip()
-        if part == 'shift':
-            keys.append(Key.shift)
-        elif part == 'ctrl' or part == 'control':
-            keys.append(Key.ctrl)
-        elif part == 'alt' or part == 'option':
-            keys.append(Key.alt)
-        elif part == 'cmd' or part == 'command':
-            keys.append(Key.cmd)
-        elif len(part) == 1:
+    for part in hotkey_str.lower().split('+'):
+        part = part.strip().replace(' ', '_')
+        part = HOTKEY_ALIASES.get(part, part)
+        if len(part) == 1:
             keys.append(KeyCode.from_char(part))
+        elif isinstance(getattr(Key, part, None), Key):
+            keys.append(getattr(Key, part))
     return keys
 
 def press_hotkey(keys):
@@ -371,9 +382,17 @@ def toggle_voice_input():
     if VOICE_INPUT_PROVIDER == 'builtin':
         return True
 
+    global last_provider_toggle_at
+    last_provider_toggle_at = time.monotonic()
+
     if VOICE_INPUT_PROVIDER == 'wispr':
         print(f"[voice-input] Pressing {WISPR_HOTKEY} to toggle Wispr Flow...")
         press_hotkey(parse_hotkey(WISPR_HOTKEY))
+        return True
+
+    if VOICE_INPUT_PROVIDER == 'fluidvoice':
+        print(f"[voice-input] Pressing {FLUIDVOICE_HOTKEY} to toggle FluidVoice...")
+        press_hotkey(parse_hotkey(FLUIDVOICE_HOTKEY))
         return True
 
     if VOICE_INPUT_PROVIDER == 'handy':
@@ -533,7 +552,11 @@ def pending_send_open_reader():
         return microphone.open_reader(sample_rate=16000)
     import sounddevice as sd
 
-    return sd.InputStream(channels=1, dtype="float32", samplerate=16000, blocksize=1600)
+    from audio_io import input_stream_settings
+
+    return sd.InputStream(
+        channels=1, dtype="float32", samplerate=16000, blocksize=1600, **input_stream_settings()
+    )
 
 
 def send_pending_text(text):
@@ -581,6 +604,86 @@ def create_pending_send_listener():
     keys = Listener(on_press=on_key_press)
     keys.daemon = True
     keys.start()
+    return listener
+
+
+def arm_pending_send_for_dictation(text):
+    """Listen for the submit phrase after an external dictation app pastes text."""
+    global pending_send_element
+    if pending_send is None or managed_submit_pending.is_set():
+        return
+    if get_frontmost_app() != TARGET_APP:
+        return
+    _, had_phrase = strip_trailing_submit_phrase(text, SUBMIT_PHRASE)
+    if had_phrase:
+        return
+    pending_send_element = get_focused_element()
+    pending_send.arm(text)
+    print(f'[send-it] Dictation from {VOICE_INPUT_PROVIDER} arrived; say "{SUBMIT_PHRASE}" to send it')
+
+
+def create_dictation_watch():
+    from dictation_watch import DictationWatch
+
+    return DictationWatch(
+        snapshot=get_pasteboard_snapshot,
+        on_text=arm_pending_send_for_dictation,
+        settle_seconds=SMART_TEXT_DELAY,
+    )
+
+
+# Mac virtual key codes for the ANSI layout; Ctrl or Option can change the reported character.
+MAC_VK_CHARS = {
+    0: 'a', 1: 's', 2: 'd', 3: 'f', 4: 'h', 5: 'g', 6: 'z', 7: 'x', 8: 'c', 9: 'v',
+    11: 'b', 12: 'q', 13: 'w', 14: 'e', 15: 'r', 16: 'y', 17: 't', 18: '1', 19: '2',
+    20: '3', 21: '4', 22: '6', 23: '5', 24: '=', 25: '9', 26: '7', 27: '-', 28: '8',
+    29: '0', 30: ']', 31: 'o', 32: 'u', 33: '[', 34: 'i', 35: 'p', 37: 'l', 38: 'j',
+    39: "'", 40: 'k', 41: ';', 42: '\\', 43: ',', 44: '/', 45: 'n', 46: 'm', 47: '.',
+    50: '`',
+}
+
+
+def setup_provider_shortcut_watch():
+    """Notice when the user presses the dictation app's own shortcut directly."""
+    if VOICE_INPUT_PROVIDER == 'wispr':
+        hotkey = WISPR_HOTKEY
+    elif VOICE_INPUT_PROVIDER == 'fluidvoice':
+        hotkey = FLUIDVOICE_HOTKEY
+    else:
+        return None
+    wanted = parse_hotkey(hotkey)
+    if not wanted or dictation_watch is None:
+        return None
+
+    def identity(key):
+        if isinstance(key, KeyCode):
+            if key.vk in MAC_VK_CHARS:
+                return MAC_VK_CHARS[key.vk]
+            return key.char.lower() if key.char else key.vk
+        return key
+
+    target = {identity(key) for key in wanted}
+    held = set()
+
+    def on_press(key):
+        name = identity(key)
+        if name in held:
+            return
+        held.add(name)
+        if not target <= held:
+            return
+        if voice_input_active.is_set() or time.monotonic() - last_provider_toggle_at < 1.0:
+            return
+        if get_frontmost_app() != TARGET_APP:
+            return
+        dictation_watch.start(timeout=300)
+
+    def on_release(key):
+        held.discard(identity(key))
+
+    listener = Listener(on_press=on_press, on_release=on_release)
+    listener.daemon = True
+    listener.start()
     return listener
 
 
@@ -660,7 +763,11 @@ def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
         managed_input_observed_at = 0.0
 
         print(f"[voice-input] Starting {VOICE_INPUT_PROVIDER} voice input loop...")
+        if dictation_watch is not None:
+            dictation_watch.start(timeout=600)
         if not toggle_voice_input():
+            if dictation_watch is not None:
+                dictation_watch.cancel()
             return
         provider_active = True
 
@@ -677,6 +784,11 @@ def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
             if toggle_voice_input():
                 provider_active = False
             command_spoken = result.reason == TurnEndReason.SUBMIT_COMMAND
+            if dictation_watch is not None:
+                if command_spoken:
+                    dictation_watch.cancel()
+                else:
+                    dictation_watch.start(timeout=15)
             if (AUTO_SUBMIT_ENABLED and AUTO_SUBMIT_MODE == "smart") or command_spoken:
                 managed_submit_started = time.monotonic()
                 if command_spoken:
@@ -696,6 +808,8 @@ def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
                 )
         else:
             print("[voice-input] No speech detected; cancelling")
+            if dictation_watch is not None:
+                dictation_watch.cancel()
             if toggle_voice_input():
                 provider_active = False
     except Exception as error:
@@ -1170,7 +1284,7 @@ def setup_manual_trigger():
     
     # Convert hotkey string to format expected by GlobalHotKeys
     # e.g., "ctrl+shift+l" -> '<ctrl>+<shift>+l'
-    aliases = {'control': 'ctrl', 'option': 'alt', 'command': 'cmd', 'return': 'enter', 'escape': 'esc'}
+    aliases = HOTKEY_ALIASES
     parts = MANUAL_TRIGGER_HOTKEY.lower().split('+')
     formatted_parts = []
     for part in parts:
@@ -1233,13 +1347,15 @@ def run_wake_word_listener():
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 def audio_needs_input():
-    return VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin'
+    # Noise suppression needs the shared microphone, so every provider's wake phrase and turn detection hear filtered audio.
+    return VOICE_INPUT_ENABLED and (VOICE_INPUT_PROVIDER == 'builtin' or NOISE_SUPPRESSION)
 
 
 def barge_in_available():
     return bool(
         helper_audio is not None
         and helper_audio.input_enabled
+        and VOICE_INPUT_PROVIDER == 'builtin'
         # With echo cancellation turned off, the user is on headphones and playback cannot leak in.
         and (helper_audio.aec_active or not ECHO_CANCELLATION)
         and BARGE_IN
@@ -1258,6 +1374,7 @@ def start_helper_audio():
             echo_cancellation=ECHO_CANCELLATION,
             input_gain_db=INPUT_GAIN_DB,
             on_playback_event=on_playback_event,
+            noise_suppression=NOISE_SUPPRESSION,
         )
         audio.start()
         helper_audio = audio
@@ -1283,15 +1400,22 @@ def start_helper_ipc():
 
 
 def main():
-    global pending_send
+    global pending_send, dictation_watch
     managed_input_observer = None
     manual_hotkey = None
+    provider_shortcut_watch = None
 
+    from audio_io import configure_input_channel
+
+    configure_input_channel(INPUT_CHANNEL)
     start_helper_audio()
     start_helper_ipc()
-    if VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin' and SUBMIT_COMMAND_ENABLED:
+    if VOICE_INPUT_ENABLED and SUBMIT_COMMAND_ENABLED:
         try:
             pending_send = create_pending_send_listener()
+            if VOICE_INPUT_PROVIDER != 'builtin':
+                dictation_watch = create_dictation_watch()
+                provider_shortcut_watch = setup_provider_shortcut_watch()
         except Exception as error:
             print(f'[send-it] Listening for "{SUBMIT_PHRASE}" after dictation is unavailable: {error}')
     if VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin':
@@ -1332,7 +1456,9 @@ def main():
     Provider:        {VOICE_INPUT_PROVIDER}
     Silence thresh:  {SILENCE_THRESHOLD}
     Silence duration: {SILENCE_DURATION}s
+    Input channel:   {INPUT_CHANNEL}
     Wispr hotkey:    {WISPR_HOTKEY if VOICE_INPUT_PROVIDER == 'wispr' else 'n/a'}
+    FluidVoice hotkey: {FLUIDVOICE_HOTKEY if VOICE_INPUT_PROVIDER == 'fluidvoice' else 'n/a'}
     Handy command:   {HANDY_COMMAND or 'auto-detect'}
     Manual trigger:  {MANUAL_TRIGGER_HOTKEY}
 
@@ -1381,6 +1507,8 @@ def main():
             managed_input_observer.stop()
         if manual_hotkey is not None:
             manual_hotkey.stop()
+        if provider_shortcut_watch is not None:
+            provider_shortcut_watch.stop()
         if helper_ipc is not None:
             helper_ipc.stop()
         if helper_audio is not None:

@@ -21,6 +21,7 @@ import {
 import { applyPronunciation } from "./pronunciation.js";
 import { checkForUpdates } from "./update-checker.js";
 import { HelperIpcClient, type HelperMessage } from "./helper-ipc.js";
+import { completionFeedbackFor, playCompletionSound } from "./completion-sound.js";
 // Create server instance
 const server = new McpServer({
   name: PACKAGE_NAME,
@@ -44,6 +45,7 @@ helper.on("disconnected", () => {
 // TTS queue to prevent overlapping audio
 interface TTSQueueItem {
   text: string;
+  completion: boolean;
   resolve: (value: any) => void;
   reject: (error: any) => void;
 }
@@ -115,6 +117,21 @@ async function processTTSQueue() {
 
     try {
       const config = getEffectiveConfig();
+      const feedback = completionFeedbackFor(config, item.completion);
+      if (feedback !== "speech") {
+        await playCompletionSound(config.completionFeedback.sound);
+      }
+      if (feedback === "sound" || (feedback === "both" && !config.ttsEnabled)) {
+        writePrivateJson(TTS_COMPLETE_PATH, {
+          timestamp: new Date().toISOString(),
+          completed: true,
+        });
+        console.error(`[TTS] Played the ${config.completionFeedback.sound} completion sound`);
+        item.resolve({
+          content: [{ type: "text", text: "Played the completion sound." }],
+        });
+        continue;
+      }
       if (!config.ttsEnabled) {
         writePrivateJson(TTS_COMPLETE_PATH, {
           timestamp: new Date().toISOString(),
@@ -218,9 +235,9 @@ async function waitForSpeechIdle(): Promise<void> {
   }
 }
 
-function queueTTS(text: string): Promise<any> {
+function queueTTS(text: string, completion = false): Promise<any> {
   return new Promise((resolve, reject) => {
-    ttsQueue.push({ text, resolve, reject });
+    ttsQueue.push({ text, completion, resolve, reject });
     processTTSQueue();
   });
 }
@@ -232,7 +249,7 @@ server.registerTool(
   "speak",
   {
     description:
-      "Speak text aloud using text-to-speech. Speech is queued and the tool returns immediately, so keep working or write the final chat response while it plays. After final completion speech, call the listen tool; it waits for playback before Auto-Listen starts. State task-start actions and factual answers explicitly; keep routine completion updates concise. The user's Spoken Response Detail setting applies at playback.",
+      "Speak text aloud using text-to-speech. Speech is queued and the tool returns immediately, so keep working or write the final chat response while it plays. Pass completion: true on the final task-completion summary. After final completion speech, call the listen tool; it waits for playback before Auto-Listen starts. State task-start actions and factual answers explicitly; keep routine completion updates concise. The user's Spoken Response Detail setting applies at playback.",
     inputSchema: {
       text: z
         .string()
@@ -241,6 +258,12 @@ server.registerTool(
       message: z.string().optional().describe("Alias for text."),
       content: z.string().optional().describe("Alias for text."),
       speech: z.string().optional().describe("Alias for text."),
+      completion: z
+        .boolean()
+        .optional()
+        .describe(
+          "Set true for the final task-completion summary. The user may have chosen a completion sound instead of, or before, this speech.",
+        ),
       waitForPlayback: z
         .boolean()
         .optional()
@@ -265,7 +288,7 @@ server.registerTool(
     const previousError = lastSpeechError;
     lastSpeechError = null;
 
-    void queueTTS(text).then((result) => {
+    void queueTTS(text, args.completion === true).then((result) => {
       if (result?.isError) {
         lastSpeechError = result.content?.[0]?.text ?? "Speech failed";
         console.error(`[TTS] Background speech failed: ${lastSpeechError}`);

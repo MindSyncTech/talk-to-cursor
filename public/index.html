@@ -637,6 +637,16 @@
       margin-bottom: 14px;
     }
 
+    details.mic-settings {
+      margin: 0 0 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    details.mic-settings > :last-child {
+      margin-bottom: 0;
+    }
+
     .form-group {
       margin-bottom: 20px;
     }
@@ -717,6 +727,7 @@
     input[type="password"],
     #manualTriggerHotkey,
     #wisprHotkey,
+    #fluidVoiceHotkey,
     #voiceId {
       font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
       font-size: 13px;
@@ -725,6 +736,21 @@
     select:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+    }
+
+    .hotkey-field {
+      display: flex;
+      gap: 8px;
+    }
+
+    .hotkey-field input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .hotkey-field.recording input {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 25%, transparent);
     }
 
     input[type="number"] {
@@ -1496,6 +1522,8 @@
 
     .auto-submit-details {
       overflow: hidden;
+      padding-inline: 4px;
+      margin-inline: -4px;
       transition: max-height 0.3s ease, opacity 0.3s ease;
       max-height: 0;
       opacity: 0;
@@ -1679,13 +1707,39 @@
         </div>
       </div>
       <div class="form-group">
+        <label for="completionFeedbackMode">Task Completion</label>
+        <select id="completionFeedbackMode">
+          <option value="speech">Speak the summary</option>
+          <option value="sound">Play a sound only</option>
+          <option value="both">Play a sound, then speak the summary</option>
+        </select>
+        <div id="completionSoundRow" style="display: none; margin-top: 10px;">
+          <div class="cloud-voice-picker">
+            <select id="completionSound" aria-label="Completion sound">
+              <option value="Hero">Hero</option>
+              <option value="Glass">Glass</option>
+              <option value="Ping">Ping</option>
+              <option value="Pop">Pop</option>
+              <option value="Purr">Purr</option>
+              <option value="Tink">Tink</option>
+              <option value="Submarine">Submarine</option>
+              <option value="Bottle">Bottle</option>
+              <option value="Blow">Blow</option>
+              <option value="Funk">Funk</option>
+            </select>
+            <button class="btn-secondary" id="completionSoundPreviewBtn" type="button"><span aria-hidden="true">&#9654;</span> Preview</button>
+          </div>
+        </div>
+        <div class="help-text">On macOS, a sound can replace or precede the final spoken summary. "Play a sound only" still plays when Spoken Responses are off. Progress updates and questions are still spoken.</div>
+      </div>
+      <div class="form-group">
         <label for="spokenResponseDetail">Spoken Response Detail</label>
         <select id="spokenResponseDetail">
           <option value="minimal">Minimal — say “Done”</option>
           <option value="brief">Brief — summarize in 1–2 sentences</option>
           <option value="detailed">Detailed — speak the full update</option>
         </select>
-        <div class="help-text">Questions, failures, blockers, and required follow-ups remain detailed when necessary.</div>
+        <div class="help-text">Applies to progress updates and spoken summaries. Questions, failures, blockers, and required follow-ups remain detailed when necessary.</div>
       </div>
       <div class="form-group">
         <label for="ttsProvider">Provider</label>
@@ -1921,12 +1975,9 @@
       </div>
 
       <div id="cloudDisconnected">
+        <p class="help-text" style="margin: 0 0 14px;">Connect your Cloud account on the Cloud page to use Cloud voices.</p>
         <div class="btn-row">
-          <button class="btn-primary" id="connectCloudBtn" type="button">Connect Cloud Account</button>
-        </div>
-        <div class="env-notice" id="cloudPairingNotice" style="display: none;">
-          <strong>Device code:</strong> <code id="cloudUserCode"></code>
-          <span style="display: block; margin-top: 6px;">Approve this code in the Cloud dashboard. This window will finish connecting automatically.</span>
+          <button class="btn-primary" id="cloudConnectLinkBtn" type="button">Connect on Cloud page</button>
         </div>
       </div>
 
@@ -2005,13 +2056,9 @@
         </div>
 
         <div class="cloud-actions">
-          <button class="btn-secondary btn-quiet-danger" id="disconnectCloudBtn" type="button">Disconnect</button>
           <span class="cloud-actions-spacer"></span>
-          <button class="btn-secondary" id="downloadCloudSettingsBtn" type="button">Download</button>
-          <button class="btn-secondary" id="uploadCloudSettingsBtn" type="button">Upload</button>
           <button class="btn-primary" id="saveCloudBtn" type="button">Save</button>
         </div>
-        <div class="help-text cloud-actions-help">Upload and Download sync safe preferences explicitly, so another device never silently overwrites them. Credentials, local URLs, spoken text, and audio are never stored in Cloud.</div>
       </div>
 
       <details class="advanced">
@@ -2148,7 +2195,7 @@
     <div class="card" id="voiceInputCard">
       <div class="card-title">Cursor Voice Input Provider</div>
       <p class="card-intro">
-        For Cursor on macOS, choose Built-in for the lowest latency, Wispr Flow for most accurate dictation, or Handy for a separate offline app (local and private).
+        For Cursor on macOS, choose Built-in for the lowest latency or Wispr Flow for the most polished dictation. If you already use FluidVoice or Handy, pick it under Other dictation apps.
       </p>
 
       <div class="form-group">
@@ -2156,7 +2203,10 @@
         <select id="voiceInputProvider">
           <option value="builtin">Built-in (fastest, on-device)</option>
           <option value="wispr">Wispr Flow (polished dictation)</option>
-          <option value="handy">Handy (free &amp; private)</option>
+          <optgroup label="Other dictation apps">
+            <option value="fluidvoice">FluidVoice (free, on-device)</option>
+            <option value="handy">Handy (free &amp; private)</option>
+          </optgroup>
         </select>
       </div>
 
@@ -2168,6 +2218,12 @@
         <strong>Wispr Flow:</strong> Install it from
         <a href="https://ref.wisprflow.ai/talktocursor" target="_blank" rel="noopener noreferrer" style="color: var(--primary);">wisprflow.ai</a>
         and configure its dictation shortcut below.
+      </div>
+
+      <div class="env-notice" id="fluidVoiceProviderInfo" style="display: none; margin-top: 0; margin-bottom: 16px;">
+        <strong>FluidVoice:</strong> Install the free app from
+        <a href="https://fluidvoice.com/" target="_blank" rel="noopener noreferrer" style="color: var(--primary);">fluidvoice.com</a>
+        (macOS 15 or later). In FluidVoice, keep the dictation shortcut in toggle mode, not press-and-hold, and enter the same shortcut below.
       </div>
 
       <div class="env-notice" id="handyProviderInfo" style="display: none; margin-top: 0; margin-bottom: 16px;">
@@ -2214,42 +2270,77 @@
           <div class="help-text">How long of silence confirms you're done speaking. Increase if it cuts you off mid-sentence.</div>
         </div>
 
-        <div class="slider-group" id="inputGainGroup" style="display: none;">
-          <div class="slider-label">
-            <label for="inputGainDb">Input Boost</label>
-            <span class="slider-value" id="inputGainDbValue">Off</span>
+        <details class="advanced mic-settings" id="micSettings">
+          <summary>Microphone Settings</summary>
+          <div class="form-group">
+            <label for="inputChannel">Input Channel</label>
+            <input type="number" id="inputChannel" min="1" max="64" step="1" value="1" style="max-width: 120px;">
+            <div class="help-text">Which channel of your Mac's input device to listen to. Leave at 1 for built-in and USB mics. For an audio interface, use the channel your mic is on; check Audio MIDI Setup or your interface's software. Save to apply it.</div>
           </div>
-          <input type="range" id="inputGainDb" min="0" max="30" step="1" value="0">
-          <div class="slider-range-labels">
-            <span>Off</span>
-            <span>+30 dB</span>
-          </div>
-          <div class="help-text">Raise this for quiet microphones, such as an interface talkback mic or low preamp gain. Too much boost can clip loud speech. Save to apply it, then test below.</div>
-        </div>
 
-        <div class="mic-meter" id="micLevelGroup" style="display: none;">
-          <div class="mic-meter-header">
-            <div>
-              <span class="mic-meter-title">Microphone Level</span>
-              <span class="mic-meter-status" id="micLevelStatus" role="status">See what the helper hears after Input Boost.</span>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-title">Noise Suppression</span>
+              <span class="toggle-desc">Filters steady background noise, such as fans, hard drives, and hum, before wake phrase and speech detection. Works with every voice input provider.</span>
             </div>
-            <button class="btn-secondary" id="micTestBtn" type="button">Test microphone</button>
+            <label class="switch">
+              <input type="checkbox" id="noiseSuppression" checked>
+              <span class="switch-slider"></span>
+            </label>
           </div>
-          <div class="mic-meter-track" aria-hidden="true">
-            <span class="mic-meter-fill" id="micLevelFill"></span>
-            <span class="mic-meter-threshold" id="micLevelThreshold" title="Speech detection level"></span>
+
+          <div class="slider-group" id="inputGainGroup" style="display: none;">
+            <div class="slider-label">
+              <label for="inputGainDb">Input Boost</label>
+              <span class="slider-value" id="inputGainDbValue">Off</span>
+            </div>
+            <input type="range" id="inputGainDb" min="0" max="30" step="1" value="0">
+            <div class="slider-range-labels">
+              <span>Off</span>
+              <span>+30 dB</span>
+            </div>
+            <div class="help-text">Raise this for quiet microphones, such as an interface talkback mic or low preamp gain. Too much boost can clip loud speech. Save to apply it, then test below.</div>
           </div>
-          <div class="slider-range-labels">
-            <span>−80 dB</span>
-            <span id="micLevelReadout"></span>
-            <span>0 dB</span>
+
+          <div class="mic-meter" id="micLevelGroup" style="display: none;">
+            <div class="mic-meter-header">
+              <div>
+                <span class="mic-meter-title">Microphone Level</span>
+                <span class="mic-meter-status" id="micLevelStatus" role="status">See what the helper hears after Input Boost.</span>
+              </div>
+              <button class="btn-secondary" id="micTestBtn" type="button">Test microphone</button>
+            </div>
+            <div class="mic-meter-track" aria-hidden="true">
+              <span class="mic-meter-fill" id="micLevelFill"></span>
+              <span class="mic-meter-threshold" id="micLevelThreshold" title="Speech detection level"></span>
+            </div>
+            <div class="slider-range-labels">
+              <span>−80 dB</span>
+              <span id="micLevelReadout"></span>
+              <span>0 dB</span>
+            </div>
           </div>
-        </div>
+        </details>
 
         <div id="wisprSettings" class="form-group">
-          <label for="wisprHotkey">Wispr Hotkey</label>
-          <input type="text" id="wisprHotkey" value="shift+ctrl" spellcheck="false">
-          <div class="help-text">Hotkey combo that toggles Wispr recording (start/stop). Default: shift+ctrl</div>
+          <label for="wisprHotkey">Wispr Shortcut</label>
+          <div class="hotkey-field">
+            <input type="text" id="wisprHotkey" value="shift+ctrl" spellcheck="false">
+            <button class="btn-secondary" type="button" data-record-hotkey="wisprHotkey">Record</button>
+          </div>
+          <div class="help-text">Must match the dictation shortcut set in Wispr Flow. TalkToCursor presses it for you to start and stop Wispr, so you don't need to press it yourself. Click Record and press it, or type it. Default: shift+ctrl</div>
+          <div class="env-notice" id="wisprHotkeyConflict" style="display: none; margin-top: 10px;">This matches the Start Listening Hotkey. Use different keys, or pressing that hotkey will also set off this app directly and the two will get out of step.</div>
+        </div>
+
+        <div id="fluidVoiceSettings" class="form-group" style="display: none;">
+          <label for="fluidVoiceHotkey">FluidVoice Shortcut</label>
+          <div class="hotkey-field">
+            <input type="text" id="fluidVoiceHotkey" value="right_option" spellcheck="false">
+            <button class="btn-secondary" type="button" id="fluidVoiceDetectBtn">Use FluidVoice's</button>
+            <button class="btn-secondary" type="button" data-record-hotkey="fluidVoiceHotkey">Record</button>
+          </div>
+          <div class="help-text">Must match the shortcut set in FluidVoice. TalkToCursor presses it for you to start and stop FluidVoice, so you don't need to press it yourself. "Use FluidVoice's" reads it from FluidVoice directly, which avoids FluidVoice starting dictation while you record. You can also type it with + between keys, such as ctrl+shift+d.</div>
+          <div class="env-notice" id="fluidVoiceHotkeyConflict" style="display: none; margin-top: 10px;">This matches the Start Listening Hotkey. Use different keys, or pressing that hotkey will also set off this app directly and the two will get out of step.</div>
         </div>
 
         <div id="handySettings" class="form-group" style="display: none;">
@@ -2373,9 +2464,13 @@
       </div>
 
       <div class="form-group">
-        <label for="manualTriggerHotkey">Manual Trigger Hotkey</label>
-        <input type="text" id="manualTriggerHotkey" value="ctrl+shift+l" spellcheck="false">
-        <div class="help-text">Global hotkey to manually start the selected voice input provider.</div>
+        <label for="manualTriggerHotkey">Start Listening Hotkey</label>
+        <div class="hotkey-field">
+          <input type="text" id="manualTriggerHotkey" value="ctrl+shift+l" spellcheck="false">
+          <button class="btn-secondary" type="button" data-record-hotkey="manualTriggerHotkey">Record</button>
+        </div>
+        <div class="help-text">The key you press, from any app, to start a listening turn with the selected voice input provider. Press it again to finish early. Click Record and press it, or type it.</div>
+        <div class="env-notice" id="manualTriggerHotkeyConflict" style="display: none; margin-top: 10px;"></div>
       </div>
 
       <div class="toggle-row">
@@ -2493,7 +2588,7 @@
                 <span class="slider-value" id="smartTextDelayValue">0.20s</span>
               </div>
               <input type="range" id="smartTextDelay" min="0.1" max="1" step="0.05" value="0.2">
-              <div class="help-text">Briefly waits for Handy or Wispr to finish inserting text before pressing Enter.</div>
+              <div class="help-text">Briefly waits for the dictation app to finish inserting text before pressing Enter.</div>
             </div>
           </details>
 
@@ -2551,9 +2646,25 @@
         <div class="account-stat"><span>Resets</span><strong id="accountResets">—</strong></div>
       </div>
       <div class="account-usage-track" id="accountUsageBar" role="progressbar" aria-label="Cloud speech usage" aria-valuemin="0" aria-valuemax="100" hidden><span id="accountUsageFill"></span></div>
-      <div class="btn-row">
-        <button class="btn-secondary" id="accountConnectBtn" type="button">Set up on Speech page</button>
-        <button class="btn-primary" id="accountDashboardBtn" type="button">Manage in Cloud dashboard ↗</button>
+      <div id="accountDisconnectedActions">
+        <div class="btn-row">
+          <button class="btn-primary" id="connectCloudBtn" type="button">Connect Cloud Account</button>
+        </div>
+        <div class="env-notice" id="cloudPairingNotice" style="display: none;">
+          <strong>Device code:</strong> <code id="cloudUserCode"></code>
+          <span style="display: block; margin-top: 6px;">Approve this code in the Cloud dashboard. This window will finish connecting automatically.</span>
+        </div>
+        <div class="help-text cloud-actions-help">A free account syncs your preferences between devices. It works with any speech provider, including ElevenLabs and Voicebox.</div>
+      </div>
+      <div id="accountConnectedActions" hidden>
+        <div class="cloud-actions">
+          <button class="btn-secondary btn-quiet-danger" id="disconnectCloudBtn" type="button">Disconnect</button>
+          <span class="cloud-actions-spacer"></span>
+          <button class="btn-secondary" id="downloadCloudSettingsBtn" type="button">Download settings</button>
+          <button class="btn-secondary" id="uploadCloudSettingsBtn" type="button">Upload settings</button>
+          <button class="btn-primary" id="accountDashboardBtn" type="button">Manage in Cloud dashboard ↗</button>
+        </div>
+        <div class="help-text cloud-actions-help">Upload and Download sync safe preferences explicitly, so another device never silently overwrites them. Credentials, local URLs, spoken text, and audio are never stored in Cloud.</div>
       </div>
     </div>
 
@@ -2627,6 +2738,10 @@
     const ttsEnabled = document.getElementById('ttsEnabled');
     const pauseMediaDuringSpeech = document.getElementById('pauseMediaDuringSpeech');
     const spokenResponseDetail = document.getElementById('spokenResponseDetail');
+    const completionFeedbackMode = document.getElementById('completionFeedbackMode');
+    const completionSoundRow = document.getElementById('completionSoundRow');
+    const completionSound = document.getElementById('completionSound');
+    const completionSoundPreviewBtn = document.getElementById('completionSoundPreviewBtn');
     const ttsProvider = document.getElementById('ttsProvider');
     const elevenLabsProviderInfo = document.getElementById('elevenLabsProviderInfo');
     const voiceboxProviderInfo = document.getElementById('voiceboxProviderInfo');
@@ -2754,6 +2869,8 @@
     const voiceInputDetails = document.getElementById('voiceInputDetails');
     const wisprProviderInfo = document.getElementById('wisprProviderInfo');
     const handyProviderInfo = document.getElementById('handyProviderInfo');
+    const fluidVoiceProviderInfo = document.getElementById('fluidVoiceProviderInfo');
+    const fluidVoiceSettings = document.getElementById('fluidVoiceSettings');
     const wisprSettings = document.getElementById('wisprSettings');
     const handySettings = document.getElementById('handySettings');
     const silenceThresholdSlider = document.getElementById('silenceThreshold');
@@ -2761,6 +2878,7 @@
     const silenceDurationSlider = document.getElementById('silenceDuration');
     const silenceDurationValue = document.getElementById('silenceDurationValue');
     const wisprHotkeyInput = document.getElementById('wisprHotkey');
+    const fluidVoiceHotkeyInput = document.getElementById('fluidVoiceHotkey');
     const handyCommandInput = document.getElementById('handyCommand');
     const manualTriggerHotkeyInput = document.getElementById('manualTriggerHotkey');
     const wakeWordEnabled = document.getElementById('wakeWordEnabled');
@@ -2836,6 +2954,9 @@
     }
     document.getElementById('openCloudDashboardBtn').addEventListener('click', openCloudDashboard);
     document.getElementById('accountDashboardBtn').addEventListener('click', openCloudDashboard);
+    document.getElementById('cloudConnectLinkBtn').addEventListener('click', () => {
+      location.hash = 'cloudAccountCard';
+    });
 
     checkForUpdatesBtn.addEventListener('click', () => {
       refreshUpdateStatus(true);
@@ -2896,11 +3017,13 @@
       return status;
     }
 
-    async function runBackgroundServiceAction(action, pendingMessage) {
+    async function runBackgroundServiceAction(action, pendingMessage, button = null) {
       backgroundServiceButtons.forEach((button) => {
         button.disabled = true;
       });
       backgroundServiceNotice.textContent = pendingMessage;
+      const idleLabel = button?.textContent;
+      if (button) button.innerHTML = `<span class="spinner"></span> ${pendingMessage.replace(/ the background helper…$/, '…')}`;
       try {
         const res = await fetch(`/api/background-service/${action}`, {
           method: 'POST',
@@ -2913,6 +3036,7 @@
         const completedAction = {
           install: 'installed',
           start: 'started',
+          restart: 'restarted',
           stop: 'stopped',
           uninstall: 'removed',
         }[action] || 'updated';
@@ -2920,6 +3044,8 @@
       } catch (error) {
         showToast(error.message || 'Background helper action failed', 'error');
         await refreshBackgroundService();
+      } finally {
+        if (button) button.textContent = idleLabel;
       }
     }
 
@@ -2944,7 +3070,7 @@
       runBackgroundServiceAction('start', 'Starting the background helper…');
     });
     restartBackgroundServiceBtn.addEventListener('click', () => {
-      runBackgroundServiceAction('start', 'Restarting the background helper…');
+      runBackgroundServiceAction('restart', 'Restarting the background helper…', restartBackgroundServiceBtn);
     });
     stopBackgroundServiceBtn.addEventListener('click', () => {
       runBackgroundServiceAction('stop', 'Stopping the background helper…');
@@ -3075,6 +3201,43 @@
       }
     });
 
+    function updateCompletionSoundRow() {
+      completionSoundRow.style.display = completionFeedbackMode.value === 'speech' ? 'none' : 'block';
+    }
+
+    async function saveCompletionFeedback() {
+      updateCompletionSoundRow();
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            completionFeedback: { mode: completionFeedbackMode.value, sound: completionSound.value },
+          }),
+        });
+        const data = await res.json();
+        showToast(data.success ? 'Task completion feedback saved' : 'Could not save task completion feedback', data.success ? 'success' : 'error');
+      } catch (error) {
+        showToast('Could not save task completion feedback', 'error');
+      }
+    }
+
+    completionFeedbackMode.addEventListener('change', saveCompletionFeedback);
+    completionSound.addEventListener('change', saveCompletionFeedback);
+    completionSoundPreviewBtn.addEventListener('click', async () => {
+      completionSoundPreviewBtn.disabled = true;
+      try {
+        const res = await fetch('/api/completion-sound/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sound: completionSound.value }),
+        });
+        if (!res.ok) showToast('Sound previews need macOS', 'error');
+      } finally {
+        completionSoundPreviewBtn.disabled = false;
+      }
+    });
+
     // Wire up slider value displays
     const sliders = [
       { slider: speedSlider, display: speedValue },
@@ -3156,8 +3319,10 @@
     const bargeInToggle = document.getElementById('bargeIn');
     const echoCancellationRow = document.getElementById('echoCancellationRow');
     const echoCancellationToggle = document.getElementById('echoCancellation');
+    const noiseSuppressionToggle = document.getElementById('noiseSuppression');
     const inputGainGroup = document.getElementById('inputGainGroup');
     const inputGainSlider = document.getElementById('inputGainDb');
+    const inputChannelInput = document.getElementById('inputChannel');
     const inputGainValue = document.getElementById('inputGainDbValue');
 
     const micLevelGroup = document.getElementById('micLevelGroup');
@@ -3242,15 +3407,57 @@
     inputGainSlider.addEventListener('input', updateInputGainLabel);
     bargeInToggle.addEventListener('change', () => saveVoiceInputSettings('Interrupt by talking saved'));
     echoCancellationToggle.addEventListener('change', () => saveVoiceInputSettings('Echo cancellation saved'));
+    noiseSuppressionToggle.addEventListener('change', () => saveVoiceInputSettings('Noise suppression saved'));
+    document.getElementById('micSettings').addEventListener('toggle', (event) => {
+      if (!event.target.open) stopMicTest();
+    });
+
+    const HOTKEY_PART_ALIASES = {
+      control: 'ctrl', ctrl_r: 'right_ctrl', right_control: 'right_ctrl',
+      alt: 'option', alt_r: 'right_option', right_alt: 'right_option',
+      command: 'cmd', cmd_r: 'right_cmd', right_command: 'right_cmd',
+      shift_r: 'right_shift', return: 'enter', escape: 'esc',
+    };
+
+    function normalizedHotkey(value) {
+      return value.toLowerCase().split('+')
+        .map((part) => part.trim().replace(/ /g, '_'))
+        .filter(Boolean)
+        .map((part) => HOTKEY_PART_ALIASES[part] || part)
+        .sort()
+        .join('+');
+    }
+
+    function updateHotkeyConflict() {
+      const provider = voiceInputProvider.value;
+      const providerInput = provider === 'wispr' ? wisprHotkeyInput : provider === 'fluidvoice' ? fluidVoiceHotkeyInput : null;
+      const providerName = provider === 'wispr' ? 'Wispr Shortcut' : 'FluidVoice Shortcut';
+      const trigger = normalizedHotkey(manualTriggerHotkeyInput.value);
+      const conflict = !!providerInput && !!trigger && trigger === normalizedHotkey(providerInput.value);
+      document.getElementById('wisprHotkeyConflict').style.display = conflict && provider === 'wispr' ? 'block' : 'none';
+      document.getElementById('fluidVoiceHotkeyConflict').style.display = conflict && provider === 'fluidvoice' ? 'block' : 'none';
+      const triggerNotice = document.getElementById('manualTriggerHotkeyConflict');
+      triggerNotice.textContent = conflict
+        ? `This matches the ${providerName} under Voice Input Provider. Use different keys, or pressing it will also set off that app directly and the two will get out of step.`
+        : '';
+      triggerNotice.style.display = conflict ? 'block' : 'none';
+    }
+
+    for (const input of [wisprHotkeyInput, fluidVoiceHotkeyInput, manualTriggerHotkeyInput]) {
+      input.addEventListener('input', updateHotkeyConflict);
+    }
 
     function updateVoiceInputProvider() {
+      updateHotkeyConflict();
       const provider = voiceInputProvider.value;
       const show = (el, visible) => { el.style.display = visible ? 'block' : 'none'; };
       show(wisprProviderInfo, provider === 'wispr');
       show(handyProviderInfo, provider === 'handy');
+      show(fluidVoiceProviderInfo, provider === 'fluidvoice');
       show(builtinProviderInfo, provider === 'builtin');
       show(wisprSettings, provider === 'wispr');
       show(handySettings, provider === 'handy');
+      show(fluidVoiceSettings, provider === 'fluidvoice');
       show(builtinSettings, provider === 'builtin');
       bargeInRow.style.display = provider === 'builtin' ? 'flex' : 'none';
       echoCancellationRow.style.display = provider === 'builtin' ? 'flex' : 'none';
@@ -3259,8 +3466,32 @@
       if (provider !== 'builtin') stopMicTest();
     }
 
-    voiceInputProvider.addEventListener('change', () => {
+    async function detectFluidVoiceHotkey() {
+      try {
+        const res = await fetch('/api/fluidvoice/hotkey');
+        const data = await res.json();
+        return res.ok ? data.hotkey : null;
+      } catch {
+        return null;
+      }
+    }
+
+    document.getElementById('fluidVoiceDetectBtn').addEventListener('click', async () => {
+      const hotkey = await detectFluidVoiceHotkey();
+      if (!hotkey) {
+        showToast("Couldn't read FluidVoice's shortcut. Check that FluidVoice is installed and has a keyboard shortcut set.", 'error');
+        return;
+      }
+      fluidVoiceHotkeyInput.value = hotkey;
+      saveVoiceInputSettings(`FluidVoice hotkey set to ${hotkey}`);
+    });
+
+    voiceInputProvider.addEventListener('change', async () => {
       updateVoiceInputProvider();
+      if (voiceInputProvider.value === 'fluidvoice') {
+        const hotkey = await detectFluidVoiceHotkey();
+        if (hotkey) fluidVoiceHotkeyInput.value = hotkey;
+      }
       saveVoiceInputSettings('Voice input provider saved');
     });
 
@@ -3371,6 +3602,9 @@
         ttsEnabled.checked = data.ttsEnabled !== false;
         pauseMediaDuringSpeech.checked = data.pauseMediaDuringSpeech === true;
         spokenResponseDetail.value = data.spokenResponseDetail || 'brief';
+        completionFeedbackMode.value = data.completionFeedback?.mode || 'speech';
+        completionSound.value = data.completionFeedback?.sound || 'Hero';
+        updateCompletionSoundRow();
         ttsProvider.value = data.ttsProvider || 'cloud';
         updateTtsProvider();
 
@@ -3436,7 +3670,9 @@
           builtinModelSelect.value = vi.builtinModel || 'parakeet';
           bargeInToggle.checked = vi.bargeIn !== false;
           echoCancellationToggle.checked = vi.echoCancellation !== false;
+          noiseSuppressionToggle.checked = vi.noiseSuppression !== false;
           inputGainSlider.value = vi.inputGainDb ?? 0;
+          inputChannelInput.value = vi.inputChannel ?? 1;
           updateInputGainLabel();
           voiceInputEnabled.checked = !!vi.enabled;
           voiceInputDetails.classList.toggle('open', !!vi.enabled);
@@ -3445,6 +3681,7 @@
           silenceDurationSlider.value = vi.silenceDuration ?? 2.0;
           silenceDurationValue.textContent = parseFloat(silenceDurationSlider.value).toFixed(1) + 's';
           wisprHotkeyInput.value = vi.wisprHotkey || 'shift+ctrl';
+          fluidVoiceHotkeyInput.value = vi.fluidVoiceHotkey || 'right_option';
           handyCommandInput.value = vi.handyCommand || '';
           manualTriggerHotkeyInput.value = vi.manualTriggerHotkey || 'ctrl+shift+l';
           wakeWordEnabled.checked = !!vi.wakeWordEnabled;
@@ -3498,12 +3735,14 @@
     const accountResets = document.getElementById('accountResets');
     const accountUsageBar = document.getElementById('accountUsageBar');
     const accountUsageFill = document.getElementById('accountUsageFill');
-    const accountConnectBtn = document.getElementById('accountConnectBtn');
+    const accountDisconnectedActions = document.getElementById('accountDisconnectedActions');
+    const accountConnectedActions = document.getElementById('accountConnectedActions');
 
     function renderCloudAccount(connected, data = null) {
       accountStatusBadge.textContent = connected ? 'Connected' : 'Not connected';
       accountStatusBadge.className = connected ? 'badge badge-set' : 'badge badge-missing';
-      accountConnectBtn.hidden = connected;
+      accountDisconnectedActions.hidden = connected;
+      accountConnectedActions.hidden = !connected;
       accountSummary.hidden = !connected;
       accountUsageBar.hidden = true;
       accountPlan.textContent = '—';
@@ -3536,15 +3775,6 @@
         accountSummaryIntro.textContent = 'Checking plan and usage…';
       }
     }
-
-    accountConnectBtn.addEventListener('click', () => {
-      if (ttsProvider.value === 'cloud') {
-        location.hash = 'cloudSettings';
-        return;
-      }
-      location.hash = 'speech';
-      ttsProvider.focus();
-    });
 
     function setCloudConnectionState(connected) {
       renderCloudAccount(connected);
@@ -4505,6 +4735,115 @@
       }, 3500);
     }
 
+    const HOTKEY_CODE_NAMES = {
+      ControlLeft: 'ctrl', ControlRight: 'right_ctrl',
+      ShiftLeft: 'shift', ShiftRight: 'right_shift',
+      AltLeft: 'option', AltRight: 'right_option',
+      MetaLeft: 'cmd', MetaRight: 'right_cmd',
+      Space: 'space', Enter: 'enter', Tab: 'tab', Backspace: 'backspace', Delete: 'delete',
+      ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+      Home: 'home', End: 'end', PageUp: 'page_up', PageDown: 'page_down',
+      Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';',
+      Quote: "'", Comma: ',', Period: '.', Slash: '/', Backslash: '\\', Backquote: '`',
+    };
+    const HOTKEY_MODIFIER_ORDER = ['ctrl', 'right_ctrl', 'shift', 'right_shift', 'option', 'right_option', 'cmd', 'right_cmd'];
+
+    function hotkeyName(code) {
+      if (HOTKEY_CODE_NAMES[code]) return HOTKEY_CODE_NAMES[code];
+      const match = code.match(/^Key([A-Z])$/) || code.match(/^Digit(\d)$/);
+      if (match) return match[1].toLowerCase();
+      if (/^F\d{1,2}$/.test(code)) return code.toLowerCase();
+      return null;
+    }
+
+    function formatHotkey(names) {
+      const rank = (name) => {
+        const index = HOTKEY_MODIFIER_ORDER.indexOf(name);
+        return index === -1 ? HOTKEY_MODIFIER_ORDER.length : index;
+      };
+      return [...names].sort((a, b) => rank(a) - rank(b)).join('+');
+    }
+
+    let stopActiveHotkeyRecording = null;
+
+    for (const button of document.querySelectorAll('[data-record-hotkey]')) {
+      const input = document.getElementById(button.dataset.recordHotkey);
+      const field = button.closest('.hotkey-field');
+
+      button.addEventListener('click', () => {
+        const wasRecording = stopActiveHotkeyRecording?.owner === button;
+        stopActiveHotkeyRecording?.(null);
+        if (wasRecording) return;
+
+        const previous = input.value;
+        const combo = new Set();
+        const held = new Set();
+        let finishTimer = null;
+
+        const onKeyDown = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.repeat) return;
+          if (event.code === 'Escape' && combo.size === 0) {
+            stop(null);
+            return;
+          }
+          const name = hotkeyName(event.code);
+          if (!name) return;
+          clearTimeout(finishTimer);
+          held.add(event.code);
+          combo.add(name);
+          input.value = formatHotkey(combo);
+        };
+        const onKeyUp = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          held.delete(event.code);
+          // macOS browsers skip keyup for keys pressed while Cmd is held.
+          if (!event.metaKey) {
+            for (const code of held) {
+              if (!code.startsWith('Meta') && !code.startsWith('Control') && !code.startsWith('Shift') && !code.startsWith('Alt')) held.delete(code);
+            }
+          }
+          if (held.size === 0 && combo.size) {
+            finishTimer = setTimeout(() => stop(formatHotkey(combo)), 600);
+          }
+        };
+        const onPointerDown = (event) => {
+          if (event.target !== button) stop(null);
+        };
+        const onWindowBlur = () => stop(null);
+
+        function stop(value) {
+          clearTimeout(finishTimer);
+          window.removeEventListener('keydown', onKeyDown, true);
+          window.removeEventListener('keyup', onKeyUp, true);
+          window.removeEventListener('pointerdown', onPointerDown, true);
+          window.removeEventListener('blur', onWindowBlur);
+          field.classList.remove('recording');
+          button.textContent = 'Record';
+          input.placeholder = '';
+          stopActiveHotkeyRecording = null;
+          input.value = value ?? previous;
+          if (value && value !== previous) {
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            showToast(`Recorded ${value}. Click Save to apply it.`, 'success');
+          }
+        }
+        stop.owner = button;
+        stopActiveHotkeyRecording = stop;
+
+        field.classList.add('recording');
+        button.textContent = 'Cancel';
+        input.value = '';
+        input.placeholder = 'Press the shortcut… (Esc cancels)';
+        window.addEventListener('keydown', onKeyDown, true);
+        window.addEventListener('keyup', onKeyUp, true);
+        window.addEventListener('pointerdown', onPointerDown, true);
+        window.addEventListener('blur', onWindowBlur);
+      });
+    }
+
     function escapeHtml(str) {
       const div = document.createElement('div');
       div.textContent = str;
@@ -4522,11 +4861,14 @@
         silenceThreshold: parseFloat(silenceThresholdSlider.value),
         silenceDuration: parseFloat(silenceDurationSlider.value),
         wisprHotkey: wisprHotkeyInput.value.trim(),
+        fluidVoiceHotkey: fluidVoiceHotkeyInput.value.trim() || 'right_option',
         handyCommand: handyCommandInput.value.trim(),
         builtinModel: builtinModelSelect.value,
         bargeIn: bargeInToggle.checked,
         echoCancellation: echoCancellationToggle.checked,
+        noiseSuppression: noiseSuppressionToggle.checked,
         inputGainDb: Number(inputGainSlider.value),
+        inputChannel: Math.min(64, Math.max(1, Math.round(Number(inputChannelInput.value) || 1))),
       };
 
       try {

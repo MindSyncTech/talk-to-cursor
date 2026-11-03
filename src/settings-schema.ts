@@ -152,10 +152,11 @@ export const autoSubmitSettingsSchema = z.object({
 export const voiceInputSettingsSchema = z
   .object({
     enabled: z.boolean(),
-    provider: z.enum(["builtin", "wispr", "handy"]),
+    provider: z.enum(["builtin", "wispr", "fluidvoice", "handy"]),
     silenceThreshold: z.number().finite().min(0.005).max(0.1),
     silenceDuration: z.number().finite().min(0.5).max(5),
     wisprHotkey: z.string().trim().min(1).max(100),
+    fluidVoiceHotkey: z.string().trim().min(1).max(100).default("right_option"),
     handyCommand: z.string().trim().max(1_000),
     manualTriggerHotkey: z.string().trim().min(1).max(100),
     wakeWordEnabled: z.boolean(),
@@ -180,9 +181,29 @@ export const voiceInputSettingsSchema = z
     builtinModel: z.enum(["streaming", "parakeet"]).default("parakeet"),
     echoCancellation: z.boolean().default(true),
     inputGainDb: z.number().finite().min(0).max(30).default(0),
+    inputChannel: z.number().int().min(1).max(64).default(1),
+    noiseSuppression: z.boolean().default(true),
   })
   // Discard retired fields such as ttsDelay from existing config files.
   .strip();
+
+export const COMPLETION_SOUNDS = [
+  "Hero",
+  "Glass",
+  "Ping",
+  "Pop",
+  "Purr",
+  "Tink",
+  "Submarine",
+  "Bottle",
+  "Blow",
+  "Funk",
+] as const;
+
+export const completionFeedbackSchema = z.object({
+  mode: z.enum(["speech", "sound", "both"]).default("speech"),
+  sound: z.enum(COMPLETION_SOUNDS).default("Hero"),
+});
 
 export const settingsSchema = z
   .object({
@@ -199,6 +220,7 @@ export const settingsSchema = z
     cloud: cloudSettingsSchema,
     autoSubmit: autoSubmitSettingsSchema,
     voiceInput: voiceInputSettingsSchema,
+    completionFeedback: completionFeedbackSchema.default({ mode: "speech", sound: "Hero" }),
     autoListen: z.boolean(),
   })
   .strict();
@@ -211,6 +233,7 @@ export const settingsUpdateSchema = settingsSchema
     cloud: cloudSettingsSchema.partial(),
     autoSubmit: autoSubmitSettingsSchema.partial(),
     voiceInput: voiceInputSettingsSchema.partial(),
+    completionFeedback: completionFeedbackSchema.partial(),
   })
   .partial()
   .strict();

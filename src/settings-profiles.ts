@@ -23,6 +23,7 @@ import {
   pronunciationSettingsSchema,
   voiceInputSettingsSchema,
   voiceSettingsSchema,
+  completionFeedbackSchema,
 } from "./settings-schema.js";
 import {
   SettingsSyncCoordinator,
@@ -67,11 +68,14 @@ const portableSettingsSchema = z.object({
     handyCommand: true,
     echoCancellation: true,
     inputGainDb: true,
+    inputChannel: true,
+    noiseSuppression: true,
   }),
   pronunciation: pronunciationSettingsSchema.default({
     enabled: true,
     entries: [],
   }),
+  completionFeedback: completionFeedbackSchema.default({ mode: "speech", sound: "Hero" }),
   autoListen: z.boolean(),
 });
 
@@ -205,6 +209,7 @@ export function toPortableSettings(config: Config): PortableSettings {
       silenceThreshold: config.voiceInput.silenceThreshold,
       silenceDuration: config.voiceInput.silenceDuration,
       wisprHotkey: config.voiceInput.wisprHotkey,
+      fluidVoiceHotkey: config.voiceInput.fluidVoiceHotkey,
       manualTriggerHotkey: config.voiceInput.manualTriggerHotkey,
       wakeWordEnabled: config.voiceInput.wakeWordEnabled,
       wakePhrase: config.voiceInput.wakePhrase,
@@ -213,6 +218,7 @@ export function toPortableSettings(config: Config): PortableSettings {
       bargeIn: config.voiceInput.bargeIn,
       builtinModel: config.voiceInput.builtinModel,
     },
+    completionFeedback: config.completionFeedback,
     autoListen: config.autoListen,
   });
 }
@@ -248,7 +254,10 @@ export function applyPortableSettings(
       handyCommand: local.voiceInput.handyCommand,
       echoCancellation: local.voiceInput.echoCancellation,
       inputGainDb: local.voiceInput.inputGainDb,
+      inputChannel: local.voiceInput.inputChannel,
+      noiseSuppression: local.voiceInput.noiseSuppression,
     },
+    completionFeedback: portable.completionFeedback,
     autoListen: portable.autoListen,
   };
 }
@@ -271,6 +280,7 @@ function toRuntimeConfigOverlay(settings: PortableSettings): ConfigUpdate {
     autoSubmit: portable.autoSubmit,
     pronunciation: portable.pronunciation,
     voiceInput: portable.voiceInput,
+    completionFeedback: portable.completionFeedback,
     autoListen: portable.autoListen,
   };
 }

@@ -9,7 +9,10 @@ import {
   normalizeManagedVoice,
   normalizeServiceUrl,
   settingsUpdateSchema,
+  completionFeedbackSchema,
 } from "./settings-schema.js";
+import { playCompletionSound } from "./completion-sound.js";
+import { readFluidVoiceHotkey } from "./fluidvoice.js";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import {
   deleteCloudToken,
@@ -88,6 +91,7 @@ app.get("/api/config", (_req, res) => {
     cloudConnected: !!getCloudToken(),
     autoSubmit: config.autoSubmit,
     voiceInput: config.voiceInput,
+    completionFeedback: config.completionFeedback,
     autoListen: config.autoListen,
   });
 });
@@ -129,9 +133,29 @@ app.post("/api/config", (req, res) => {
       cloudConnected: !!getCloudToken(),
       autoSubmit: saved.autoSubmit,
       voiceInput: saved.voiceInput,
+      completionFeedback: saved.completionFeedback,
       autoListen: saved.autoListen,
     },
   });
+});
+
+app.post("/api/completion-sound/preview", async (req, res) => {
+  const sound = completionFeedbackSchema.shape.sound.safeParse(req.body?.sound);
+  if (!sound.success || process.platform !== "darwin") {
+    res.status(400).json({ error: "Completion sounds are available on macOS." });
+    return;
+  }
+  await playCompletionSound(sound.data);
+  res.json({ success: true });
+});
+
+app.get("/api/fluidvoice/hotkey", async (_req, res) => {
+  const hotkey = await readFluidVoiceHotkey();
+  if (!hotkey) {
+    res.status(404).json({ error: "Couldn't read a keyboard shortcut from FluidVoice. Open FluidVoice and set one, or record it here." });
+    return;
+  }
+  res.json({ hotkey });
 });
 
 app.get("/api/background-service/status", (_req, res) => {
@@ -190,6 +214,15 @@ app.post("/api/background-service/install", async (_req, res) => {
 });
 
 app.post("/api/background-service/start", async (_req, res) => {
+  try {
+    res.json(await startBackgroundService());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: message });
+  }
+});
+
+app.post("/api/background-service/restart", async (_req, res) => {
   try {
     res.json(await startBackgroundService());
   } catch (error) {
@@ -479,6 +512,12 @@ app.post("/api/cloud/settings/download", async (_req, res) => {
         handyCommand: config.voiceInput.handyCommand,
         echoCancellation: config.voiceInput.echoCancellation,
         inputGainDb: config.voiceInput.inputGainDb,
+        inputChannel: config.voiceInput.inputChannel,
+        noiseSuppression: config.voiceInput.noiseSuppression,
+      },
+      completionFeedback: {
+        ...config.completionFeedback,
+        ...(settings.completionFeedback || {}),
       },
       autoListen:
         settings.autoListen === undefined
@@ -534,6 +573,7 @@ app.post("/api/cloud/settings/upload", async (_req, res) => {
               silenceThreshold: config.voiceInput.silenceThreshold,
               silenceDuration: config.voiceInput.silenceDuration,
               wisprHotkey: config.voiceInput.wisprHotkey,
+              fluidVoiceHotkey: config.voiceInput.fluidVoiceHotkey,
               manualTriggerHotkey: config.voiceInput.manualTriggerHotkey,
               wakeWordEnabled: config.voiceInput.wakeWordEnabled,
               wakePhrase: config.voiceInput.wakePhrase,
@@ -542,6 +582,7 @@ app.post("/api/cloud/settings/upload", async (_req, res) => {
               bargeIn: config.voiceInput.bargeIn,
               builtinModel: config.voiceInput.builtinModel,
             },
+            completionFeedback: config.completionFeedback,
             autoListen: config.autoListen,
           },
         }),

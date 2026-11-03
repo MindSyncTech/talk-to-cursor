@@ -66,6 +66,7 @@ describe("settings profiles", () => {
     local.voiceInput.handyCommand = "/private/bin/handy";
     local.voiceInput.echoCancellation = false;
     local.voiceInput.inputGainDb = 18;
+    local.voiceInput.inputChannel = 4;
 
     const portable = toPortableSettings(local);
 
@@ -75,6 +76,8 @@ describe("settings profiles", () => {
     expect(JSON.stringify(portable)).not.toContain("/private/bin");
     expect(portable.voiceInput).not.toHaveProperty("echoCancellation");
     expect(portable.voiceInput).not.toHaveProperty("inputGainDb");
+    expect(portable.voiceInput).not.toHaveProperty("inputChannel");
+    expect(portable.voiceInput).not.toHaveProperty("noiseSuppression");
   });
 
   it("preserves credentials and machine-local settings when applying", () => {
@@ -86,6 +89,7 @@ describe("settings profiles", () => {
     local.voiceInput.handyCommand = "/private/bin/handy";
     local.voiceInput.echoCancellation = false;
     local.voiceInput.inputGainDb = 18;
+    local.voiceInput.inputChannel = 4;
     const portable = toPortableSettings(config());
     portable.ttsEnabled = false;
 
@@ -99,6 +103,7 @@ describe("settings profiles", () => {
     expect(applied.voiceInput.handyCommand).toBe("/private/bin/handy");
     expect(applied.voiceInput.echoCancellation).toBe(false);
     expect(applied.voiceInput.inputGainDb).toBe(18);
+    expect(applied.voiceInput.inputChannel).toBe(4);
   });
 
   it("includes pronunciation in paid profile conversion and application", () => {

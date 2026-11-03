@@ -102,11 +102,14 @@ class TurnDetector:
                 sample_rate=self.sample_rate,
                 preroll_seconds=self.preroll_seconds,
             )
+        from audio_io import input_stream_settings
+
         return sd.InputStream(
             samplerate=self.sample_rate,
             channels=1,
             dtype="float32",
             blocksize=self.chunk_size,
+            **input_stream_settings(),
         )
 
     def request_stop(self):

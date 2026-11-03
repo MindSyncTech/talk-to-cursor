@@ -135,6 +135,7 @@ export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
   silenceThreshold: 0.005,
   silenceDuration: 2.0,
   wisprHotkey: "shift+ctrl",
+  fluidVoiceHotkey: "right_option",
   handyCommand: "",
   manualTriggerHotkey: "ctrl+shift+l",
   wakeWordEnabled: false,
@@ -145,6 +146,13 @@ export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
   builtinModel: "parakeet",
   echoCancellation: true,
   inputGainDb: 0,
+  inputChannel: 1,
+  noiseSuppression: true,
+};
+
+export const DEFAULT_COMPLETION_FEEDBACK: Config["completionFeedback"] = {
+  mode: "speech",
+  sound: "Hero",
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -161,6 +169,7 @@ export const DEFAULT_CONFIG: Config = {
   cloud: { ...DEFAULT_CLOUD },
   autoSubmit: { ...DEFAULT_AUTO_SUBMIT },
   voiceInput: { ...DEFAULT_VOICE_INPUT },
+  completionFeedback: { ...DEFAULT_COMPLETION_FEEDBACK },
   autoListen: true,
 };
 
@@ -215,6 +224,10 @@ export function loadConfig(): Config {
           ...DEFAULT_VOICE_INPUT,
           ...parsedVoiceInput,
         },
+        completionFeedback: {
+          ...DEFAULT_COMPLETION_FEEDBACK,
+          ...(parsed.completionFeedback || {}),
+        },
         autoListen: parsed.autoListen !== undefined ? parsed.autoListen : DEFAULT_CONFIG.autoListen,
       };
       const result = settingsSchema.safeParse(candidate);
@@ -235,6 +248,7 @@ export function loadConfig(): Config {
     cloud: { ...DEFAULT_CLOUD },
     autoSubmit: { ...DEFAULT_AUTO_SUBMIT },
     voiceInput: { ...DEFAULT_VOICE_INPUT },
+    completionFeedback: { ...DEFAULT_COMPLETION_FEEDBACK },
     autoListen: DEFAULT_CONFIG.autoListen,
   };
 }
@@ -252,6 +266,10 @@ function mergeConfig(current: Config, config: ConfigUpdate): Config {
     cloud: { ...current.cloud, ...(config.cloud || {}) },
     autoSubmit: { ...current.autoSubmit, ...(config.autoSubmit || {}) },
     voiceInput: { ...current.voiceInput, ...(config.voiceInput || {}) },
+    completionFeedback: {
+      ...current.completionFeedback,
+      ...(config.completionFeedback || {}),
+    },
   });
 }
 
@@ -283,6 +301,7 @@ export function getEffectiveConfig(): Config {
     cloud: fileConfig.cloud,
     autoSubmit: fileConfig.autoSubmit,
     voiceInput: fileConfig.voiceInput,
+    completionFeedback: fileConfig.completionFeedback,
     autoListen: fileConfig.autoListen,
   };
 }

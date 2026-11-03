@@ -36,6 +36,7 @@ const SERVICE_DOMAIN = `gui/${userInfo().uid}`;
 const RUNTIME_FILES = [
   "auto-submit.py",
   "audio_io.py",
+  "dictation_watch.py",
   "ipc_server.py",
   "model_download.py",
   "silence_detector.py",
@@ -95,6 +96,26 @@ function serviceIsRunning(): boolean {
       stdio: "ignore",
     }).status === 0
   );
+}
+
+function servicePid(): number | null {
+  if (platform() !== "darwin") return null;
+  const result = spawnSync("/bin/launchctl", ["print", SERVICE_TARGET], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) return null;
+  const match = result.stdout.match(/^\s*pid = (\d+)$/m);
+  return match ? Number(match[1]) : null;
+}
+
+/** Restart commands return before launchd has spawned the replacement process. */
+async function waitForNewProcess(previousPid: number | null, timeoutMs = 10_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const pid = servicePid();
+    if (pid !== null && pid !== previousPid) return;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
 }
 
 export function getBackgroundServiceStatus(): BackgroundServiceStatus {
@@ -259,6 +280,7 @@ export async function startBackgroundService() {
     await installDependencies();
   }
   const wasRunning = serviceIsRunning();
+  const previousPid = servicePid();
   const launchAgentChanged = writeLaunchAgent();
   if (wasRunning && launchAgentChanged) {
     await run("/bin/launchctl", ["bootout", SERVICE_TARGET], 30_000);
@@ -269,6 +291,7 @@ export async function startBackgroundService() {
   } else {
     await run("/bin/launchctl", ["bootstrap", SERVICE_DOMAIN, PLIST_PATH], 30_000);
   }
+  await waitForNewProcess(previousPid);
   writeInstalledVersion();
   return getBackgroundServiceStatus();
 }

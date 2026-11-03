@@ -47,6 +47,34 @@
 - TalkToCursor Cloud's optional plan is now $9/month (was $15).
 - Cloud voices have their own speed setting, defaulting to 1.20x and going up to 2.00x. ElevenLabs speed is unchanged.
 - Cloud voices now show common first names (for example, Emma instead of Kore), with new preview clips. Saved voice choices are unchanged.
+- Added FluidVoice as a voice input provider, grouped with Handy under Other
+  dictation apps. Its hotkey defaults to Right Option, and provider hotkeys now
+  accept right-side modifiers such as `right_option` and named keys.
+- Added a Task Completion setting on macOS: speak the final summary, play a
+  system sound instead, or play a sound and then speak. Agents mark the final
+  summary with the new `completion` option on `speak`; the voice-feedback rule
+  examples include it.
+- Hotkey fields have a Record button: click it and press the shortcut instead
+  of typing key names. Left and right modifier keys are recorded separately.
+- The FluidVoice hotkey can be read straight from FluidVoice's settings, and
+  fills in automatically when FluidVoice is selected.
+- The background helper's Restart button now waits for the new helper process
+  and confirms the restart, instead of returning before it was running.
+- Renamed the Manual Trigger Hotkey to Start Listening Hotkey and the provider
+  hotkeys to Wispr and FluidVoice Shortcut, with clearer help text and a warning
+  when the two are set to the same keys.
+- Saying "send it" after dictated text appears now works with Wispr Flow,
+  FluidVoice, and Handy, not just built-in voice input. It also works when you
+  start Wispr or FluidVoice with their own shortcut instead of TalkToCursor's.
+- New Input Channel setting for audio interfaces: choose which channel of the
+  input device the helper records, instead of always channel 1. It stays on
+  this Mac and isn't synced to Cloud.
+- New Noise Suppression setting (on by default) filters steady background noise
+  such as fans and hum before wake phrase and speech detection, for every
+  voice input provider and with or without echo cancellation.
+- Cloud account connection and settings Upload/Download moved to the Cloud
+  page, so free accounts can sync preferences while using ElevenLabs or
+  Voicebox for speech.
 - Fixed manual trigger hotkeys that use named keys such as `ctrl+space` or
   `cmd+f5`, and the `control`, `option`, and `command` spellings.
 - Fixed an intermittent "Bootstrap failed: 5" error when restarting the
