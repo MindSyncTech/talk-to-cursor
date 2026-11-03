@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Added Cloud dictation: paid Cloud accounts can choose **Cloud: Deepgram
+  Nova-3** as the built-in voice input's Speech Model. Audio streams from your
+  Mac directly to Deepgram, and the plan includes 500 dictation minutes per
+  billing period. If Cloud can't be reached or the minutes run out, that turn
+  is transcribed by a local model you've already downloaded.
+- The Cloud Account card shows dictation minutes left alongside characters.
+
 ## 1.4.0 — 2026-11-01
 
 - Added a Unix-socket connection between the MCP server and the Background

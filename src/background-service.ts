@@ -36,6 +36,7 @@ const SERVICE_DOMAIN = `gui/${userInfo().uid}`;
 const RUNTIME_FILES = [
   "auto-submit.py",
   "audio_io.py",
+  "cloud_dictation.py",
   "dictation_watch.py",
   "ipc_server.py",
   "model_download.py",

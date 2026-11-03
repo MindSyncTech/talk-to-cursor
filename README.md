@@ -188,7 +188,7 @@ For the full hands-free conversational loop, choose one of these providers:
 - **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended)** — A polished voice-to-text experience with minimal setup.
 - **[FluidVoice](https://fluidvoice.com/) (free & local)** — Open-source on-device dictation for macOS 15 or later. Keep its shortcut in toggle mode and enter the same shortcut in TalkToCursor (default Right Option).
 - **[Handy](https://github.com/cjpais/Handy) (free & private)** — Open-source transcription that runs locally using Whisper or Parakeet, must be installed manually.
-- **Built-in (free & private)** — On-device transcription inside the Background Helper. **Parakeet** (the default) is the most accurate and transcribes when you finish (about 480 MB model); **Streaming** transcribes while you speak and is less accurate (about 100 MB). Models download once on first use.
+- **Built-in (free & private)** — On-device transcription inside the Background Helper. **Parakeet** (the default) is the most accurate and transcribes when you finish (about 480 MB model); **Streaming** transcribes while you speak and is less accurate (about 100 MB). Models download once on first use. Paid [Cloud](https://cloud.talktocursor.com) accounts can choose **Cloud** instead, which streams audio to Deepgram Nova-3 with no download and includes 500 dictation minutes a month.
 
 For Wispr Flow, FluidVoice, or Handy, install and launch the app first. Then select it under **Voice Input Provider**,
 turn on **Enable Voice Input**, then click **Install & Start** under

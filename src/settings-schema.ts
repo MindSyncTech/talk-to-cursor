@@ -178,7 +178,7 @@ export const voiceInputSettingsSchema = z
     wakeSensitivity: z.number().finite().min(0).max(1),
     wakeChime: z.boolean(),
     bargeIn: z.boolean().default(true),
-    builtinModel: z.enum(["streaming", "parakeet"]).default("parakeet"),
+    builtinModel: z.enum(["streaming", "parakeet", "cloud"]).default("parakeet"),
     echoCancellation: z.boolean().default(true),
     inputGainDb: z.number().finite().min(0).max(30).default(0),
     inputChannel: z.number().int().min(1).max(64).default(1),

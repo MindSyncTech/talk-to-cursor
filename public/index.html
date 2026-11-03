@@ -470,12 +470,14 @@
 
     .account-stats {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
       border: 1px solid var(--border-soft);
       border-radius: var(--radius-sm);
     }
 
     .account-stats[hidden],
+    .account-stat[hidden],
     .account-usage-track[hidden] {
       display: none;
     }
@@ -528,7 +530,7 @@
 
     @media (max-width: 560px) {
       .account-stats {
-        grid-template-columns: 1fr;
+        grid-auto-flow: row;
       }
 
       .account-stat + .account-stat {
@@ -2211,7 +2213,7 @@
       </div>
 
       <div class="env-notice" id="builtinProviderInfo" style="display: none; margin-top: 0; margin-bottom: 16px;">
-        <strong>Built-in:</strong> The Background Helper transcribes on-device with sherpa-onnx and types the prompt directly. The first use downloads a speech model (about 100 MB for Streaming, 480 MB for Parakeet).
+        <strong>Built-in:</strong> The Background Helper transcribes on-device with sherpa-onnx and types the prompt directly. The first use downloads a speech model (about 100 MB for Streaming, 480 MB for Parakeet). Paid Cloud accounts can choose Cloud dictation instead, which needs no download.
       </div>
 
       <div class="env-notice" id="wisprProviderInfo" style="margin-top: 0; margin-bottom: 16px;">
@@ -2354,8 +2356,11 @@
           <select id="builtinModel">
             <option value="parakeet">Parakeet TDT 0.6B (most accurate)</option>
             <option value="streaming">Streaming (fastest)</option>
+            <option value="cloud">Cloud: Deepgram Nova-3 (paid Cloud plan)</option>
           </select>
-          <div class="help-text">Streaming transcribes while you talk. Parakeet transcribes after you stop, with higher accuracy.</div>
+          <div class="help-text">Streaming transcribes while you talk. Parakeet transcribes after you stop, with higher accuracy. Both run on this Mac.</div>
+          <div class="help-text" id="cloudDictationHelp" hidden>Cloud sends your microphone audio to Deepgram while you talk and uses your plan's dictation minutes. If Cloud can't be reached, TalkToCursor uses a local model you've already downloaded.</div>
+          <div class="env-notice" id="cloudDictationNotice" hidden style="margin-top: 10px;">Cloud dictation needs a connected paid Cloud account. <a href="#cloudAccountCard">Connect on the Cloud page</a>.</div>
         </div>
 
         <div class="toggle-row" id="bargeInRow" style="display: none;">
@@ -2643,6 +2648,7 @@
       <div class="account-stats" id="accountSummary" hidden>
         <div class="account-stat"><span>Plan</span><strong id="accountPlan">—</strong></div>
         <div class="account-stat"><span>Characters left</span><strong id="accountRemaining">—</strong></div>
+        <div class="account-stat" id="accountDictationStat" hidden><span>Dictation minutes left</span><strong id="accountDictationRemaining">—</strong></div>
         <div class="account-stat"><span>Resets</span><strong id="accountResets">—</strong></div>
       </div>
       <div class="account-usage-track" id="accountUsageBar" role="progressbar" aria-label="Cloud speech usage" aria-valuemin="0" aria-valuemax="100" hidden><span id="accountUsageFill"></span></div>
@@ -3315,6 +3321,17 @@
     const builtinProviderInfo = document.getElementById('builtinProviderInfo');
     const builtinSettings = document.getElementById('builtinSettings');
     const builtinModelSelect = document.getElementById('builtinModel');
+    const cloudDictationHelp = document.getElementById('cloudDictationHelp');
+    const cloudDictationNotice = document.getElementById('cloudDictationNotice');
+    let cloudDictationReady = false;
+
+    function updateBuiltinModelHelp() {
+      const cloud = builtinModelSelect.value === 'cloud';
+      cloudDictationHelp.hidden = !cloud;
+      cloudDictationNotice.hidden = !cloud || cloudDictationReady;
+    }
+
+    builtinModelSelect.addEventListener('change', updateBuiltinModelHelp);
     const bargeInRow = document.getElementById('bargeInRow');
     const bargeInToggle = document.getElementById('bargeIn');
     const echoCancellationRow = document.getElementById('echoCancellationRow');
@@ -3668,6 +3685,7 @@
           const vi = data.voiceInput;
           voiceInputProvider.value = vi.provider || 'wispr';
           builtinModelSelect.value = vi.builtinModel || 'parakeet';
+          updateBuiltinModelHelp();
           bargeInToggle.checked = vi.bargeIn !== false;
           echoCancellationToggle.checked = vi.echoCancellation !== false;
           noiseSuppressionToggle.checked = vi.noiseSuppression !== false;
@@ -3733,6 +3751,8 @@
     const accountPlan = document.getElementById('accountPlan');
     const accountRemaining = document.getElementById('accountRemaining');
     const accountResets = document.getElementById('accountResets');
+    const accountDictationStat = document.getElementById('accountDictationStat');
+    const accountDictationRemaining = document.getElementById('accountDictationRemaining');
     const accountUsageBar = document.getElementById('accountUsageBar');
     const accountUsageFill = document.getElementById('accountUsageFill');
     const accountDisconnectedActions = document.getElementById('accountDisconnectedActions');
@@ -3748,6 +3768,9 @@
       accountPlan.textContent = '—';
       accountRemaining.textContent = '—';
       accountResets.textContent = '—';
+      accountDictationStat.hidden = true;
+      cloudDictationReady = connected && !!data?.usage;
+      updateBuiltinModelHelp();
       if (!connected) {
         accountSummaryIntro.textContent = 'Connect TalkToCursor Cloud to see your plan and usage here.';
         return;
@@ -3758,6 +3781,12 @@
         const percent = Math.min(100, Math.max(0, Number(usage.percentUsed) || 0));
         accountPlan.textContent = 'Paid';
         accountRemaining.textContent = `${usage.remaining.toLocaleString()} of ${usage.included.toLocaleString()}`;
+        if (usage.dictation) {
+          const left = Math.floor(Number(usage.dictation.remainingSeconds || 0) / 60);
+          const total = Math.floor(Number(usage.dictation.includedSeconds || 0) / 60);
+          accountDictationRemaining.textContent = `${left.toLocaleString()} of ${total.toLocaleString()}`;
+          accountDictationStat.hidden = false;
+        }
         accountResets.textContent = usage.periodEnd
           ? new Date(usage.periodEnd).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
           : '—';

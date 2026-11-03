@@ -59,6 +59,10 @@ def _safe_extract(archive_path, destination):
                         shutil.copyfileobj(source, output)
 
 
+def is_downloaded(user_data_dir, spec):
+    return _is_valid(Path(user_data_dir) / "models" / spec.name, spec)
+
+
 def ensure_model(user_data_dir, spec, log_prefix="[models]"):
     """Return the model directory, downloading and verifying it if needed."""
     models_dir = Path(user_data_dir) / "models"

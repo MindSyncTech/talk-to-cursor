@@ -161,12 +161,17 @@ def load_config():
             'inputChannel': 1,
             'noiseSuppression': True,
         },
+        'cloud': {
+            'apiUrl': 'https://cloud.talktocursor.com',
+        },
     }
     try:
         with open(CONFIG_PATH, 'r') as f:
             config = json.load(f)
             if 'autoSubmit' in config:
                 defaults['autoSubmit'].update(config['autoSubmit'])
+            if isinstance(config.get('cloud'), dict):
+                defaults['cloud'].update(config['cloud'])
             # Support configs created before voiceInput replaced wisprLoop.
             voice_input = config.get('voiceInput', config.get('wisprLoop', {}))
             defaults['voiceInput'].update(voice_input)
@@ -201,7 +206,12 @@ WAKE_PHRASE = config['voiceInput']['wakePhrase']
 WAKE_SENSITIVITY = config['voiceInput']['wakeSensitivity']
 WAKE_CHIME = config['voiceInput']['wakeChime']
 BARGE_IN = config['voiceInput']['bargeIn']
-BUILTIN_MODEL = 'streaming' if config['voiceInput']['builtinModel'] == 'streaming' else 'parakeet'
+BUILTIN_MODEL = (
+    config['voiceInput']['builtinModel']
+    if config['voiceInput']['builtinModel'] in ('streaming', 'cloud')
+    else 'parakeet'
+)
+CLOUD_API_URL = config['cloud'].get('apiUrl') or 'https://cloud.talktocursor.com'
 ECHO_CANCELLATION = config['voiceInput']['echoCancellation'] is not False
 INPUT_GAIN_DB = min(30.0, max(0.0, float(config['voiceInput']['inputGainDb'] or 0)))
 INPUT_CHANNEL = config['voiceInput'].get('inputChannel') or 1
@@ -697,6 +707,31 @@ def create_speech_detector(sample_rate=16000):
         return None
 
 
+def local_fallback_transcriber():
+    """A local transcriber for Cloud dictation outages, if a model is already downloaded."""
+    from model_download import PARAKEET_STT, STREAMING_STT, is_downloaded
+    from stt_engine import BuiltinTranscriber
+
+    for model, spec in (('parakeet', PARAKEET_STT), ('streaming', STREAMING_STT)):
+        if is_downloaded(USER_DATA_DIR, spec):
+            return BuiltinTranscriber(USER_DATA_DIR, model)
+    return None
+
+
+def create_builtin_transcriber():
+    if BUILTIN_MODEL == 'cloud':
+        from cloud_dictation import CloudTranscriber, read_cloud_token
+
+        return CloudTranscriber(
+            CLOUD_API_URL,
+            read_cloud_token(USER_DATA_DIR),
+            fallback_factory=local_fallback_transcriber,
+        )
+    from stt_engine import BuiltinTranscriber
+
+    return BuiltinTranscriber(USER_DATA_DIR, BUILTIN_MODEL)
+
+
 def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
     """Start the configured provider, detect turn completion, then stop it."""
     global managed_baseline_text, managed_submit_started
@@ -709,15 +744,13 @@ def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
 
     voice_input_active.set()
     provider_active = False
+    transcriber = None
     try:
         from turn_detector import TurnDetector, TurnEndReason
 
         builtin = VOICE_INPUT_PROVIDER == 'builtin'
-        transcriber = None
         if builtin:
-            from stt_engine import BuiltinTranscriber
-
-            transcriber = BuiltinTranscriber(USER_DATA_DIR, BUILTIN_MODEL)
+            transcriber = create_builtin_transcriber()
 
         detector = TurnDetector(
             speech_detector=create_speech_detector(),
@@ -744,7 +777,8 @@ def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
             if not result.speech_detected:
                 print("[voice-input] No speech detected; cancelling")
                 return
-            transcript = transcriber.finish()
+            finishing, transcriber = transcriber, None
+            transcript = finishing.finish()
             print(f"[voice-input] Transcript ready ({len(transcript)} characters)")
             submit_prompt_text(
                 transcript,
@@ -817,6 +851,8 @@ def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
     finally:
         if provider_active:
             toggle_voice_input()
+        if transcriber is not None and hasattr(transcriber, 'cancel'):
+            transcriber.cancel()
         active_turn_detector = None
         voice_input_active.clear()
         voice_input_lock.release()
@@ -1418,7 +1454,9 @@ def main():
                 provider_shortcut_watch = setup_provider_shortcut_watch()
         except Exception as error:
             print(f'[send-it] Listening for "{SUBMIT_PHRASE}" after dictation is unavailable: {error}')
-    if VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin':
+    if VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin' and BUILTIN_MODEL == 'cloud':
+        print(f"[stt] Cloud dictation via {CLOUD_API_URL}")
+    elif VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin':
         def preload_stt():
             try:
                 from stt_engine import preload

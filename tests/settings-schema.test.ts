@@ -34,6 +34,16 @@ describe("settingsUpdateSchema", () => {
     });
   });
 
+  it("accepts Cloud dictation as a built-in speech model", () => {
+    expect(
+      settingsUpdateSchema.parse({ voiceInput: { builtinModel: "cloud" } }),
+    ).toEqual({ voiceInput: { builtinModel: "cloud" } });
+    expect(
+      settingsUpdateSchema.safeParse({ voiceInput: { builtinModel: "whisper" } })
+        .success,
+    ).toBe(false);
+  });
+
   it("rejects unknown providers and out-of-range values", () => {
     expect(
       settingsUpdateSchema.safeParse({ ttsProvider: "unknown" }).success,

@@ -366,7 +366,7 @@ Choose a voice input provider:
 - **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended):** Install Wispr Flow and configure its dictation hotkey.
 - **[FluidVoice](https://fluidvoice.com/) (free & local):** Install FluidVoice (macOS 15 or later), keep its dictation shortcut in toggle mode rather than press-and-hold, and enter the same shortcut as the FluidVoice Shortcut (or click **Use FluidVoice's**). FluidVoice's default is Right Option (`right_option`).
 - **[Handy](https://github.com/cjpais/Handy) (free & private):** Install and launch Handy, download a transcription model, and grant Microphone, Accessibility, and Input Monitoring permissions.
-- **Built-in (free & private):** Nothing else to install. Choose **Parakeet** (the default, about 480 MB, most accurate) or **Streaming** (about 100 MB, transcribes while you speak). Until the model finishes downloading, the hotkey and wake phrase play an error sound instead of starting a turn. The model downloads and is checksum-verified on first use.
+- **Built-in (free & private):** Nothing else to install. Choose **Parakeet** (the default, about 480 MB, most accurate) or **Streaming** (about 100 MB, transcribes while you speak). Until the model finishes downloading, the hotkey and wake phrase play an error sound instead of starting a turn. The model downloads and is checksum-verified on first use. With a connected paid Cloud account you can choose **Cloud: Deepgram Nova-3** instead: nothing downloads, your microphone audio streams to Deepgram while you talk, and each turn uses your plan's dictation minutes (500 per billing period). If Cloud can't be reached, that turn falls back to a local model if you've already downloaded one.
 
 Then:
 
@@ -454,6 +454,7 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `voiceInput.provider` | Voice input provider (`builtin`, `wispr`, `fluidvoice`, or `handy`) | `wispr` |
 | `voiceInput.wisprHotkey` | Wispr Flow recording shortcut | `shift+ctrl` |
 | `voiceInput.fluidVoiceHotkey` | FluidVoice dictation shortcut | `right_option` |
+| `voiceInput.builtinModel` | Built-in speech model: `parakeet`, `streaming`, or `cloud` (paid Cloud plan) | `parakeet` |
 | `voiceInput.inputChannel` | Input device channel to record (macOS); stays on this Mac | `1` |
 | `voiceInput.handyCommand` | Optional Handy executable path | auto-detect |
 | `voiceInput.wakeWordEnabled` | Always listen locally for a wake phrase | `false` |
