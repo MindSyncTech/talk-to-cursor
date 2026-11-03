@@ -212,6 +212,7 @@ export const voiceInputSettingsSchema = z
     provider: z.enum(["builtin", "wispr", "fluidvoice", "handy"]),
     silenceThreshold: z.number().finite().min(0.005).max(0.1),
     silenceDuration: z.number().finite().min(0.5).max(5),
+    noSpeechTimeout: z.number().int().min(5).max(120).default(30),
     wisprHotkey: z.string().trim().min(1).max(100),
     fluidVoiceHotkey: z.string().trim().min(1).max(100).default("right_option"),
     handyCommand: z.string().trim().max(1_000),

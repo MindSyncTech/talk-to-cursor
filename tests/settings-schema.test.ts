@@ -111,6 +111,13 @@ describe("settingsUpdateSchema", () => {
     expect(() => settingsUpdateSchema.parse({ autoSubmit: { minWords: 0 } })).toThrow();
   });
 
+  it("waits 30 seconds for speech by default, within 5 seconds to 2 minutes", () => {
+    const { noSpeechTimeout: _removed, ...olderVoiceInput } = DEFAULT_CONFIG.voiceInput;
+    expect(settingsSchema.parse({ ...DEFAULT_CONFIG, voiceInput: olderVoiceInput }).voiceInput.noSpeechTimeout).toBe(30);
+    expect(settingsUpdateSchema.parse({ voiceInput: { noSpeechTimeout: 120 } }).voiceInput?.noSpeechTimeout).toBe(120);
+    expect(() => settingsUpdateSchema.parse({ voiceInput: { noSpeechTimeout: 2 } })).toThrow();
+  });
+
   it("gives Cloud its own natural voice style, separate from ElevenLabs", () => {
     const { cloudStyle: _omitted, ...legacy } = DEFAULT_CONFIG.voiceSettings;
     const parsed = settingsSchema.parse({ ...DEFAULT_CONFIG, voiceSettings: legacy });

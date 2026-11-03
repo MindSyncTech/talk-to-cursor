@@ -471,6 +471,7 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `autoListen` | Auto-listen after tasks | false |
 | `autoSubmit.enabled` | Auto-press Enter | false |
 | `autoSubmit.mode` | Turn detection mode (`fixed` or `smart`) | `smart` |
+| `autoSubmit.minWords` | Fewest words Auto-Submit sends (1–10) | `2` |
 | `autoSubmit.silenceDelay` | Text stability delay for fixed mode | `3.0` |
 | `autoSubmit.smartCandidateSilence` | Quiet audio before a Smart Turn check | `0.8` |
 | `autoSubmit.smartTurnThreshold` | Probability required to end the turn | `0.5` |
@@ -482,6 +483,7 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `autoSubmit.sendSound` | Send sound: `Chime` or any sound allowed for `completionFeedback.sound` | `ttc-message-sent-1` |
 | `voiceInput.enabled` | Automatic voice input loop | false |
 | `voiceInput.provider` | Voice input provider (`builtin`, `wispr`, `fluidvoice`, or `handy`) | `builtin` |
+| `voiceInput.noSpeechTimeout` | Seconds to wait for you to start speaking before listening stops (5–120) | `30` |
 | `voiceInput.wisprHotkey` | Wispr Flow recording shortcut | `shift+ctrl` |
 | `voiceInput.fluidVoiceHotkey` | FluidVoice dictation shortcut | `right_option` |
 | `voiceInput.builtinModel` | Built-in speech model: `parakeet`, `streaming`, or `cloud` (paid Cloud plan) | `parakeet` |

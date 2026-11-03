@@ -152,6 +152,7 @@ def load_config():
             'provider': 'builtin',
             'silenceThreshold': 0.005,
             'silenceDuration': 2.0,
+            'noSpeechTimeout': 30,
             'wisprHotkey': 'shift+ctrl',
             'fluidVoiceHotkey': 'right_option',
             'handyCommand': '',
@@ -245,6 +246,7 @@ VOICE_INPUT_ENABLED = config['voiceInput']['enabled']
 VOICE_INPUT_PROVIDER = config['voiceInput']['provider']
 SILENCE_THRESHOLD = config['voiceInput']['silenceThreshold']
 SILENCE_DURATION = config['voiceInput']['silenceDuration']
+NO_SPEECH_TIMEOUT = min(120.0, max(5.0, float(config['voiceInput'].get('noSpeechTimeout') or 30)))
 WISPR_HOTKEY = config['voiceInput']['wisprHotkey']
 FLUIDVOICE_HOTKEY = config['voiceInput']['fluidVoiceHotkey']
 HANDY_COMMAND = config['voiceInput']['handyCommand']
@@ -874,6 +876,7 @@ def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
             user_data_dir=USER_DATA_DIR,
             silence_threshold=SILENCE_THRESHOLD,
             fixed_silence=SILENCE_DURATION,
+            no_speech_timeout=NO_SPEECH_TIMEOUT,
             candidate_silence=SMART_CANDIDATE_SILENCE,
             smart_threshold=SMART_TURN_THRESHOLD,
             smart_max_silence=SMART_MAX_SILENCE,

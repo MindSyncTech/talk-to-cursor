@@ -144,6 +144,7 @@ export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
   provider: "builtin",
   silenceThreshold: 0.005,
   silenceDuration: 2.0,
+  noSpeechTimeout: 30,
   wisprHotkey: "shift+ctrl",
   fluidVoiceHotkey: "right_option",
   handyCommand: "",
