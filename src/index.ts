@@ -20,11 +20,25 @@ import {
 } from "./settings-profiles.js";
 import { applyPronunciation } from "./pronunciation.js";
 import { checkForUpdates } from "./update-checker.js";
-
+import { HelperIpcClient, type HelperMessage } from "./helper-ipc.js";
 // Create server instance
 const server = new McpServer({
   name: PACKAGE_NAME,
   version: PACKAGE_VERSION,
+});
+
+const helper = new HelperIpcClient("mcp");
+let helperPlayback = false;
+
+helper.on("message", (message: HelperMessage) => {
+  if (message.type === "helper.state") {
+    helperPlayback = Boolean(message.playback);
+  } else if (message.type === "tts.cancel") {
+    interruptSpeech("the user started speaking");
+  }
+});
+helper.on("disconnected", () => {
+  helperPlayback = false;
 });
 
 // TTS queue to prevent overlapping audio
@@ -36,6 +50,24 @@ interface TTSQueueItem {
 
 const ttsQueue: TTSQueueItem[] = [];
 let isProcessingQueue = false;
+let currentSpeech: AbortController | null = null;
+
+function interruptedResult(reason: string) {
+  return {
+    content: [
+      {
+        type: "text",
+        text: `Speech was interrupted because ${reason}; continue with the user's new request.`,
+      },
+    ],
+  };
+}
+
+/** Stop current playback and drop queued speech (barge-in). */
+function interruptSpeech(reason: string) {
+  currentSpeech?.abort();
+  for (const item of ttsQueue.splice(0)) item.resolve(interruptedResult(reason));
+}
 
 function briefSpokenResponse(text: string): string {
   const trimmed = text.trim();
@@ -115,14 +147,33 @@ async function processTTSQueue() {
         timestamp: new Date().toISOString(),
         speaking: true,
       });
+      const controller = new AbortController();
+      currentSpeech = controller;
+      let interrupted = false;
       try {
-        await speakWithProvider(spokenText, config);
+        const result = await speakWithProvider(
+          spokenText,
+          config,
+          controller.signal,
+          { helper, helperPlayback },
+        );
+        interrupted = result.interrupted;
       } finally {
+        currentSpeech = null;
         writePrivateJson(TTS_STATE_PATH, {
           timestamp: new Date().toISOString(),
           speaking: false,
         });
         await resumeMedia();
+      }
+
+      if (interrupted) {
+        console.error(`[TTS] Playback interrupted`);
+        item.resolve(interruptedResult("the user started speaking"));
+        for (const queued of ttsQueue.splice(0)) {
+          queued.resolve(interruptedResult("the user started speaking"));
+        }
+        continue;
       }
 
       // Write TTS completion signal for background script
@@ -146,7 +197,7 @@ async function processTTSQueue() {
         error instanceof Error ? error.message : String(error);
       console.error(`[TTS] Error: ${errorMessage}`);
 
-      item.reject({
+      item.resolve({
         content: [
           {
             type: "text",
@@ -161,6 +212,12 @@ async function processTTSQueue() {
   isProcessingQueue = false;
 }
 
+async function waitForSpeechIdle(): Promise<void> {
+  while (isProcessingQueue || ttsQueue.length > 0) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
 function queueTTS(text: string): Promise<any> {
   return new Promise((resolve, reject) => {
     ttsQueue.push({ text, resolve, reject });
@@ -169,37 +226,58 @@ function queueTTS(text: string): Promise<any> {
 }
 
 // Register the speak tool
+let lastSpeechError: string | null = null;
+
 server.registerTool(
   "speak",
   {
     description:
-      "Speak text aloud using text-to-speech. For task-start announcements set waitForPlayback to false so work begins immediately. For completion speech leave it true, then call the listen tool so Auto-Listen starts after playback. State task-start actions and factual answers explicitly; keep routine completion updates concise. The user's Spoken Response Detail setting applies at playback.",
+      "Speak text aloud using text-to-speech. Speech is queued and the tool returns immediately, so keep working or write the final chat response while it plays. After final completion speech, call the listen tool; it waits for playback before Auto-Listen starts. State task-start actions and factual answers explicitly; keep routine completion updates concise. The user's Spoken Response Detail setting applies at playback.",
     inputSchema: {
       text: z
         .string()
-        .describe("The text to speak aloud. Keep it concise (1-2 sentences max)."),
+        .optional()
+        .describe("Required. The text to speak aloud. Keep it concise (1-2 sentences max)."),
+      message: z.string().optional().describe("Alias for text."),
+      content: z.string().optional().describe("Alias for text."),
+      speech: z.string().optional().describe("Alias for text."),
       waitForPlayback: z
         .boolean()
         .optional()
-        .default(true)
-        .describe(
-          "Set false for task-start announcements; leave true for completion speech, questions, failures, and required follow-ups.",
-        ),
+        .describe("Deprecated and ignored; speech never blocks the agent."),
     },
   },
-  async ({ text, waitForPlayback }) => {
-    if (waitForPlayback) {
-      return await queueTTS(text);
+  async (args) => {
+    const text = [args.text, args.message, args.content, args.speech]
+      .find((value) => typeof value === "string" && value.trim() !== "");
+    if (!text) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: 'Nothing to speak. Call speak again with { "text": "..." }.',
+          },
+        ],
+        isError: true,
+      };
     }
 
-    void queueTTS(text).catch((error) => {
-      console.error(`[TTS] Background speech failed: ${String(error)}`);
+    const previousError = lastSpeechError;
+    lastSpeechError = null;
+
+    void queueTTS(text).then((result) => {
+      if (result?.isError) {
+        lastSpeechError = result.content?.[0]?.text ?? "Speech failed";
+        console.error(`[TTS] Background speech failed: ${lastSpeechError}`);
+      }
     });
     return {
       content: [
         {
           type: "text",
-          text: "Speech queued; continue the task immediately.",
+          text: previousError
+            ? `Speech queued. The previous speech did not play (${previousError}); tell the user.`
+            : "Speech queued; continue immediately.",
         },
       ],
     };
@@ -211,7 +289,7 @@ server.registerTool(
   "listen",
   {
     description:
-      "Signal the background script to start listening with the configured voice input provider. Always call this immediately after final task-completion speech; it safely does nothing when Auto-Listen is disabled. Never call it after task-start or milestone speech.",
+      "Signal the background script to start listening with the configured voice input provider once queued speech has finished playing. Always call this immediately after final task-completion speech; it returns right away and safely does nothing when Auto-Listen is disabled. Never call it after task-start or milestone speech.",
     inputSchema: {},
   },
   async () => {
@@ -241,13 +319,17 @@ server.registerTool(
         };
       }
 
-      const signal = {
-        timestamp: new Date().toISOString(),
-        triggered: true,
-      };
-      
-      writePrivateJson(LISTEN_SIGNAL_PATH, signal);
-      console.error(`[TTS] Listen signal written`);
+      void waitForSpeechIdle().then(() => {
+        if (helper.send({ type: "listen" })) {
+          console.error(`[TTS] Listen request sent to the Background Helper`);
+        } else {
+          writePrivateJson(LISTEN_SIGNAL_PATH, {
+            timestamp: new Date().toISOString(),
+            triggered: true,
+          });
+          console.error(`[TTS] Listen signal written`);
+        }
+      });
 
       return {
         content: [
@@ -307,6 +389,8 @@ async function main() {
       console.error(`[TTS] Cloud URL: ${config.cloud.apiUrl}`);
     }
   }
+
+  helper.start();
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

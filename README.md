@@ -17,6 +17,8 @@ A voice interface for Cursor and compatible MCP coding assistants. Your agent sp
 - **Automatic Profile Sync** - Assign paid profiles by project and coding host, merge non-overlapping changes safely, and use 30-version/90-day history with rollback
 - **Pronunciation Dictionaries** - Add up to 50 explicit word or phrase replacements to paid profiles
 - **Paid Cloud Usage Controls** - Set hard per-device billing-period budgets and receive in-app warnings at 80%/95% of the included allowance, with optional email alerts
+- **Streaming Speech** - Speech starts on the first sentence, and talking over the assistant stops it (barge-in)
+- **Built-in Voice Input** - Private on-device speech-to-text with echo cancellation, no Wispr or Handy required
 
 ## Coding Host Guides
 
@@ -34,7 +36,7 @@ Support for an unlisted IDE is not implied. It must support local stdio MCP serv
 
 TalkToCursor handles text-to-speech responses from the connected coding agent. Choose the provider that fits your priorities:
 
-- **[TalkToCursor Cloud](https://cloud.talktocursor.com) (recommended for easiest setup)** - Create a free account to pair devices and manually upload/download portable preferences. The optional $15/month subscription adds managed TTS with 100,000 characters, up to 10 named project/host profiles, automatic conflict-safe sync, 30-version/90-day rollback, pronunciation rules, hard device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts. Signed-in users can export usage as CSV. No provider API key is required.
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com) (recommended for easiest setup)** - Create a free account to pair devices and manually upload/download portable preferences. The optional $9/month subscription adds managed TTS with 100,000 characters, up to 10 named project/host profiles, automatic conflict-safe sync, 30-version/90-day rollback, pronunciation rules, hard device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts. Signed-in users can export usage as CSV. No provider API key is required.
 - **[ElevenLabs](https://try.elevenlabs.io/talktocursor) (best for voice selection and control)** - Bring your own API key for a broad voice library, models, presets, and detailed tuning.
 - **[Voicebox](https://github.com/jamiepine/voicebox) (free, private, and local)** - Run speech synthesis and voice cloning on your computer with manual setup.
 
@@ -151,7 +153,7 @@ For example:
 
 ### 4. Choose a text-to-speech provider
 
-- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Create a free account to pair devices and manually upload/download portable preferences. The optional $15/month plan adds managed Google Cloud TTS with 100,000 characters, up to 10 named project/host profiles with automatic conflict-safe sync and rollback, pronunciation rules, device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts—without storing a provider API key locally. Signed-in users can export usage as CSV.
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Create a free account to pair devices and manually upload/download portable preferences. The optional $9/month plan adds managed Google Cloud TTS with 100,000 characters, up to 10 named project/host profiles with automatic conflict-safe sync and rollback, pronunciation rules, device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts—without storing a provider API key locally. Signed-in users can export usage as CSV.
 - **[ElevenLabs](https://try.elevenlabs.io/talktocursor):** Sign up and create an API key for full voice and model controls.
 - **[Voicebox](https://github.com/jamiepine/voicebox) (free & local):** Install and run Voicebox, download a TTS model, and create a voice profile.
 
@@ -182,8 +184,9 @@ For the full hands-free conversational loop, choose one of these providers:
 
 - **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended)** — A polished voice-to-text experience with minimal setup.
 - **[Handy](https://github.com/cjpais/Handy) (free & private)** — Open-source transcription that runs locally using Whisper or Parakeet, must be installed manually.
+- **Built-in (free & private)** — On-device transcription inside the Background Helper. **Parakeet** (the default) is the most accurate and transcribes when you finish (about 480 MB model); **Streaming** transcribes while you speak and is less accurate (about 100 MB). Models download once on first use.
 
-Install and launch your provider, select it under **Voice Input Provider**,
+For Wispr Flow or Handy, install and launch your provider first. Then select a provider under **Voice Input Provider**, select it under **Voice Input Provider**,
 turn on **Enable Voice Input**, then click **Install & Start** under
 **Cursor Hands-Free Background Helper**. The helper runs invisibly and starts at login.
 
@@ -230,8 +233,14 @@ ElevenLabs supports detailed voice controls:
 - Dramatic - Maximum style
 
 TalkToCursor Cloud uses the fixed `gemini-2.5-flash-tts` model and a curated
-list of Google voices, defaulting to Kore. Voicebox uses the profiles and models
-available in your local Voicebox installation.
+list of Google voices, defaulting to Emma. Cloud voices have their own **Speed**
+(0.7x - 2.0x, default 1.2x) and **Style** controls, separate from ElevenLabs.
+Voicebox uses the profiles and models available in your local Voicebox
+installation.
+
+With built-in voice input, the helper plays speech through its own echo-cancelled
+audio engine. Turn on **Interrupt by Talking** to stop the assistant mid-sentence by
+talking over it.
 
 ## Auto-Submit (Optional)
 
@@ -252,7 +261,11 @@ with Pipecat's local Smart Turn v3.2 model, keeps listening when your thought
 sounds unfinished, and submits quickly when it sounds complete. The verified
 8.7 MB model downloads once on first use and stays under TalkToCursor's local
 application data. You can also say **"send it"** to finish immediately; the
-helper removes that trailing command before submission.
+helper removes that trailing command before submission. The "send it" command
+has its own switch and works even with Auto-Submit off, so you can submit only
+when you say it. With built-in voice input, you can also say "send it" after
+the text is typed in; the helper keeps listening for just that phrase until the
+text is sent, you press Enter or Escape, move to another field, or leave Cursor.
 
 The helper monitors the text field and automatically presses Enter when
 dictation finishes. Dictation started outside TalkToCursor continues to use the

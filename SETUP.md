@@ -14,11 +14,11 @@ Follow the host-specific MCP instructions in [INSTALL.md](INSTALL.md#choose-your
 
 ## Step 1: Choose Your Text-to-Speech Provider
 
-- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Create a free account to pair devices and manually upload or download portable preferences. The optional $15/month plan adds managed Google Cloud TTS with 100,000 characters, up to 10 project/host profiles with automatic conflict-safe sync and rollback, pronunciation rules, device budgets, up to 12 billing periods of analytics, CSV export, and in-app plus optional email allowance alerts. No provider API key is stored locally.
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Create a free account to pair devices and manually upload or download portable preferences. The optional $9/month plan adds managed Google Cloud TTS with 100,000 characters, up to 10 project/host profiles with automatic conflict-safe sync and rollback, pronunciation rules, device budgets, up to 12 billing periods of analytics, CSV export, and in-app plus optional email allowance alerts. No provider API key is stored locally.
 - **[ElevenLabs](https://try.elevenlabs.io/talktocursor):** Create an API key for full voice and model controls.
 - **[Voicebox](https://github.com/jamiepine/voicebox) (free & local):** Install and run Voicebox, download a model, and create a voice profile.
 
-TalkToCursor Cloud uses the fixed `gemini-2.5-flash-tts` model and defaults to the Kore voice.
+TalkToCursor Cloud uses the fixed `gemini-2.5-flash-tts` model and defaults to the Emma voice.
 
 ## Step 2: Configure TalkToCursor
 
@@ -69,7 +69,7 @@ Completely quit and restart the coding host so it reloads the MCP server.
 
 ## Step 5: Try Voice-to-Voice Coding
 
-1. Install and open [Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended) or [Handy](https://github.com/cjpais/Handy) (free and private)
+1. Install and open [Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended) or [Handy](https://github.com/cjpais/Handy) (free and private), or skip this and use **Built-in** on-device transcription
 2. Select it under **Voice Input Provider** in the TalkToCursor settings UI
 3. Install PortAudio with `brew install portaudio` and turn on **Enable Voice Input**
 4. Click **Install & Start Background Helper** under **Cursor Hands-Free Background Helper**. It creates
@@ -89,8 +89,10 @@ Auto-submit and the voice-input loop require macOS.
 Auto-Submit offers **Fixed Pause** and **Smart Turn** modes. Smart Turn runs a
 verified local endpoint model after a short pause, continues listening when a
 thought appears unfinished, and falls back to a maximum silence timeout. Its
-8.7 MB model downloads once on first use. The optional spoken **"send it"**
-command ends the turn immediately and is removed from the prompt before Enter.
+8.7 MB model downloads once on first use. Auto-Submit is off by default. The
+optional spoken **"send it"** command ends the turn immediately and is removed
+from the prompt before Enter; it has its own switch and works even with
+Auto-Submit off.
 
 ## What You Need to Configure
 

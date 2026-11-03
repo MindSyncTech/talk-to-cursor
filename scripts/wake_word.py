@@ -224,9 +224,20 @@ def listen_for_wake_phrase(
     sensitivity,
     should_pause,
     on_detected,
+    audio_source=None,
 ):
     """Listen continuously and call on_detected after the configured phrase."""
     import sounddevice as sd
+
+    def open_microphone():
+        if audio_source is not None:
+            return audio_source.open_reader(sample_rate=sample_rate)
+        return sd.InputStream(
+            channels=1,
+            dtype="float32",
+            samplerate=sample_rate,
+            blocksize=samples_per_read,
+        )
 
     detector = StreamingKeywordDetector(
         user_data_dir,
@@ -248,12 +259,7 @@ def listen_for_wake_phrase(
         detector.reset()
         detected = False
         try:
-            with sd.InputStream(
-                channels=1,
-                dtype="float32",
-                samplerate=sample_rate,
-                blocksize=samples_per_read,
-            ) as microphone:
+            with open_microphone() as microphone:
                 while not should_pause():
                     samples, overflowed = microphone.read(samples_per_read)
                     if overflowed:

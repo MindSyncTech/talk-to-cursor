@@ -63,7 +63,11 @@ const portableSettingsSchema = z.object({
     personality: z.boolean(),
   }),
   autoSubmit: autoSubmitSettingsSchema,
-  voiceInput: voiceInputSettingsSchema.omit({ handyCommand: true }),
+  voiceInput: voiceInputSettingsSchema.omit({
+    handyCommand: true,
+    echoCancellation: true,
+    inputGainDb: true,
+  }),
   pronunciation: pronunciationSettingsSchema.default({
     enabled: true,
     entries: [],
@@ -206,6 +210,8 @@ export function toPortableSettings(config: Config): PortableSettings {
       wakePhrase: config.voiceInput.wakePhrase,
       wakeSensitivity: config.voiceInput.wakeSensitivity,
       wakeChime: config.voiceInput.wakeChime,
+      bargeIn: config.voiceInput.bargeIn,
+      builtinModel: config.voiceInput.builtinModel,
     },
     autoListen: config.autoListen,
   });
@@ -240,6 +246,8 @@ export function applyPortableSettings(
     voiceInput: {
       ...portable.voiceInput,
       handyCommand: local.voiceInput.handyCommand,
+      echoCancellation: local.voiceInput.echoCancellation,
+      inputGainDb: local.voiceInput.inputGainDb,
     },
     autoListen: portable.autoListen,
   };

@@ -1,5 +1,6 @@
 """Hybrid RMS, Smart Turn, and spoken-command turn detection."""
 
+import threading
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -15,6 +16,8 @@ class TurnEndReason(Enum):
     SUBMIT_COMMAND = "submit_command"
     FIXED_PAUSE = "fixed_pause"
     NO_SPEECH = "no_speech"
+    MANUAL_STOP = "manual_stop"
+    MAX_DURATION = "max_duration"
 
 
 @dataclass(frozen=True)
@@ -39,9 +42,18 @@ class TurnDetector:
         submit_phrase,
         submit_sensitivity=0.65,
         no_speech_timeout=30.0,
+        max_turn_seconds=120.0,
         sample_rate=16000,
         chunk_size=800,
+        audio_source=None,
+        preroll_seconds=0.0,
+        on_audio=None,
+        speech_detector=None,
     ):
+        self.audio_source = audio_source
+        self.speech_detector = speech_detector
+        self.preroll_seconds = float(preroll_seconds)
+        self.on_audio = on_audio
         self.mode = mode
         self.silence_threshold = float(silence_threshold)
         self.fixed_silence = float(fixed_silence)
@@ -49,6 +61,8 @@ class TurnDetector:
         self.smart_threshold = float(smart_threshold)
         self.smart_max_silence = float(smart_max_silence)
         self.no_speech_timeout = float(no_speech_timeout)
+        self.max_turn_seconds = float(max_turn_seconds)
+        self._stop_requested = threading.Event()
         self.sample_rate = sample_rate
         self.chunk_size = chunk_size
         self.smart_analyzer = None
@@ -63,19 +77,41 @@ class TurnDetector:
             except Exception as error:
                 print(f"[smart-turn] Unavailable; using fixed-pause fallback: {error}")
 
-            if submit_command_enabled:
-                try:
-                    from wake_word import StreamingKeywordDetector
+        if submit_command_enabled:
+            try:
+                from wake_word import StreamingKeywordDetector
 
-                    self.submit_detector = StreamingKeywordDetector(
-                        user_data_dir,
-                        submit_phrase,
-                        submit_sensitivity,
-                        filename="submit-command-keywords.txt",
-                    )
-                    print(f'[smart-turn] Spoken submit command ready: "{submit_phrase}"')
-                except Exception as error:
-                    print(f"[smart-turn] Spoken submit command unavailable: {error}")
+                self.submit_detector = StreamingKeywordDetector(
+                    user_data_dir,
+                    submit_phrase,
+                    submit_sensitivity,
+                    filename="submit-command-keywords.txt",
+                )
+                print(f'[turn-detector] Spoken submit command ready: "{submit_phrase}"')
+            except Exception as error:
+                print(f"[turn-detector] Spoken submit command unavailable: {error}")
+
+    @property
+    def fast_path_threshold(self):
+        """Probability that completes a turn without a second confirmation."""
+        return min(0.95, self.smart_threshold + 0.25)
+
+    def _open_microphone(self):
+        if self.audio_source is not None:
+            return self.audio_source.open_reader(
+                sample_rate=self.sample_rate,
+                preroll_seconds=self.preroll_seconds,
+            )
+        return sd.InputStream(
+            samplerate=self.sample_rate,
+            channels=1,
+            dtype="float32",
+            blocksize=self.chunk_size,
+        )
+
+    def request_stop(self):
+        """Finish the current turn as soon as the next audio chunk arrives."""
+        self._stop_requested.set()
 
     def wait_for_turn_end(self, verbose=True):
         """Block until speech ends semantically or a fallback condition fires."""
@@ -101,18 +137,16 @@ class TurnDetector:
                 if self.mode == "smart" and self.smart_analyzer is not None
                 else "fixed pause"
             )
+            voice_check = (
+                ", voice activity detection on" if self.speech_detector is not None else ""
+            )
             print(
                 f"[turn-detector] Listening with {detector_name} "
                 f"(adaptive RMS threshold: {effective_threshold:.4f}, "
-                f"configured ceiling: {self.silence_threshold:.4f})"
+                f"configured ceiling: {self.silence_threshold:.4f}{voice_check})"
             )
 
-        with sd.InputStream(
-            samplerate=self.sample_rate,
-            channels=1,
-            dtype="float32",
-            blocksize=self.chunk_size,
-        ) as microphone:
+        with self._open_microphone() as microphone:
             while True:
                 audio_data, overflowed = microphone.read(self.chunk_size)
                 if overflowed and verbose:
@@ -120,10 +154,38 @@ class TurnDetector:
 
                 samples = audio_data.reshape(-1).astype(np.float32, copy=False)
                 audio_chunks.append(samples.copy())
+                if self.on_audio is not None:
+                    self.on_audio(samples)
                 rms = float(np.sqrt(np.mean(samples ** 2)))
                 now = time.monotonic()
                 if listening_started is None:
                     listening_started = now
+
+                if self._stop_requested.is_set():
+                    print("[turn-detector] Stop requested; finishing turn")
+                    return TurnEndResult(
+                        speech_detected=speech_detected,
+                        reason=(
+                            TurnEndReason.MANUAL_STOP
+                            if speech_detected
+                            else TurnEndReason.NO_SPEECH
+                        ),
+                        smart_probability=last_probability,
+                    )
+
+                if (
+                    speech_started is not None
+                    and now - speech_started >= self.max_turn_seconds
+                ):
+                    print(
+                        f"[turn-detector] Turn reached {self.max_turn_seconds:.0f}s; "
+                        "finishing. Background noise may be above the speech threshold."
+                    )
+                    return TurnEndResult(
+                        speech_detected=True,
+                        reason=TurnEndReason.MAX_DURATION,
+                        smart_probability=last_probability,
+                    )
 
                 if self.submit_detector is not None and self.submit_detector.accept(
                     samples, self.sample_rate
@@ -135,7 +197,12 @@ class TurnDetector:
                         smart_probability=last_probability,
                     )
 
-                if rms >= effective_threshold:
+                voiced = (
+                    self.speech_detector.accept(samples)
+                    if self.speech_detector is not None
+                    else True
+                )
+                if rms >= effective_threshold and voiced:
                     if not speech_detected and verbose:
                         print(
                             f"[turn-detector] Speech detected "
@@ -215,7 +282,10 @@ class TurnDetector:
                     )
                     if prediction.probability >= self.smart_threshold:
                         completion_checks += 1
-                        if completion_checks >= 2:
+                        if (
+                            completion_checks >= 2
+                            or prediction.probability >= self.fast_path_threshold
+                        ):
                             return TurnEndResult(
                                 speech_detected=True,
                                 reason=TurnEndReason.SMART_TURN,

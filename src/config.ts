@@ -91,6 +91,7 @@ function migrateLegacyConfig(): void {
 
 export const DEFAULT_VOICE_SETTINGS: Config["voiceSettings"] = {
   speed: 1.0,
+  cloudSpeed: 1.2,
   stability: 0.5,
   similarityBoost: 0.75,
   style: 0.0,
@@ -140,6 +141,10 @@ export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
   wakePhrase: "hey cursor",
   wakeSensitivity: 0.5,
   wakeChime: true,
+  bargeIn: true,
+  builtinModel: "parakeet",
+  echoCancellation: true,
+  inputGainDb: 0,
 };
 
 export const DEFAULT_CONFIG: Config = {

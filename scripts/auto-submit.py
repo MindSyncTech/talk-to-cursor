@@ -17,6 +17,7 @@ Requires macOS Accessibility and Input Monitoring permissions:
   System Settings > Privacy & Security > Accessibility / Input Monitoring
 """
 
+import base64
 import time
 import json
 import os
@@ -52,7 +53,7 @@ if os.environ.get('XPC_SERVICE_NAME') == 'com.mindsynctech.talktocursor.backgrou
         print(f"[background-helper] Could not hide Dock icon: {error}")
 
 try:
-    from AppKit import NSWorkspace
+    from AppKit import NSPasteboard, NSPasteboardTypeString, NSWorkspace
     from ApplicationServices import (
         AXUIElementCreateSystemWide,
         AXUIElementCopyAttributeValue,
@@ -62,6 +63,7 @@ try:
         kAXTrustedCheckOptionPrompt,
     )
     from pynput.keyboard import Key, KeyCode, Controller, GlobalHotKeys, Listener
+    from CoreFoundation import CFEqual
     from submit_phrase import strip_trailing_submit_phrase
 except ImportError as error:
     package_root = Path(os.environ.get(
@@ -100,6 +102,7 @@ CONFIG_PATH = USER_DATA_DIR / 'config.json'
 SIGNAL_PATH = USER_DATA_DIR / 'listen-signal.json'
 TTS_COMPLETE_PATH = USER_DATA_DIR / 'tts-complete.json'
 TTS_STATE_PATH = USER_DATA_DIR / 'tts-state.json'
+HELPER_SOCKET_PATH = USER_DATA_DIR / 'helper.sock'
 PACKAGE_ROOT = Path(os.environ.get(
     'TALKTOCURSOR_PACKAGE_ROOT',
     Path(__file__).resolve().parent.parent,
@@ -150,7 +153,11 @@ def load_config():
             'wakePhrase': 'hey cursor',
             'wakeSensitivity': 0.5,
             'wakeChime': True,
-        }
+            'bargeIn': True,
+            'builtinModel': 'parakeet',
+            'echoCancellation': True,
+            'inputGainDb': 0,
+        },
     }
     try:
         with open(CONFIG_PATH, 'r') as f:
@@ -189,7 +196,12 @@ WAKE_WORD_ENABLED = config['voiceInput']['wakeWordEnabled']
 WAKE_PHRASE = config['voiceInput']['wakePhrase']
 WAKE_SENSITIVITY = config['voiceInput']['wakeSensitivity']
 WAKE_CHIME = config['voiceInput']['wakeChime']
+BARGE_IN = config['voiceInput']['bargeIn']
+BUILTIN_MODEL = 'streaming' if config['voiceInput']['builtinModel'] == 'streaming' else 'parakeet'
+ECHO_CANCELLATION = config['voiceInput']['echoCancellation'] is not False
+INPUT_GAIN_DB = min(30.0, max(0.0, float(config['voiceInput']['inputGainDb'] or 0)))
 WAKE_CHIME_GUARD_SECONDS = 1.7
+HELPER_CHIME_GUARD_SECONDS = 0.3
 
 # ─── State ───────────────────────────────────────────────────────────────────
 
@@ -200,6 +212,9 @@ text_at_change_start = None
 submit_timer = None
 monitoring = True
 voice_input_active = threading.Event()
+pending_send = None
+pending_send_element = None
+builtin_stt_loading = threading.Event()
 voice_input_lock = threading.Lock()
 submit_action_lock = threading.Lock()
 managed_submit_pending = threading.Event()
@@ -214,6 +229,11 @@ managed_baseline_pasteboard_text = ""
 # Controllers
 ctrl = Controller()
 
+# Shared helper audio and IPC, created in main()
+helper_audio = None
+helper_ipc = None
+active_turn_detector = None
+
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 def get_frontmost_app():
@@ -225,7 +245,9 @@ def get_frontmost_app():
         return ""
 
 def is_tts_playing():
-    """Return true only for a recent active TTS state signal."""
+    """Return true while helper playback runs or a recent TTS state is active."""
+    if helper_audio is not None and helper_audio.is_playing():
+        return True
     try:
         state = json.loads(TTS_STATE_PATH.read_text(encoding='utf-8'))
         timestamp = state.get('timestamp', '')
@@ -346,6 +368,9 @@ def wait_for_tts_completion(timeout=15.0):
 
 def toggle_voice_input():
     """Start or stop the configured voice input provider."""
+    if VOICE_INPUT_PROVIDER == 'builtin':
+        return True
+
     if VOICE_INPUT_PROVIDER == 'wispr':
         print(f"[voice-input] Pressing {WISPR_HOTKEY} to toggle Wispr Flow...")
         press_hotkey(parse_hotkey(WISPR_HOTKEY))
@@ -377,11 +402,203 @@ def toggle_voice_input():
     print(f"[voice-input] Unknown provider: {VOICE_INPUT_PROVIDER}")
     return False
 
-def trigger_voice_input_loop(detector_start_delay=0.0):
+def shared_microphone():
+    """Echo-cancelled helper microphone, when duplex audio is running."""
+    if helper_audio is not None and helper_audio.input_enabled:
+        return helper_audio
+    return None
+
+
+def paste_text(text):
+    """Paste through the clipboard, then restore the previous clipboard text."""
+    pasteboard = NSPasteboard.generalPasteboard()
+    previous = pasteboard.stringForType_(NSPasteboardTypeString)
+    pasteboard.clearContents()
+    pasteboard.setString_forType_(text, NSPasteboardTypeString)
+    ctrl.press(Key.cmd)
+    ctrl.press(KeyCode.from_char('v'))
+    ctrl.release(KeyCode.from_char('v'))
+    ctrl.release(Key.cmd)
+    time.sleep(0.2)
+    if previous is not None:
+        pasteboard.clearContents()
+        pasteboard.setString_forType_(previous, NSPasteboardTypeString)
+    return True
+
+
+def insert_text(text):
+    """Insert text into the focused field; verify an Accessibility write."""
+    before = get_focused_text()
+    if before is not None:
+        separator = ' ' if before and not before[-1].isspace() else ''
+        if set_focused_text(before + separator + text):
+            after = get_focused_text()
+            if after is not None and after.rstrip().endswith(text):
+                return True
+    return paste_text(text)
+
+
+def submit_prompt_text(text, command_requested=False):
+    """Insert a finished transcript into the target app and optionally submit."""
+    global monitoring, last_text, text_at_change_start, submit_timer, pending_send_element
+
+    cleaned, had_phrase = strip_trailing_submit_phrase(text, SUBMIT_PHRASE)
+    if had_phrase and SUBMIT_COMMAND_ENABLED:
+        command_requested = True
+        text = cleaned
+    text = text.strip()
+    if not text:
+        print("[voice-input] Empty transcript; nothing to insert")
+        return False
+    if get_frontmost_app() != TARGET_APP:
+        print(f"[voice-input] {TARGET_APP} is not frontmost; transcript not inserted")
+        return False
+
+    with submit_action_lock:
+        monitoring = False
+        try:
+            if submit_timer is not None:
+                submit_timer.cancel()
+                submit_timer = None
+            insert_text(text)
+            submitted = command_requested or (
+                AUTO_SUBMIT_ENABLED and len(text) >= MIN_TEXT_LENGTH
+            )
+            if submitted:
+                if pending_send is not None:
+                    pending_send.disarm()
+                time.sleep(0.05)
+                ctrl.press(Key.enter)
+                ctrl.release(Key.enter)
+                print(f"[voice-input] Submitted {len(text)} characters")
+                broadcast({'type': 'turn.submitted', 'text': text})
+            else:
+                print(f"[voice-input] Inserted {len(text)} characters")
+                if pending_send is not None:
+                    pending_send_element = get_focused_element()
+                    pending_send.arm(text)
+                    print(f'[send-it] Say "{SUBMIT_PHRASE}" to send it')
+            time.sleep(0.2)
+        finally:
+            last_text = get_focused_text()
+            text_at_change_start = None
+            monitoring = True
+    return True
+
+
+def get_focused_element():
+    try:
+        err, focused = AXUIElementCopyAttributeValue(
+            AXUIElementCreateSystemWide(), "AXFocusedUIElement", None
+        )
+        return focused if err == 0 else None
+    except Exception:
+        return None
+
+
+def pending_send_text_is_waiting(text):
+    app = get_frontmost_app()
+    if app != TARGET_APP:
+        print(f'[send-it] Stopped listening: {app or "another app"} is frontmost')
+        return False
+    current = get_focused_text()
+    if current is None:
+        # Cursor's chat box hides its text; fall back to "the same field still has focus".
+        focused = get_focused_element()
+        if (
+            focused is not None
+            and pending_send_element is not None
+            and not CFEqual(focused, pending_send_element)
+        ):
+            print("[send-it] Stopped listening: focus moved to another field")
+            return False
+        return True
+    if text not in current:
+        print(f"[send-it] Stopped listening: the dictated text is no longer in the focused field ({len(current)} characters there)")
+        return False
+    return True
+
+
+def pending_send_should_pause():
+    if voice_input_active.is_set():
+        return True
+    # On speakers without working echo cancellation, the assistant's voice reaches the mic.
+    speakers_leak = ECHO_CANCELLATION and not (helper_audio is not None and helper_audio.aec_active)
+    return speakers_leak and is_tts_playing()
+
+
+def pending_send_open_reader():
+    microphone = shared_microphone()
+    if microphone is not None:
+        return microphone.open_reader(sample_rate=16000)
+    import sounddevice as sd
+
+    return sd.InputStream(channels=1, dtype="float32", samplerate=16000, blocksize=1600)
+
+
+def send_pending_text(text):
+    global monitoring, last_text
+    with submit_action_lock:
+        if not pending_send_text_is_waiting(text):
+            return
+        monitoring = False
+        try:
+            ctrl.press(Key.enter)
+            ctrl.release(Key.enter)
+            print(f'[send-it] Heard "{SUBMIT_PHRASE}"; submitted {len(text)} characters')
+            broadcast({'type': 'turn.submitted', 'text': text})
+            time.sleep(0.2)
+        finally:
+            last_text = get_focused_text()
+            monitoring = True
+
+
+def create_pending_send_listener():
+    from pending_send import PendingSendListener
+
+    def create_detector():
+        from wake_word import StreamingKeywordDetector
+
+        return StreamingKeywordDetector(
+            USER_DATA_DIR,
+            SUBMIT_PHRASE,
+            0.65,
+            filename="pending-send-keywords.txt",
+        )
+
+    def on_key_press(key):
+        if key in (Key.enter, getattr(Key, 'esc', None)) and listener.armed:
+            listener.disarm()
+            print("[send-it] Stopped listening: Enter or Escape was pressed")
+
+    listener = PendingSendListener(
+        create_detector=create_detector,
+        open_reader=pending_send_open_reader,
+        should_pause=pending_send_should_pause,
+        still_pending=pending_send_text_is_waiting,
+        on_send=send_pending_text,
+    )
+    keys = Listener(on_press=on_key_press)
+    keys.daemon = True
+    keys.start()
+    return listener
+
+
+def create_speech_detector(sample_rate=16000):
+    try:
+        from speech_vad import SpeechActivityDetector
+
+        return SpeechActivityDetector(USER_DATA_DIR, sample_rate=sample_rate)
+    except Exception as error:
+        print(f"[vad] Unavailable; using loudness only: {error}")
+        return None
+
+
+def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
     """Start the configured provider, detect turn completion, then stop it."""
     global managed_baseline_text, managed_submit_started
     global managed_baseline_pasteboard_count, managed_baseline_pasteboard_text
-    global managed_input_observed_at
+    global managed_input_observed_at, active_turn_detector
 
     if not voice_input_lock.acquire(blocking=False):
         print("[voice-input] Voice input is already active; ignoring duplicate trigger")
@@ -392,7 +609,15 @@ def trigger_voice_input_loop(detector_start_delay=0.0):
     try:
         from turn_detector import TurnDetector, TurnEndReason
 
+        builtin = VOICE_INPUT_PROVIDER == 'builtin'
+        transcriber = None
+        if builtin:
+            from stt_engine import BuiltinTranscriber
+
+            transcriber = BuiltinTranscriber(USER_DATA_DIR, BUILTIN_MODEL)
+
         detector = TurnDetector(
+            speech_detector=create_speech_detector(),
             mode=AUTO_SUBMIT_MODE if AUTO_SUBMIT_ENABLED else "fixed",
             user_data_dir=USER_DATA_DIR,
             silence_threshold=SILENCE_THRESHOLD,
@@ -400,13 +625,29 @@ def trigger_voice_input_loop(detector_start_delay=0.0):
             candidate_silence=SMART_CANDIDATE_SILENCE,
             smart_threshold=SMART_TURN_THRESHOLD,
             smart_max_silence=SMART_MAX_SILENCE,
-            submit_command_enabled=(
-                AUTO_SUBMIT_ENABLED
-                and AUTO_SUBMIT_MODE == "smart"
-                and SUBMIT_COMMAND_ENABLED
-            ),
+            submit_command_enabled=SUBMIT_COMMAND_ENABLED,
             submit_phrase=SUBMIT_PHRASE,
+            audio_source=shared_microphone(),
+            preroll_seconds=preroll_seconds,
+            on_audio=transcriber.accept if transcriber is not None else None,
         )
+        active_turn_detector = detector
+
+        if builtin:
+            if detector_start_delay > 0:
+                time.sleep(detector_start_delay)
+            print("[voice-input] Listening with built-in speech-to-text...")
+            result = detector.wait_for_turn_end(verbose=True)
+            if not result.speech_detected:
+                print("[voice-input] No speech detected; cancelling")
+                return
+            transcript = transcriber.finish()
+            print(f"[voice-input] Transcript ready ({len(transcript)} characters)")
+            submit_prompt_text(
+                transcript,
+                command_requested=result.reason == TurnEndReason.SUBMIT_COMMAND,
+            )
+            return
 
         managed_baseline_text = get_focused_text() or ""
         (
@@ -435,9 +676,10 @@ def trigger_voice_input_loop(detector_start_delay=0.0):
             print(f"[voice-input] Speech complete; stopping {VOICE_INPUT_PROVIDER}...")
             if toggle_voice_input():
                 provider_active = False
-            if AUTO_SUBMIT_ENABLED and AUTO_SUBMIT_MODE == "smart":
+            command_spoken = result.reason == TurnEndReason.SUBMIT_COMMAND
+            if (AUTO_SUBMIT_ENABLED and AUTO_SUBMIT_MODE == "smart") or command_spoken:
                 managed_submit_started = time.monotonic()
-                if result.reason == TurnEndReason.SUBMIT_COMMAND:
+                if command_spoken:
                     submit_phrase_pending.set()
                 managed_submit_pending.set()
                 print(
@@ -461,6 +703,7 @@ def trigger_voice_input_loop(detector_start_delay=0.0):
     finally:
         if provider_active:
             toggle_voice_input()
+        active_turn_detector = None
         voice_input_active.clear()
         voice_input_lock.release()
 
@@ -564,7 +807,7 @@ def watch_for_managed_transcription():
             )
             fresh_length = len(cleaned.strip() if command_in_text else observed_text.strip())
             command_requested = submit_phrase_pending.is_set()
-            if fresh_length >= MIN_TEXT_LENGTH or (
+            if (AUTO_SUBMIT_ENABLED and fresh_length >= MIN_TEXT_LENGTH) or (
                 command_requested and fresh_length > 0
             ):
                 do_submit(
@@ -695,10 +938,195 @@ def monitor_text_field():
         
         time.sleep(0.15)  # Poll ~7 times per second
 
+# ─── Barge-In ───────────────────────────────────────────────────────────────
+
+class BargeInMonitor:
+    """Stop agent speech when the user talks over it (echo-cancelled mic)."""
+
+    RMS_THRESHOLD = 0.02
+    SUSTAIN_FRAMES = 25          # 250 ms of 10 ms frames
+    PLAYBACK_GRACE_SECONDS = 0.4  # let echo cancellation converge
+    PREROLL_SECONDS = 0.6
+
+    def __init__(self):
+        self._loud_frames = 0
+        self._playback_started_at = 0.0
+        self._speech_detector = None
+
+    def enable_voice_detection(self):
+        self._speech_detector = create_speech_detector()
+
+    def playback_started(self):
+        self._playback_started_at = time.monotonic()
+        self._loud_frames = 0
+        if self._speech_detector is not None:
+            self._speech_detector.reset()
+
+    def on_frame(self, frame_int16):
+        if not barge_in_available() or not helper_audio.is_playing():
+            self._loud_frames = 0
+            return
+        if time.monotonic() - self._playback_started_at < self.PLAYBACK_GRACE_SECONDS:
+            return
+        samples = frame_int16.astype('float32') / 32768.0
+        rms = float((samples ** 2).mean() ** 0.5)
+        voiced = True
+        if self._speech_detector is not None:
+            from audio_io import resample_frame
+
+            voiced = self._speech_detector.accept(resample_frame(samples, 16000))
+        if rms >= self.RMS_THRESHOLD and voiced:
+            self._loud_frames += 1
+        else:
+            self._loud_frames = max(0, self._loud_frames - 2)
+        if self._loud_frames >= self.SUSTAIN_FRAMES:
+            self._loud_frames = 0
+            self.trigger()
+
+    def trigger(self):
+        cancelled = helper_audio.cancel()
+        print(f"[barge-in] User speech detected; stopped {len(cancelled)} playback stream(s)")
+        broadcast({'type': 'tts.cancel', 'ids': cancelled, 'reason': 'barge-in'})
+        if not voice_input_active.is_set():
+            threading.Thread(
+                target=trigger_voice_input_loop,
+                kwargs={'preroll_seconds': self.PREROLL_SECONDS},
+                daemon=True,
+            ).start()
+
+
+barge_in_monitor = BargeInMonitor()
+
+
+def chime_pcm():
+    """A short two-note chime rendered as 24 kHz PCM for helper playback."""
+    import numpy as np
+
+    rate = 24000
+    notes = []
+    for frequency, duration in ((880.0, 0.09), (1318.5, 0.14)):
+        t = np.arange(int(rate * duration)) / rate
+        envelope = np.minimum(1.0, t / 0.005) * np.exp(-t * 18)
+        notes.append(0.25 * np.sin(2 * np.pi * frequency * t) * envelope)
+    audio = np.concatenate(notes)
+    return (audio * 32767).astype(np.int16).tobytes()
+
+
+def play_chime():
+    """Play the activation chime; returns seconds to wait before listening."""
+    if helper_audio is not None:
+        stream_id = f"chime-{time.monotonic_ns()}"
+        helper_audio.begin_stream(stream_id)
+        helper_audio.write(stream_id, chime_pcm())
+        helper_audio.end_stream(stream_id)
+        # The chime lasts 0.23 s; listening starts right after it.
+        return HELPER_CHIME_GUARD_SECONDS
+    try:
+        subprocess.Popen(
+            ['afplay', '/System/Library/Sounds/Glass.aiff'],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        pass
+    return WAKE_CHIME_GUARD_SECONDS
+
+
+def speech_model_still_loading():
+    """True (and plays a warning sound) while the built-in model downloads or loads."""
+    if VOICE_INPUT_PROVIDER != 'builtin' or not builtin_stt_loading.is_set():
+        return False
+    print(f"[voice-input] The {BUILTIN_MODEL} speech model is still loading; try again when it's ready")
+    try:
+        subprocess.Popen(
+            ['afplay', '/System/Library/Sounds/Basso.aiff'],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        pass
+    return True
+
+# ─── Helper IPC ─────────────────────────────────────────────────────────────
+
+def helper_state_message():
+    return {
+        'type': 'helper.state',
+        'playback': helper_audio is not None,
+        'sampleRate': 24000,
+        'echoCancellation': bool(helper_audio is not None and helper_audio.aec_active),
+        'bargeIn': barge_in_available(),
+    }
+
+
+def input_level_message():
+    if helper_audio is None or not helper_audio.input_enabled:
+        return {'type': 'level', 'available': False}
+    rms, peak = helper_audio.input_level()
+    return {
+        'type': 'level',
+        'available': True,
+        'rms': rms,
+        'peak': peak,
+        'threshold': SILENCE_THRESHOLD,
+        'gainDb': INPUT_GAIN_DB,
+        'listening': voice_input_active.is_set(),
+        'speechModelLoading': builtin_stt_loading.is_set(),
+    }
+
+
+def broadcast(message, role=None):
+    if helper_ipc is not None:
+        helper_ipc.broadcast(message, role=role)
+
+
+def on_playback_event(kind, stream_id, interrupted):
+    if kind == 'started':
+        barge_in_monitor.playback_started()
+    broadcast({
+        'type': f'playback.{kind}',
+        'id': stream_id,
+        'interrupted': bool(interrupted),
+    })
+
+
+def handle_listen_request():
+    """Start voice input once current speech has finished playing."""
+    if not VOICE_INPUT_ENABLED:
+        return
+
+    def run():
+        wait_for_tts_completion()
+        trigger_voice_input_loop()
+
+    threading.Thread(target=run, daemon=True).start()
+
+
+def handle_ipc_message(client, message):
+    kind = message['type']
+    stream_id = str(message.get('id', ''))
+    if kind == 'hello':
+        client.send(helper_state_message())
+    elif kind == 'level.get':
+        client.send(input_level_message())
+    elif kind == 'listen':
+        print("[voice-input] Listen request received over IPC")
+        handle_listen_request()
+    elif kind == 'tts.start' and helper_audio is not None:
+        helper_audio.begin_stream(stream_id)
+    elif kind == 'tts.audio' and helper_audio is not None:
+        helper_audio.write(stream_id, base64.b64decode(message.get('data') or ''))
+    elif kind == 'tts.end' and helper_audio is not None:
+        helper_audio.end_stream(stream_id)
+    elif kind == 'tts.cancel' and helper_audio is not None:
+        helper_audio.cancel(stream_id or None)
+
 # ─── Voice Input Signal Watcher ─────────────────────────────────────────────
 
 def watch_for_signals():
-    """Watch for listen-signal.json and trigger the voice input loop."""
+    """Watch for listen-signal.json when the MCP server cannot use IPC."""
     while True:
         if not VOICE_INPUT_ENABLED:
             time.sleep(0.5)
@@ -707,20 +1135,13 @@ def watch_for_signals():
         try:
             if os.path.exists(SIGNAL_PATH):
                 print("[voice-input] Listen signal detected!")
-                
-                # Delete the signal file
                 os.remove(SIGNAL_PATH)
-                
-                # Wait for TTS to actually finish playing
-                wait_for_tts_completion()
-                
-                # Start the voice input loop in a separate thread so we don't block
-                threading.Thread(target=trigger_voice_input_loop, daemon=True).start()
+                handle_listen_request()
         
         except Exception as e:
             print(f"[voice-input] Error: {e}")
         
-        time.sleep(0.3)  # Poll for signal file every 300ms
+        time.sleep(0.3)
 
 # ─── Manual Trigger Hotkey ──────────────────────────────────────────────────
 
@@ -749,19 +1170,27 @@ def setup_manual_trigger():
     
     # Convert hotkey string to format expected by GlobalHotKeys
     # e.g., "ctrl+shift+l" -> '<ctrl>+<shift>+l'
+    aliases = {'control': 'ctrl', 'option': 'alt', 'command': 'cmd', 'return': 'enter', 'escape': 'esc'}
     parts = MANUAL_TRIGGER_HOTKEY.lower().split('+')
     formatted_parts = []
     for part in parts:
-        part = part.strip()
-        if part in ['shift', 'ctrl', 'control', 'alt', 'option', 'cmd', 'command']:
-            formatted_parts.append(f'<{part}>')
-        else:
-            formatted_parts.append(part)
+        part = aliases.get(part.strip(), part.strip())
+        # Named keys (ctrl, space, f5, ...) need angle brackets; single characters do not.
+        formatted_parts.append(f'<{part}>' if len(part) > 1 else part)
     formatted_hotkey = '+'.join(formatted_parts)
     
     def on_manual_trigger():
         print("[voice-input] Manual trigger activated!")
-        threading.Thread(target=trigger_voice_input_loop, daemon=True).start()
+        if voice_input_active.is_set():
+            detector = active_turn_detector
+            if detector is not None:
+                print("[voice-input] Manual trigger pressed again; finishing the turn")
+                detector.request_stop()
+            return
+        if speech_model_still_loading():
+            return
+        guard = play_chime() if WAKE_CHIME else 0.0
+        threading.Thread(target=trigger_voice_input_loop, args=(guard,), daemon=True).start()
     
     try:
         hotkeys = GlobalHotKeys({
@@ -779,19 +1208,10 @@ def wake_word_should_pause():
     return voice_input_active.is_set() or is_tts_playing()
 
 def on_wake_word_detected():
-    if WAKE_CHIME:
-        try:
-            subprocess.Popen(
-                ['afplay', '/System/Library/Sounds/Glass.aiff'],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-        except OSError:
-            pass
-    trigger_voice_input_loop(
-        WAKE_CHIME_GUARD_SECONDS if WAKE_CHIME else 0.0
-    )
+    if speech_model_still_loading():
+        return
+    guard = play_chime() if WAKE_CHIME else 0.0
+    trigger_voice_input_loop(guard)
 
 def run_wake_word_listener():
     try:
@@ -802,6 +1222,7 @@ def run_wake_word_listener():
             sensitivity=WAKE_SENSITIVITY,
             should_pause=wake_word_should_pause,
             on_detected=on_wake_word_detected,
+            audio_source=shared_microphone(),
         )
     except ImportError as error:
         print(f"[wake-word] Missing dependency: {error}")
@@ -811,9 +1232,80 @@ def run_wake_word_listener():
 
 # ─── Main ────────────────────────────────────────────────────────────────────
 
+def audio_needs_input():
+    return VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin'
+
+
+def barge_in_available():
+    return bool(
+        helper_audio is not None
+        and helper_audio.input_enabled
+        # With echo cancellation turned off, the user is on headphones and playback cannot leak in.
+        and (helper_audio.aec_active or not ECHO_CANCELLATION)
+        and BARGE_IN
+        and VOICE_INPUT_ENABLED
+        and VOICE_INPUT_PROVIDER == 'builtin'
+    )
+
+
+def start_helper_audio():
+    global helper_audio
+    try:
+        from audio_io import DuplexAudio
+
+        audio = DuplexAudio(
+            input_enabled=audio_needs_input(),
+            echo_cancellation=ECHO_CANCELLATION,
+            input_gain_db=INPUT_GAIN_DB,
+            on_playback_event=on_playback_event,
+        )
+        audio.start()
+        helper_audio = audio
+        if audio.input_enabled:
+            barge_in_monitor.enable_voice_detection()
+            audio.add_listener(barge_in_monitor.on_frame)
+    except Exception as error:
+        helper_audio = None
+        print(f"[audio] Helper playback unavailable; the MCP server will play audio: {error}")
+
+
+def start_helper_ipc():
+    global helper_ipc
+    try:
+        from ipc_server import HelperIpcServer
+
+        server = HelperIpcServer(HELPER_SOCKET_PATH, handle_ipc_message)
+        server.start()
+        helper_ipc = server
+    except Exception as error:
+        helper_ipc = None
+        print(f"[ipc] Unavailable; using signal files: {error}")
+
+
 def main():
+    global pending_send
     managed_input_observer = None
     manual_hotkey = None
+
+    start_helper_audio()
+    start_helper_ipc()
+    if VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin' and SUBMIT_COMMAND_ENABLED:
+        try:
+            pending_send = create_pending_send_listener()
+        except Exception as error:
+            print(f'[send-it] Listening for "{SUBMIT_PHRASE}" after dictation is unavailable: {error}')
+    if VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin':
+        def preload_stt():
+            try:
+                from stt_engine import preload
+                preload(USER_DATA_DIR, BUILTIN_MODEL)
+                print(f"[stt] Built-in speech-to-text ready ({BUILTIN_MODEL})")
+            except Exception as error:
+                print(f"[stt] Could not load built-in speech-to-text: {error}")
+            finally:
+                builtin_stt_loading.clear()
+        builtin_stt_loading.set()
+        threading.Thread(target=preload_stt, daemon=True).start()
 
     # Check accessibility permissions
     if not AXIsProcessTrusted():
@@ -863,7 +1355,8 @@ def main():
         signal_watcher = threading.Thread(target=watch_for_signals, daemon=True)
         signal_watcher.start()
         print("[voice-input] Signal watcher started")
-        
+
+    if VOICE_INPUT_ENABLED:
         manual_hotkey = setup_manual_trigger()
         if manual_hotkey:
             print(f"[voice-input] Manual trigger registered: {MANUAL_TRIGGER_HOTKEY}")
@@ -888,6 +1381,10 @@ def main():
             managed_input_observer.stop()
         if manual_hotkey is not None:
             manual_hotkey.stop()
+        if helper_ipc is not None:
+            helper_ipc.stop()
+        if helper_audio is not None:
+            helper_audio.stop()
 
 if __name__ == '__main__':
     main()

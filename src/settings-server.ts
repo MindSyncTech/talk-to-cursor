@@ -41,6 +41,7 @@ import {
   updateProfile,
 } from "./settings-profiles.js";
 import { checkForUpdates } from "./update-checker.js";
+import { HelperIpcClient } from "./helper-ipc.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -135,6 +136,35 @@ app.post("/api/config", (req, res) => {
 
 app.get("/api/background-service/status", (_req, res) => {
   res.json(getBackgroundServiceStatus());
+});
+
+let helperClient: HelperIpcClient | null = null;
+
+async function connectedHelperClient(): Promise<HelperIpcClient | null> {
+  if (!helperClient) {
+    helperClient = new HelperIpcClient("settings");
+    helperClient.start();
+  }
+  if (helperClient.isConnected()) return helperClient;
+  const client = helperClient;
+  await new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, 500);
+    client.once("connected", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+  return client.isConnected() ? client : null;
+}
+
+app.get("/api/voice-input/level", async (_req, res) => {
+  const client = await connectedHelperClient();
+  if (!client || !client.send({ type: "level.get" })) {
+    res.json({ helperRunning: false });
+    return;
+  }
+  const reply = await client.waitFor((message) => message.type === "level", 500);
+  res.json(reply ? { helperRunning: true, ...reply } : { helperRunning: false });
 });
 
 app.get("/api/background-service/log", (_req, res) => {
@@ -447,6 +477,8 @@ app.post("/api/cloud/settings/download", async (_req, res) => {
         ...config.voiceInput,
         ...(settings.voiceInput || {}),
         handyCommand: config.voiceInput.handyCommand,
+        echoCancellation: config.voiceInput.echoCancellation,
+        inputGainDb: config.voiceInput.inputGainDb,
       },
       autoListen:
         settings.autoListen === undefined
@@ -507,6 +539,8 @@ app.post("/api/cloud/settings/upload", async (_req, res) => {
               wakePhrase: config.voiceInput.wakePhrase,
               wakeSensitivity: config.voiceInput.wakeSensitivity,
               wakeChime: config.voiceInput.wakeChime,
+              bargeIn: config.voiceInput.bargeIn,
+              builtinModel: config.voiceInput.builtinModel,
             },
             autoListen: config.autoListen,
           },

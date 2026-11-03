@@ -79,6 +79,7 @@ function serviceUrlSchema(label: string) {
 
 export const voiceSettingsSchema = z.object({
   speed: z.number().finite().min(0.7).max(1.2),
+  cloudSpeed: z.number().finite().min(0.7).max(2).default(1.2),
   stability: z.number().finite().min(0).max(1),
   similarityBoost: z.number().finite().min(0).max(1),
   style: z.number().finite().min(0).max(1),
@@ -151,7 +152,7 @@ export const autoSubmitSettingsSchema = z.object({
 export const voiceInputSettingsSchema = z
   .object({
     enabled: z.boolean(),
-    provider: z.enum(["wispr", "handy"]),
+    provider: z.enum(["builtin", "wispr", "handy"]),
     silenceThreshold: z.number().finite().min(0.005).max(0.1),
     silenceDuration: z.number().finite().min(0.5).max(5),
     wisprHotkey: z.string().trim().min(1).max(100),
@@ -175,6 +176,10 @@ export const voiceInputSettingsSchema = z
     ]),
     wakeSensitivity: z.number().finite().min(0).max(1),
     wakeChime: z.boolean(),
+    bargeIn: z.boolean().default(true),
+    builtinModel: z.enum(["streaming", "parakeet"]).default("parakeet"),
+    echoCancellation: z.boolean().default(true),
+    inputGainDb: z.number().finite().min(0).max(30).default(0),
   })
   // Discard retired fields such as ttsDelay from existing config files.
   .strip();

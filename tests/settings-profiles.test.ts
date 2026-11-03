@@ -64,6 +64,8 @@ describe("settings profiles", () => {
     local.cloud.apiUrl = "https://private.example";
     local.voicebox.baseUrl = "http://127.0.0.1:9999";
     local.voiceInput.handyCommand = "/private/bin/handy";
+    local.voiceInput.echoCancellation = false;
+    local.voiceInput.inputGainDb = 18;
 
     const portable = toPortableSettings(local);
 
@@ -71,6 +73,8 @@ describe("settings profiles", () => {
     expect(JSON.stringify(portable)).not.toContain("private.example");
     expect(JSON.stringify(portable)).not.toContain("127.0.0.1");
     expect(JSON.stringify(portable)).not.toContain("/private/bin");
+    expect(portable.voiceInput).not.toHaveProperty("echoCancellation");
+    expect(portable.voiceInput).not.toHaveProperty("inputGainDb");
   });
 
   it("preserves credentials and machine-local settings when applying", () => {
@@ -80,6 +84,8 @@ describe("settings profiles", () => {
     local.cloud.settingsRevision = 12;
     local.voicebox.baseUrl = "http://127.0.0.1:9999";
     local.voiceInput.handyCommand = "/private/bin/handy";
+    local.voiceInput.echoCancellation = false;
+    local.voiceInput.inputGainDb = 18;
     const portable = toPortableSettings(config());
     portable.ttsEnabled = false;
 
@@ -91,6 +97,8 @@ describe("settings profiles", () => {
     expect(applied.cloud.settingsRevision).toBe(12);
     expect(applied.voicebox.baseUrl).toBe("http://127.0.0.1:9999");
     expect(applied.voiceInput.handyCommand).toBe("/private/bin/handy");
+    expect(applied.voiceInput.echoCancellation).toBe(false);
+    expect(applied.voiceInput.inputGainDb).toBe(18);
   });
 
   it("includes pronunciation in paid profile conversion and application", () => {

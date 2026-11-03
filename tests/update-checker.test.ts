@@ -46,7 +46,7 @@ describe("update checker", () => {
       now: () => Date.parse("2026-08-29T12:00:00.000Z"),
       readCache: () => ({
         checkedAt: "2026-08-29T11:00:00.000Z",
-        latestVersion: "1.4.0",
+        latestVersion: "99.0.0",
       }),
       fetch: async () => {
         fetched = true;
@@ -55,7 +55,7 @@ describe("update checker", () => {
     });
 
     expect(fetched).toBe(false);
-    expect(status.latestVersion).toBe("1.4.0");
+    expect(status.latestVersion).toBe("99.0.0");
     expect(status.updateAvailable).toBe(true);
   });
 
@@ -70,14 +70,14 @@ describe("update checker", () => {
       writeCache: (cache) => {
         written = cache;
       },
-      fetch: async () => Response.json({ version: "1.4.0" }),
+      fetch: async () => Response.json({ version: "99.0.0" }),
     });
 
     expect(written).toEqual({
       checkedAt: "2026-08-29T12:00:00.000Z",
-      latestVersion: "1.4.0",
+      latestVersion: "99.0.0",
     });
-    expect(status.latestVersion).toBe("1.4.0");
+    expect(status.latestVersion).toBe("99.0.0");
     expect(status.checkFailed).toBe(false);
   });
 
@@ -85,14 +85,14 @@ describe("update checker", () => {
     const status = await checkForUpdates(true, {
       readCache: () => ({
         checkedAt: "2026-08-28T12:00:00.000Z",
-        latestVersion: "1.4.0",
+        latestVersion: "99.0.0",
       }),
       fetch: async () => {
         throw new Error("offline");
       },
     });
 
-    expect(status.latestVersion).toBe("1.4.0");
+    expect(status.latestVersion).toBe("99.0.0");
     expect(status.updateAvailable).toBe(true);
     expect(status.checkFailed).toBe(true);
   });

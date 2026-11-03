@@ -35,8 +35,14 @@ const SERVICE_TARGET = `gui/${userInfo().uid}/${LABEL}`;
 const SERVICE_DOMAIN = `gui/${userInfo().uid}`;
 const RUNTIME_FILES = [
   "auto-submit.py",
+  "audio_io.py",
+  "ipc_server.py",
+  "model_download.py",
   "silence_detector.py",
   "smart_turn.py",
+  "speech_vad.py",
+  "pending_send.py",
+  "stt_engine.py",
   "submit_phrase.py",
   "turn_detector.py",
   "wake_word.py",
@@ -232,6 +238,14 @@ function bootOut() {
   });
 }
 
+/** launchd finishes bootout asynchronously; bootstrapping too early fails with error 5. */
+async function waitForServiceUnloaded(timeoutMs = 10_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (serviceIsRunning() && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+}
+
 export async function startBackgroundService() {
   if (platform() !== "darwin") {
     throw new Error("The background helper is currently supported only on macOS.");
@@ -248,6 +262,7 @@ export async function startBackgroundService() {
   const launchAgentChanged = writeLaunchAgent();
   if (wasRunning && launchAgentChanged) {
     await run("/bin/launchctl", ["bootout", SERVICE_TARGET], 30_000);
+    await waitForServiceUnloaded();
     await run("/bin/launchctl", ["bootstrap", SERVICE_DOMAIN, PLIST_PATH], 30_000);
   } else if (wasRunning) {
     await run("/bin/launchctl", ["kickstart", "-k", SERVICE_TARGET], 30_000);

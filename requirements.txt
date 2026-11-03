@@ -6,3 +6,4 @@ sounddevice>=0.4,<1
 sherpa-onnx
 sentencepiece
 onnxruntime>=1.19.2,<2
+livekit>=1.0,<2

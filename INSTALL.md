@@ -157,7 +157,7 @@ args = ["/ABSOLUTE/PATH/TO/talk-to-cursor/build/index.js"]
 
 ## Choose a TTS Provider
 
-- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Create a free account to pair devices and manually upload/download portable speech and hands-free preferences. The optional $15/month subscription adds managed Google Cloud TTS with 100,000 characters, up to 10 named project/host profiles, automatic conflict-safe sync, 30-version/90-day rollback, pronunciation rules, hard device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts, while storing no provider credential locally. Signed-in users can export usage as CSV.
+- **[TalkToCursor Cloud](https://cloud.talktocursor.com):** Create a free account to pair devices and manually upload/download portable speech and hands-free preferences. The optional $9/month subscription adds managed Google Cloud TTS with 100,000 characters, up to 10 named project/host profiles, automatic conflict-safe sync, 30-version/90-day rollback, pronunciation rules, hard device budgets, up to 12 billing periods of analytics, and in-app plus optional email allowance alerts, while storing no provider credential locally. Signed-in users can export usage as CSV.
 - **[ElevenLabs](https://try.elevenlabs.io/talktocursor):** Sign up and create an API key for full voice and model controls.
 - **[Voicebox](https://github.com/jamiepine/voicebox) (free & local):** Install and run Voicebox, download a TTS model, and create a voice profile.
 
@@ -246,9 +246,11 @@ alwaysApply: true
 
 # Voice feedback
 
-Use the `speak` tool at task start with `waitForPlayback: false` so work begins
-immediately. Use `waitForPlayback: true` for important milestones, questions,
-failures, required follow-ups, and completion.
+Use the `speak` tool at task start, for important milestones, questions,
+failures, and required follow-ups, and at completion. It returns immediately
+while the speech plays.
+Pass the words in the `text` argument: `{ "text": "..." }`. If a `speak` call
+fails, fix the arguments and retry once before continuing.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 
@@ -270,6 +272,7 @@ Add to the global `~/.claude/CLAUDE.md` or a project’s `CLAUDE.md`:
 
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
+Pass the words in the `text` argument: `{ "text": "..." }`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
@@ -283,6 +286,7 @@ Add to the applicable global `~/.codex/AGENTS.md` or project `AGENTS.md`:
 
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
+Pass the words in the `text` argument: `{ "text": "..." }`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
@@ -296,6 +300,7 @@ Add to the global `~/.gemini/GEMINI.md`, or create an Always On Workspace Rule f
 
 Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
+Pass the words in the `text` argument: `{ "text": "..." }`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
@@ -308,9 +313,10 @@ For a fully hands-free experience with voice dictation. This Accessibility-based
 
 ### Auto-Submit Setup
 
-1. Enable **Auto-Submit** in the settings UI
+1. Enable **Auto-Submit** in the settings UI (it is off by default)
 2. Choose **Fixed Pause** or **Smart Turn**. Smart Turn uses a short audio pause
-   plus a local endpoint model and supports the spoken **"send it"** command.
+   plus a local endpoint model. The spoken **"send it"** command has its own
+   switch and works in either mode, even with Auto-Submit off.
 3. Click **Install & Start** under **Cursor Hands-Free Background Helper**. TalkToCursor
    creates a private Python environment, runs invisibly, and starts at login.
 4. Grant Accessibility and Input Monitoring permissions when prompted:
@@ -349,6 +355,7 @@ Choose a voice input provider:
 
 - **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended):** Install Wispr Flow and configure its dictation hotkey.
 - **[Handy](https://github.com/cjpais/Handy) (free & private):** Install and launch Handy, download a transcription model, and grant Microphone, Accessibility, and Input Monitoring permissions.
+- **Built-in (free & private):** Nothing else to install. Choose **Parakeet** (the default, about 480 MB, most accurate) or **Streaming** (about 100 MB, transcribes while you speak). Until the model finishes downloading, the hotkey and wake phrase play an error sound instead of starting a turn. The model downloads and is checksum-verified on first use.
 
 Then:
 
@@ -410,7 +417,8 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `apiKey` | ElevenLabs API key | required for ElevenLabs |
 | `voiceId` | ElevenLabs voice ID | Rachel |
 | `model` | TTS model | `eleven_flash_v2_5` |
-| `voiceSettings.speed` | Speech speed (0.7-1.2) | 1.0 |
+| `voiceSettings.speed` | ElevenLabs speech speed (0.7-1.2) | 1.0 |
+| `voiceSettings.cloudSpeed` | Cloud speech speed (0.7-2.0) | 1.2 |
 | `voiceSettings.stability` | Voice stability (0-1) | 0.5 |
 | `voiceSettings.similarityBoost` | Voice similarity (0-1) | 0.75 |
 | `voiceSettings.style` | Style exaggeration (0-1) | 0.0 |
@@ -418,7 +426,7 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `voicebox.profile` | Voicebox profile name or ID | default binding |
 | `voicebox.personality` | Use the Voicebox profile personality | false |
 | `cloud.apiUrl` | TalkToCursor Cloud service URL | `https://cloud.talktocursor.com` |
-| `cloud.voiceId` | Managed Google Cloud voice | `Kore` |
+| `cloud.voiceId` | Managed Google Cloud voice ID | `Kore` (Emma) |
 | `cloud.model` | Fixed managed Google Cloud model | `gemini-2.5-flash-tts` |
 | `autoListen` | Auto-listen after tasks | true |
 | `autoSubmit.enabled` | Auto-press Enter | false |
@@ -439,11 +447,10 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `voiceInput.wakeChime` | Play a sound before dictation starts | `true` |
 
 TalkToCursor Cloud voice choices are grouped in the settings UI: Male
-(Alnilam, Charon, Puck, Sadaltager, Umbriel, Sadachbia, Achird, Algenib,
-Enceladus, Iapetus) and Female (Achernar, Despina, Kore, Leda, Sulafat,
-Zephyr, Aoede, Callirrhoe, Laomedeia, Vindemiatrix). These managed settings do
-not change the
-ElevenLabs BYOK voice or model.
+(Daniel, James, Ryan, Michael, Ethan, Lucas, Noah, Marcus, David, Owen) and Female (Olivia, Sophie, Emma, Grace, Chloe, Ava, Mia, Hannah, Lily, Claire).
+Each name maps to a Google voice ID, which is what `cloud.voiceId` stores
+(Emma is `Kore`). These managed settings do not change the ElevenLabs BYOK
+voice or model.
 
 ---
 

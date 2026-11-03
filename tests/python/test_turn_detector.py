@@ -38,6 +38,13 @@ def detector(mode, analyzer=None):
     instance.chunk_size = 800
     instance.smart_analyzer = analyzer
     instance.submit_detector = None
+    instance.no_speech_timeout = 30.0
+    instance.max_turn_seconds = 120.0
+    instance._stop_requested = turn_detector.threading.Event()
+    instance.audio_source = None
+    instance.preroll_seconds = 0.0
+    instance.on_audio = None
+    instance.speech_detector = None
     return instance
 
 
@@ -58,6 +65,63 @@ class TurnDetectorTests(unittest.TestCase):
         ):
             result = detector("fixed").wait_for_turn_end(verbose=False)
         self.assertEqual(result.reason, TurnEndReason.FIXED_PAUSE)
+
+    def test_noise_above_threshold_ends_at_max_turn_duration(self):
+        loud = np.full((800, 1), 0.05, dtype=np.float32)
+        instance = detector("fixed")
+        instance.max_turn_seconds = 1.0
+        with (
+            patch.object(
+                turn_detector.sd,
+                "InputStream",
+                return_value=FakeInputStream([loud, loud, loud]),
+            ),
+            patch.object(turn_detector.time, "monotonic", side_effect=[0.0, 0.5, 1.2]),
+        ):
+            result = instance.wait_for_turn_end(verbose=False)
+        self.assertTrue(result.speech_detected)
+        self.assertEqual(result.reason, TurnEndReason.MAX_DURATION)
+
+    def test_loud_noise_without_voice_is_not_speech(self):
+        loud = np.full((800, 1), 0.05, dtype=np.float32)
+        instance = detector("fixed")
+        instance.no_speech_timeout = 1.0
+        instance.speech_detector = SimpleNamespace(accept=lambda _samples: False)
+        with (
+            patch.object(
+                turn_detector.sd,
+                "InputStream",
+                return_value=FakeInputStream([loud, loud, loud]),
+            ),
+            patch.object(turn_detector.time, "monotonic", side_effect=[0.0, 0.5, 1.2]),
+        ):
+            result = instance.wait_for_turn_end(verbose=False)
+        self.assertFalse(result.speech_detected)
+        self.assertEqual(result.reason, TurnEndReason.NO_SPEECH)
+
+    def test_stop_request_finishes_turn_with_speech(self):
+        loud = np.full((800, 1), 0.05, dtype=np.float32)
+        instance = detector("fixed")
+
+        class StoppingStream(FakeInputStream):
+            reads = 0
+
+            def read(self, chunk_size):
+                self.reads += 1
+                if self.reads == 2:
+                    instance.request_stop()
+                return super().read(chunk_size)
+
+        with (
+            patch.object(
+                turn_detector.sd,
+                "InputStream",
+                return_value=StoppingStream([loud, loud]),
+            ),
+            patch.object(turn_detector.time, "monotonic", side_effect=[0.0, 0.05]),
+        ):
+            result = instance.wait_for_turn_end(verbose=False)
+        self.assertEqual(result.reason, TurnEndReason.MANUAL_STOP)
 
     def test_smart_mode_keeps_model_probability(self):
         chunks = [
