@@ -103,6 +103,17 @@ describe("settingsUpdateSchema", () => {
     ).toThrow();
   });
 
+  it("accepts when the send sound plays, rejecting unknown triggers", () => {
+    for (const sendSoundTrigger of ["both", "sendIt", "autoSubmit"]) {
+      expect(settingsUpdateSchema.parse({ autoSubmit: { sendSoundTrigger } })).toEqual({
+        autoSubmit: { sendSoundTrigger },
+      });
+    }
+    expect(() =>
+      settingsUpdateSchema.parse({ autoSubmit: { sendSoundTrigger: "always" } }),
+    ).toThrow();
+  });
+
   it("accepts Cloud dictation as a built-in speech model", () => {
     expect(
       settingsUpdateSchema.parse({ voiceInput: { builtinModel: "cloud" } }),

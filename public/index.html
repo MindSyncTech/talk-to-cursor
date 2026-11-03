@@ -2611,7 +2611,7 @@
       <div class="toggle-row">
         <div class="toggle-info">
           <span class="toggle-title">Send Sound</span>
-          <span class="toggle-desc">Play a sound when TalkToCursor sends your message, after “send it” or Auto-Submit</span>
+          <span class="toggle-desc">Play a sound when TalkToCursor sends your message, after “send it”, Auto-Submit, or both</span>
         </div>
         <label class="switch">
           <input type="checkbox" id="sendSoundEnabled">
@@ -2623,6 +2623,12 @@
           <select id="sendSound" data-sound-options="chime" aria-label="Send sound"></select>
           <button class="btn-secondary" type="button" data-sound-preview="sendSound"><span aria-hidden="true">&#9654;</span> Preview</button>
         </div>
+        <label for="sendSoundTrigger" style="margin-top: 12px;">Play For</label>
+        <select id="sendSoundTrigger">
+          <option value="both">“Send it” and Auto-Submit</option>
+          <option value="sendIt">“Send it” only</option>
+          <option value="autoSubmit">Auto-Submit only</option>
+        </select>
       </div>
 
       <div class="auto-submit-details" id="autoSubmitDetails">
@@ -3004,6 +3010,7 @@
     const wakeChimeSoundRow = document.getElementById('wakeChimeSoundRow');
     const wakeChimeSoundSelect = document.getElementById('wakeChimeSound');
     const sendSoundEnabled = document.getElementById('sendSoundEnabled');
+    const sendSoundTrigger = document.getElementById('sendSoundTrigger');
     const sendSoundRow = document.getElementById('sendSoundRow');
     const sendSoundSelect = document.getElementById('sendSound');
     const saveVoiceInputBtn = document.getElementById('saveVoiceInputBtn');
@@ -3591,6 +3598,7 @@
       saveAutoSubmitSettings(sendSoundEnabled.checked ? 'Send sound turned on' : 'Send sound turned off');
     });
     sendSoundSelect.addEventListener('change', () => saveAutoSubmitSettings('Send sound saved'));
+    sendSoundTrigger.addEventListener('change', () => saveAutoSubmitSettings('Send sound saved'));
     wakeChime.addEventListener('change', updateSoundRows);
     wakeChimeSoundSelect.addEventListener('change', () => saveListeningTriggers('Activation chime sound saved'));
 
@@ -4002,6 +4010,7 @@
           submitCommandEnabled.checked = as.submitCommandEnabled !== false;
           sendSoundEnabled.checked = as.sendSoundEnabled !== false;
           sendSoundSelect.value = as.sendSound || 'ttc-message-sent-1';
+          sendSoundTrigger.value = as.sendSoundTrigger || 'both';
           updateSoundRows();
           updateAutoSubmitMode();
         }
@@ -5058,6 +5067,7 @@
         submitCommandEnabled: submitCommandEnabled.checked,
         submitPhrase: 'send it',
         sendSoundEnabled: sendSoundEnabled.checked,
+        sendSoundTrigger: sendSoundTrigger.value,
         sendSound: sendSoundSelect.value,
       };
 

@@ -199,6 +199,7 @@ export const autoSubmitSettingsSchema = z.object({
   submitCommandEnabled: z.boolean(),
   submitPhrase: z.literal("send it"),
   sendSoundEnabled: z.boolean().default(true),
+  sendSoundTrigger: z.enum(["both", "sendIt", "autoSubmit"]).default("both"),
   sendSound: z.enum(CHIME_SOUNDS).default("ttc-message-sent-1"),
 });
 

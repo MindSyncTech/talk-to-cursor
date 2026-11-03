@@ -9,7 +9,8 @@
   is transcribed by a local model you've already downloaded.
 - The Cloud Account card shows dictation minutes left alongside characters.
 - Added an optional **Send Sound** that plays when TalkToCursor sends your
-  message, after “send it” or Auto-Submit, with a choice of sounds.
+  message, with a choice of sounds. It can play after “send it”, after
+  Auto-Submit, or both.
 - The Activation Chime can now use a different sound instead of the built-in
   two-note chime.
 - Fixed a glitch in the activation chime with Auto-Submit on. The Smart Turn,

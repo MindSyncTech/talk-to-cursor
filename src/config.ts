@@ -133,6 +133,7 @@ export const DEFAULT_AUTO_SUBMIT: Config["autoSubmit"] = {
   submitCommandEnabled: true,
   submitPhrase: "send it",
   sendSoundEnabled: true,
+  sendSoundTrigger: "both",
   sendSound: "ttc-message-sent-1",
 };
 

@@ -143,6 +143,7 @@ def load_config():
             'submitCommandEnabled': True,
             'submitPhrase': 'send it',
             'sendSoundEnabled': True,
+            'sendSoundTrigger': 'both',
             'sendSound': 'ttc-message-sent-1',
         },
         'voiceInput': {
@@ -225,6 +226,11 @@ SEND_SOUND = (
     if config['autoSubmit'].get('sendSoundEnabled') is True
     and valid_sound(config['autoSubmit'].get('sendSound'))
     else None
+)
+SEND_SOUND_TRIGGER = (
+    config['autoSubmit'].get('sendSoundTrigger')
+    if config['autoSubmit'].get('sendSoundTrigger') in ('both', 'sendIt', 'autoSubmit')
+    else 'both'
 )
 
 VOICE_INPUT_ENABLED = config['voiceInput']['enabled']
@@ -538,7 +544,7 @@ def submit_prompt_text(text, command_requested=False):
                 time.sleep(0.05)
                 ctrl.press(Key.enter)
                 ctrl.release(Key.enter)
-                play_send_sound()
+                play_send_sound(send_it=command_requested)
                 announce_prompt(text)
                 print(f"[voice-input] Submitted {len(text)} characters")
                 broadcast({'type': 'turn.submitted', 'text': text})
@@ -619,7 +625,7 @@ def send_pending_text(text):
         try:
             ctrl.press(Key.enter)
             ctrl.release(Key.enter)
-            play_send_sound()
+            play_send_sound(send_it=True)
             announce_prompt(text)
             print(f'[send-it] Heard "{SUBMIT_PHRASE}"; submitted {len(text)} characters')
             broadcast({'type': 'turn.submitted', 'text': text})
@@ -966,6 +972,7 @@ def press_submit_key(
     require_managed_pending=False,
     managed_fresh=False,
     fallback=False,
+    send_it=False,
 ):
     """Press Enter once, guarded by the target app and submit state."""
     global monitoring
@@ -1010,7 +1017,7 @@ def press_submit_key(
         else:
             ctrl.press(Key.enter)
             ctrl.release(Key.enter)
-        play_send_sound()
+        play_send_sound(send_it=send_it)
         announce_prompt('')
         time.sleep(0.5)
         monitoring = True
@@ -1122,6 +1129,7 @@ def do_submit(new_text_length, managed=False, fresh_text=None, fallback=False):
         require_managed_pending=managed,
         managed_fresh=(new_text_length > 0),
         fallback=fallback,
+        send_it=command_requested,
     )
 
 def monitor_text_field():
@@ -1343,9 +1351,14 @@ SEND_SOUND_TAIL_SECONDS = 0.05
 send_sound_ends_at = 0.0
 
 
-def play_send_sound():
+def send_sound_plays_for(send_it):
+    """Whether the send sound plays for a "send it" send or an Auto-Submit send."""
+    return SEND_SOUND_TRIGGER == 'both' or SEND_SOUND_TRIGGER == ('sendIt' if send_it else 'autoSubmit')
+
+
+def play_send_sound(send_it):
     global send_sound_ends_at
-    if SEND_SOUND is None:
+    if SEND_SOUND is None or not send_sound_plays_for(send_it):
         return
     pcm = sound_pcm(SEND_SOUND)
     duration = len(pcm) / 2 / 24000 if pcm else SEND_SOUND_FALLBACK_SECONDS

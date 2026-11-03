@@ -477,6 +477,7 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `autoSubmit.smartTextDelay` | Text stability delay after Smart Turn | `0.2` |
 | `autoSubmit.submitCommandEnabled` | Enable the spoken `send it` command | `true` |
 | `autoSubmit.sendSoundEnabled` | Play a sound when a message is sent | `true` |
+| `autoSubmit.sendSoundTrigger` | When the send sound plays: `both`, `sendIt` (after “send it” only), or `autoSubmit` (after Auto-Submit only) | `both` |
 | `autoSubmit.sendSound` | Send sound: `Chime` or any sound allowed for `completionFeedback.sound` | `ttc-message-sent-1` |
 | `voiceInput.enabled` | Automatic voice input loop | false |
 | `voiceInput.provider` | Voice input provider (`builtin`, `wispr`, `fluidvoice`, or `handy`) | `builtin` |
