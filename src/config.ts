@@ -125,6 +125,7 @@ export const DEFAULT_AUTO_SUBMIT: Config["autoSubmit"] = {
   mode: "smart",
   silenceDelay: 3.0,
   minTextLength: 15,
+  minWords: 2,
   targetApp: "Cursor",
   smartCandidateSilence: 0.8,
   smartTurnThreshold: 0.5,

@@ -13,6 +13,9 @@
   Auto-Submit, or both.
 - The Activation Chime can now use a different sound instead of the built-in
   two-note chime.
+- Auto-Submit now requires a minimum number of words (2 by default) instead
+  of 15 characters, so short questions like “how much HTML?” are sent.
+  **Minimum Words** replaces **Min Text Length** in Settings.
 - Fixed a glitch in the activation chime with Auto-Submit on. The Smart Turn,
   voice activity, and spoken submit command models now load once when the
   Background Helper starts instead of on every activation, so listening also

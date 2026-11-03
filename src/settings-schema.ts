@@ -190,7 +190,9 @@ export const autoSubmitSettingsSchema = z.object({
   enabled: z.boolean(),
   mode: z.enum(["fixed", "smart"]),
   silenceDelay: z.number().finite().min(0.5).max(5),
+  // Older app versions require this; Auto-Submit now checks minWords.
   minTextLength: z.number().int().min(5).max(50),
+  minWords: z.number().int().min(1).max(10).default(2),
   targetApp: z.string().trim().min(1).max(200),
   smartCandidateSilence: z.number().finite().min(0.2).max(1),
   smartTurnThreshold: z.number().finite().min(0.1).max(0.9),

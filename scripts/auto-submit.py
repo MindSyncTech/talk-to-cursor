@@ -135,6 +135,7 @@ def load_config():
             'mode': 'smart',
             'silenceDelay': 3.0,
             'minTextLength': 15,
+            'minWords': 2,
             'targetApp': 'Cursor',
             'smartCandidateSilence': 0.8,
             'smartTurnThreshold': 0.5,
@@ -190,7 +191,14 @@ config = load_config()
 AUTO_SUBMIT_ENABLED = config['autoSubmit']['enabled']
 AUTO_SUBMIT_MODE = config['autoSubmit']['mode']
 SILENCE_DELAY = config['autoSubmit']['silenceDelay']
-MIN_TEXT_LENGTH = config['autoSubmit']['minTextLength']
+MIN_WORDS = config['autoSubmit'].get('minWords', 2)
+if not isinstance(MIN_WORDS, int) or not 1 <= MIN_WORDS <= 10:
+    MIN_WORDS = 2
+
+
+def long_enough_to_submit(text):
+    """Auto-Submit sends text with at least MIN_WORDS words ("send it" always sends)."""
+    return len((text or '').split()) >= MIN_WORDS
 TARGET_APP = config['autoSubmit']['targetApp']
 SMART_CANDIDATE_SILENCE = config['autoSubmit']['smartCandidateSilence']
 SMART_TURN_THRESHOLD = config['autoSubmit']['smartTurnThreshold']
@@ -536,7 +544,7 @@ def submit_prompt_text(text, command_requested=False):
                 submit_timer = None
             insert_text(text)
             submitted = command_requested or (
-                AUTO_SUBMIT_ENABLED and len(text) >= MIN_TEXT_LENGTH
+                AUTO_SUBMIT_ENABLED and long_enough_to_submit(text)
             )
             if submitted:
                 if pending_send is not None:
@@ -1066,13 +1074,13 @@ def watch_for_managed_transcription():
                 observed_text,
                 SUBMIT_PHRASE,
             )
-            fresh_length = len(cleaned.strip() if command_in_text else observed_text.strip())
+            fresh_text = cleaned if command_in_text else observed_text
             command_requested = submit_phrase_pending.is_set()
-            if (AUTO_SUBMIT_ENABLED and fresh_length >= MIN_TEXT_LENGTH) or (
-                command_requested and fresh_length > 0
+            if (AUTO_SUBMIT_ENABLED and long_enough_to_submit(fresh_text)) or (
+                command_requested and fresh_text.strip()
             ):
                 do_submit(
-                    fresh_length,
+                    fresh_text,
                     managed=True,
                     fresh_text=observed_text,
                     fallback=True,
@@ -1086,7 +1094,12 @@ def watch_for_managed_transcription():
         submit_phrase_pending.clear()
 
 
-def do_submit(new_text_length, managed=False, fresh_text=None, fallback=False):
+def text_added(current_text, baseline):
+    baseline = baseline or ""
+    return current_text[len(baseline):] if current_text.startswith(baseline) else current_text
+
+
+def do_submit(new_text, managed=False, fresh_text=None, fallback=False):
     """Press Enter if conditions are met."""
     global submit_timer
     submit_timer = None
@@ -1107,17 +1120,18 @@ def do_submit(new_text_length, managed=False, fresh_text=None, fallback=False):
         remove_spoken_submit_phrase(fresh_text)
         current_text = get_focused_text()
         if current_text is not None:
-            new_text_length = len(current_text) - len(managed_baseline_text)
+            new_text = text_added(current_text, managed_baseline_text)
         elif fresh_text is not None:
             cleaned, changed = strip_trailing_submit_phrase(
                 fresh_text,
                 SUBMIT_PHRASE,
             )
             if changed:
-                new_text_length = len(cleaned.strip())
+                new_text = cleaned
 
+    new_text_length = len(new_text.strip())
     if new_text_length <= 0 or (
-        new_text_length < MIN_TEXT_LENGTH and not command_requested
+        not long_enough_to_submit(new_text) and not command_requested
     ):
         managed_submit_pending.clear()
         submit_phrase_pending.clear()
@@ -1168,7 +1182,7 @@ def monitor_text_field():
                     and now - last_change_time >= SMART_TEXT_DELAY
                 ):
                     do_submit(
-                        len(current_text) - len(managed_baseline_text),
+                        text_added(current_text, managed_baseline_text),
                         managed=True,
                     )
                 time.sleep(0.05)
@@ -1180,7 +1194,7 @@ def monitor_text_field():
                 if text_at_change_start is None:
                     text_at_change_start = last_text or ""
                 
-                new_chars = len(current_text) - len(text_at_change_start)
+                new_text = text_added(current_text, text_at_change_start)
                 
                 last_text = current_text
                 last_change_time = now
@@ -1190,8 +1204,8 @@ def monitor_text_field():
                     submit_timer.cancel()
                 
                 # Only schedule submit if meaningful text was added
-                if new_chars >= MIN_TEXT_LENGTH:
-                    submit_timer = threading.Timer(SILENCE_DELAY, do_submit, args=[new_chars])
+                if long_enough_to_submit(new_text):
+                    submit_timer = threading.Timer(SILENCE_DELAY, do_submit, args=[new_text])
                     submit_timer.daemon = True
                     submit_timer.start()
                 
@@ -1710,7 +1724,7 @@ def main():
   Auto-Submit: {'Enabled' if AUTO_SUBMIT_ENABLED else 'Disabled'}
     Turn detection:  {AUTO_SUBMIT_MODE}
     Submit delay:    {SILENCE_DELAY}s
-    Min text length: {MIN_TEXT_LENGTH} chars
+    Min words:       {MIN_WORDS}
     Target app:      {TARGET_APP}
     Submit command:  {SUBMIT_PHRASE if SUBMIT_COMMAND_ENABLED else 'disabled'}
     Send sound:      {SEND_SOUND or 'off'}

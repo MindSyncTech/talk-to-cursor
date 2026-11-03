@@ -2715,15 +2715,15 @@
 
         <div class="slider-group">
           <div class="slider-label">
-            <label for="minTextLength">Min Text Length</label>
-            <span class="slider-value" id="minTextLengthValue">15</span>
+            <label for="minWords">Minimum Words</label>
+            <span class="slider-value" id="minWordsValue">2</span>
           </div>
-          <input type="range" id="minTextLength" min="5" max="50" step="5" value="15">
+          <input type="range" id="minWords" min="1" max="10" step="1" value="2">
           <div class="slider-range-labels">
-            <span>5 chars (sensitive)</span>
-            <span>50 chars (strict)</span>
+            <span>1 word (sensitive)</span>
+            <span>10 words (strict)</span>
           </div>
-          <div class="help-text">Minimum characters in clipboard to count as dictation. Prevents accidental submits from short copy-paste actions.</div>
+          <div class="help-text">Shorter dictation is typed but not sent, so a stray “um” or a short paste doesn’t submit. Saying “send it” always sends.</div>
         </div>
 
         </div>
@@ -2972,8 +2972,9 @@
     const smartAutoSubmitDetails = document.getElementById('smartAutoSubmitDetails');
     const silenceDelaySlider = document.getElementById('silenceDelay');
     const silenceDelayValue = document.getElementById('silenceDelayValue');
-    const minTextLengthSlider = document.getElementById('minTextLength');
-    const minTextLengthValue = document.getElementById('minTextLengthValue');
+    const minWordsSlider = document.getElementById('minWords');
+    const minWordsValue = document.getElementById('minWordsValue');
+    let savedMinTextLength = 15;
     const smartCandidateSilenceSlider = document.getElementById('smartCandidateSilence');
     const smartCandidateSilenceValue = document.getElementById('smartCandidateSilenceValue');
     const smartTurnThresholdSlider = document.getElementById('smartTurnThreshold');
@@ -3614,8 +3615,8 @@
       silenceDelayValue.textContent = parseFloat(silenceDelaySlider.value).toFixed(1) + 's';
     });
 
-    minTextLengthSlider.addEventListener('input', () => {
-      minTextLengthValue.textContent = parseInt(minTextLengthSlider.value);
+    minWordsSlider.addEventListener('input', () => {
+      minWordsValue.textContent = parseInt(minWordsSlider.value);
     });
 
     smartCandidateSilenceSlider.addEventListener('input', () => {
@@ -3997,8 +3998,9 @@
           autoSubmitMode.value = as.mode || 'smart';
           silenceDelaySlider.value = as.silenceDelay ?? 3.0;
           silenceDelayValue.textContent = parseFloat(silenceDelaySlider.value).toFixed(1) + 's';
-          minTextLengthSlider.value = as.minTextLength ?? 15;
-          minTextLengthValue.textContent = parseInt(minTextLengthSlider.value);
+          savedMinTextLength = as.minTextLength ?? 15;
+          minWordsSlider.value = as.minWords ?? 2;
+          minWordsValue.textContent = parseInt(minWordsSlider.value);
           smartCandidateSilenceSlider.value = as.smartCandidateSilence ?? 0.8;
           smartCandidateSilenceValue.textContent = parseFloat(smartCandidateSilenceSlider.value).toFixed(2) + 's';
           smartTurnThresholdSlider.value = as.smartTurnThreshold ?? 0.5;
@@ -5058,7 +5060,8 @@
         enabled: autoSubmitEnabled.checked,
         mode: autoSubmitMode.value,
         silenceDelay: parseFloat(silenceDelaySlider.value),
-        minTextLength: parseInt(minTextLengthSlider.value),
+        minTextLength: savedMinTextLength,
+        minWords: parseInt(minWordsSlider.value),
         targetApp: 'Cursor',
         smartCandidateSilence: parseFloat(smartCandidateSilenceSlider.value),
         smartTurnThreshold: parseFloat(smartTurnThresholdSlider.value),

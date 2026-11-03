@@ -4,6 +4,7 @@ import {
   normalizeServiceUrl,
   parseSettingsLeniently,
   pronunciationSettingsSchema,
+  settingsSchema,
   settingsUpdateSchema,
   voiceInputSettingsSchema,
 } from "../src/settings-schema.js";
@@ -101,6 +102,13 @@ describe("settingsUpdateSchema", () => {
     expect(() =>
       settingsUpdateSchema.parse({ autoSubmit: { sendSound: "../../evil" } }),
     ).toThrow();
+  });
+
+  it("defaults Auto-Submit to two words and keeps minTextLength for older versions", () => {
+    const parsed = settingsSchema.parse(DEFAULT_CONFIG);
+    expect(parsed.autoSubmit.minWords).toBe(2);
+    expect(parsed.autoSubmit.minTextLength).toBe(15);
+    expect(() => settingsUpdateSchema.parse({ autoSubmit: { minWords: 0 } })).toThrow();
   });
 
   it("accepts when the send sound plays, rejecting unknown triggers", () => {
