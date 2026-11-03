@@ -11,6 +11,7 @@ import { homedir, platform } from "os";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import {
+  DEFAULT_AGENT_SPEECH as SCHEMA_AGENT_SPEECH,
   DEFAULT_COMPLETION_FEEDBACK as SCHEMA_COMPLETION_FEEDBACK,
   DEFAULT_QUESTION_FEEDBACK as SCHEMA_QUESTION_FEEDBACK,
   MANAGED_TTS_DEFAULT_VOICE,
@@ -164,6 +165,10 @@ export const DEFAULT_QUESTION_FEEDBACK: Config["questionFeedback"] = {
   ...SCHEMA_QUESTION_FEEDBACK,
 };
 
+export const DEFAULT_AGENT_SPEECH: Config["agentSpeech"] = {
+  ...SCHEMA_AGENT_SPEECH,
+};
+
 export const DEFAULT_CONFIG: Config = {
   ttsEnabled: true,
   pauseMediaDuringSpeech: false,
@@ -180,6 +185,7 @@ export const DEFAULT_CONFIG: Config = {
   voiceInput: { ...DEFAULT_VOICE_INPUT },
   completionFeedback: { ...DEFAULT_COMPLETION_FEEDBACK },
   questionFeedback: { ...DEFAULT_QUESTION_FEEDBACK },
+  agentSpeech: { ...DEFAULT_AGENT_SPEECH },
   autoListen: true,
 };
 
@@ -242,6 +248,10 @@ export function loadConfig(): Config {
           ...DEFAULT_QUESTION_FEEDBACK,
           ...(parsed.questionFeedback || {}),
         },
+        agentSpeech: {
+          ...DEFAULT_AGENT_SPEECH,
+          ...(parsed.agentSpeech || {}),
+        },
         autoListen: parsed.autoListen !== undefined ? parsed.autoListen : DEFAULT_CONFIG.autoListen,
       };
       const result = settingsSchema.safeParse(candidate);
@@ -272,6 +282,7 @@ export function loadConfig(): Config {
     voiceInput: { ...DEFAULT_VOICE_INPUT },
     completionFeedback: { ...DEFAULT_COMPLETION_FEEDBACK },
     questionFeedback: { ...DEFAULT_QUESTION_FEEDBACK },
+    agentSpeech: { ...DEFAULT_AGENT_SPEECH },
     autoListen: DEFAULT_CONFIG.autoListen,
   };
 }
@@ -297,6 +308,7 @@ function mergeConfig(current: Config, config: ConfigUpdate): Config {
       ...current.questionFeedback,
       ...(config.questionFeedback || {}),
     },
+    agentSpeech: { ...current.agentSpeech, ...(config.agentSpeech || {}) },
   });
 }
 
@@ -330,6 +342,7 @@ export function getEffectiveConfig(): Config {
     voiceInput: fileConfig.voiceInput,
     completionFeedback: fileConfig.completionFeedback,
     questionFeedback: fileConfig.questionFeedback,
+    agentSpeech: fileConfig.agentSpeech,
     autoListen: fileConfig.autoListen,
   };
 }

@@ -1748,6 +1748,42 @@
         <div class="help-text">Applies to progress updates and spoken summaries. Questions, failures, blockers, and required follow-ups remain detailed when necessary.</div>
       </div>
       <div class="form-group">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <span class="toggle-title">Instant Feedback</span>
+            <span class="toggle-desc">Speak a short acknowledgement (“let me take a look”) the moment you send a prompt, before the agent starts working</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="instantFeedback">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+        <div id="promptHookRow" style="margin-top: 10px;">
+          <div class="cloud-voice-picker">
+            <button class="btn-secondary" id="cursorPromptHookBtn" type="button">Install Cursor hook</button>
+            <button class="btn-secondary" id="claudePromptHookBtn" type="button">Install Claude Code hook</button>
+          </div>
+          <div class="help-text">Prompts sent by voice are acknowledged through the Background Helper. Install a prompt hook to acknowledge typed prompts too. The phrase is cached per voice so it plays right away.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="progressUpdates">Progress Updates</label>
+        <select id="progressUpdates">
+          <option value="all">All tasks</option>
+          <option value="long">Longer tasks only</option>
+          <option value="off">Off</option>
+        </select>
+        <div class="help-text">Spoken updates while the agent works (“about halfway done”). “Longer tasks only” skips them during a task’s first minute. Questions and the final summary are always spoken.</div>
+      </div>
+      <div class="form-group">
+        <label for="speakingStyle">Speaking Style</label>
+        <select id="speakingStyle">
+          <option value="casual">Casual — “let me take a look at that, one sec”</option>
+          <option value="professional">Professional — “I’ll examine the codebase to see how that can be implemented”</option>
+        </select>
+        <div class="help-text">Sets the tone of acknowledgements and tells the agent how to phrase what it says.</div>
+      </div>
+      <div class="form-group">
         <label for="ttsProvider">Provider</label>
         <select id="ttsProvider">
           <option value="cloud">TalkToCursor Cloud (recommended)</option>
@@ -3290,6 +3326,80 @@
     questionFeedbackMode.addEventListener('change', saveQuestionFeedback);
     questionSound.addEventListener('change', saveQuestionFeedback);
 
+    const instantFeedback = document.getElementById('instantFeedback');
+    const promptHookRow = document.getElementById('promptHookRow');
+    const progressUpdates = document.getElementById('progressUpdates');
+    const speakingStyle = document.getElementById('speakingStyle');
+    const promptHookButtons = {
+      cursor: { button: document.getElementById('cursorPromptHookBtn'), label: 'Cursor hook', installed: false },
+      claude: { button: document.getElementById('claudePromptHookBtn'), label: 'Claude Code hook', installed: false },
+    };
+
+    async function saveAgentSpeech(message) {
+      promptHookRow.style.display = instantFeedback.checked ? 'block' : 'none';
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agentSpeech: {
+              instantFeedback: instantFeedback.checked,
+              progressUpdates: progressUpdates.value,
+              speakingStyle: speakingStyle.value,
+            },
+          }),
+        });
+        const data = await res.json();
+        showToast(data.success ? message : 'Could not save agent speech settings', data.success ? 'success' : 'error');
+      } catch (error) {
+        showToast('Could not save agent speech settings', 'error');
+      }
+    }
+
+    instantFeedback.addEventListener('change', () =>
+      saveAgentSpeech(instantFeedback.checked ? 'Instant feedback on' : 'Instant feedback off'));
+    progressUpdates.addEventListener('change', () => saveAgentSpeech('Progress updates saved'));
+    speakingStyle.addEventListener('change', () => saveAgentSpeech('Speaking style saved'));
+
+    function renderPromptHooks() {
+      for (const hook of Object.values(promptHookButtons)) {
+        hook.button.textContent = `${hook.installed ? 'Remove' : 'Install'} ${hook.label}`;
+      }
+    }
+
+    async function loadPromptHooks() {
+      try {
+        const data = await (await fetch('/api/prompt-hooks')).json();
+        promptHookButtons.cursor.installed = !!data.cursor;
+        promptHookButtons.claude.installed = !!data.claude;
+        renderPromptHooks();
+      } catch (error) {
+        // Leave the buttons on "Install".
+      }
+    }
+
+    for (const [host, hook] of Object.entries(promptHookButtons)) {
+      hook.button.addEventListener('click', async () => {
+        hook.button.disabled = true;
+        try {
+          const res = await fetch('/api/prompt-hooks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ host, installed: !hook.installed }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          hook.installed = data.installed;
+          renderPromptHooks();
+          showToast(`${hook.label} ${hook.installed ? 'installed' : 'removed'}`, 'success');
+        } catch (error) {
+          showToast(error.message || `Could not update the ${hook.label}`, 'error');
+        } finally {
+          hook.button.disabled = false;
+        }
+      });
+    }
+
     async function previewSound(sound, button) {
       if (sound === 'Chime') {
         const context = new AudioContext();
@@ -3746,6 +3856,11 @@
         questionSound.value = data.questionFeedback?.sound || 'ttc-pending-review-1';
         updateQuestionSoundRow();
         updateCompletionSoundRow();
+        instantFeedback.checked = data.agentSpeech?.instantFeedback !== false;
+        promptHookRow.style.display = instantFeedback.checked ? 'block' : 'none';
+        progressUpdates.value = data.agentSpeech?.progressUpdates || 'all';
+        speakingStyle.value = data.agentSpeech?.speakingStyle || 'casual';
+        loadPromptHooks();
         ttsProvider.value = data.ttsProvider || 'cloud';
         updateTtsProvider();
 

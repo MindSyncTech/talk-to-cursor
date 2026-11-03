@@ -321,6 +321,14 @@ Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
 
+### Instant Feedback, progress updates, and speaking style
+
+These three settings are under **Speech** in Settings:
+
+- **Instant Feedback** speaks a short acknowledgement ("let me take a look") the moment a prompt is sent, before the agent starts working. The phrase depends on the kind of prompt (a question, a fix, a build) and is cached for your voice, so it plays right away. Prompts sent by voice are acknowledged through the Background Helper (macOS). For typed prompts, click **Install Cursor hook** or **Install Claude Code hook**. This adds a prompt-submit hook to `~/.cursor/hooks.json` or `~/.claude/settings.json` and leaves your other hooks alone.
+- **Progress Updates** can be on for all tasks, only for tasks longer than about a minute, or off. TalkToCursor enforces the choice even if your rule asks for milestone updates. Questions and the final summary are always spoken.
+- **Speaking Style** is Casual or Professional. It sets the tone of acknowledgements and is passed to the agent with the `speak` tool, so changing it doesn't require editing your rules.
+
 ---
 
 ## Optional: Hands-Free Dictation (macOS only)
@@ -434,6 +442,9 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `completionFeedback.sound` | Task completion sound: a macOS sound (`Hero`, `Glass`, `Ping`, `Pop`, `Purr`, `Tink`, `Submarine`, `Bottle`, `Blow`, `Funk`) or a TalkToCursor sound (`ttc-ding-1`, `ttc-message-sent-2`, and others listed in Settings) | `ttc-success-jingle-1` |
 | `questionFeedback.mode` | When the agent needs your answer, on macOS (`speech`, `sound`, or `both`) | `both` |
 | `questionFeedback.sound` | Answers-needed sound, from the same list as `completionFeedback.sound` | `ttc-pending-review-1` |
+| `agentSpeech.instantFeedback` | Speak an acknowledgement as soon as a prompt is sent | `true` |
+| `agentSpeech.progressUpdates` | Spoken progress updates: `all`, `long` (tasks over about a minute), or `off` | `all` |
+| `agentSpeech.speakingStyle` | Tone of acknowledgements and agent speech: `casual` or `professional` | `casual` |
 | `ttsProvider` | Text-to-speech provider (`elevenlabs`, `voicebox`, or `cloud`) | `cloud` |
 | `apiKey` | ElevenLabs API key | required for ElevenLabs |
 | `voiceId` | ElevenLabs voice ID | Rachel |

@@ -22,6 +22,15 @@ import { applyPronunciation } from "./pronunciation.js";
 import { checkForUpdates } from "./update-checker.js";
 import { HelperIpcClient, type HelperMessage } from "./helper-ipc.js";
 import { playCompletionSound, soundFeedbackFor, type SpeechKind } from "./completion-sound.js";
+import {
+  ACKNOWLEDGEMENTS,
+  acknowledgementFor,
+  ProgressGate,
+  speakToolDescription,
+} from "./agent-speech.js";
+import { acknowledgementAudio, prewarmAcknowledgements, voiceFingerprint } from "./ack-cache.js";
+import { playPcm } from "./audio-output.js";
+import type { Config } from "./config.js";
 // Create server instance
 const server = new McpServer({
   name: PACKAGE_NAME,
@@ -36,6 +45,8 @@ helper.on("message", (message: HelperMessage) => {
     helperPlayback = Boolean(message.playback);
   } else if (message.type === "tts.cancel") {
     interruptSpeech("the user started speaking");
+  } else if (message.type === "prompt.received") {
+    acknowledgePrompt(typeof message.text === "string" ? message.text : "");
   }
 });
 helper.on("disconnected", () => {
@@ -45,7 +56,7 @@ helper.on("disconnected", () => {
 // TTS queue to prevent overlapping audio
 interface TTSQueueItem {
   text: string;
-  kind: SpeechKind;
+  kind: SpeechKind | "ack";
   resolve: (value: any) => void;
   reject: (error: any) => void;
 }
@@ -117,6 +128,11 @@ async function processTTSQueue() {
 
     try {
       const config = getEffectiveConfig();
+      if (item.kind === "ack") {
+        await speakAcknowledgement(item.text, config);
+        item.resolve(null);
+        continue;
+      }
       const feedback = soundFeedbackFor(config, item.kind);
       if (feedback.mode !== "speech") {
         await playCompletionSound(feedback.sound);
@@ -188,7 +204,8 @@ async function processTTSQueue() {
         console.error(`[TTS] Playback interrupted`);
         item.resolve(interruptedResult("the user started speaking"));
         for (const queued of ttsQueue.splice(0)) {
-          queued.resolve(interruptedResult("the user started speaking"));
+          if (queued.kind === "ack") ttsQueue.push(queued);
+          else queued.resolve(interruptedResult("the user started speaking"));
         }
         continue;
       }
@@ -229,6 +246,41 @@ async function processTTSQueue() {
   isProcessingQueue = false;
 }
 
+async function speakAcknowledgement(text: string, config: Config) {
+  const controller = new AbortController();
+  currentSpeech = controller;
+  writePrivateJson(TTS_STATE_PATH, { timestamp: new Date().toISOString(), speaking: true });
+  try {
+    const spokenText = applyPronunciation(text, config.pronunciation);
+    const target = { helper, helperPlayback };
+    const audio = acknowledgementAudio(spokenText, config, controller.signal);
+    if (audio) await playPcm(audio, controller.signal, target);
+    else await speakWithProvider(spokenText, config, controller.signal, target);
+    console.error(`[TTS] Acknowledged the prompt: "${spokenText}"`);
+  } catch (error) {
+    console.error(
+      `[TTS] Acknowledgement failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  } finally {
+    currentSpeech = null;
+    writePrivateJson(TTS_STATE_PATH, { timestamp: new Date().toISOString(), speaking: false });
+  }
+}
+
+const progress = new ProgressGate();
+
+/** Speak a short acknowledgement the moment a prompt is sent (Instant Feedback). */
+function acknowledgePrompt(prompt: string) {
+  progress.promptReceived();
+  const config = getEffectiveConfig();
+  if (!config.ttsEnabled || !config.agentSpeech.instantFeedback) return;
+  const phrase = acknowledgementFor(prompt, config.agentSpeech.speakingStyle);
+  if (!phrase) return;
+  interruptSpeech("the user sent a new prompt");
+  ttsQueue.unshift({ text: phrase, kind: "ack", resolve: () => {}, reject: () => {} });
+  processTTSQueue();
+}
+
 async function waitForSpeechIdle(): Promise<void> {
   while (isProcessingQueue || ttsQueue.length > 0) {
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -245,11 +297,12 @@ function queueTTS(text: string, kind: SpeechKind = "update"): Promise<any> {
 // Register the speak tool
 let lastSpeechError: string | null = null;
 
-server.registerTool(
+let speakDescription = speakToolDescription(getEffectiveConfig());
+
+const speakTool = server.registerTool(
   "speak",
   {
-    description:
-      "Speak text aloud using text-to-speech. Speech is queued and the tool returns immediately, so keep working or write the final chat response while it plays. Pass completion: true on the final task-completion summary, or question: true when you need the user's answer to continue. After final completion speech, call the listen tool; it waits for playback before Auto-Listen starts. State task-start actions and factual answers explicitly; keep routine completion updates concise. The user's Spoken Response Detail setting applies at playback.",
+    description: speakDescription,
     inputSchema: {
       text: z
         .string()
@@ -296,6 +349,22 @@ server.registerTool(
 
     const kind: SpeechKind =
       args.completion === true ? "completion" : args.question === true ? "question" : "update";
+    const config = getEffectiveConfig();
+    refreshAgentSpeech(config);
+    if (kind === "completion") progress.taskEnded();
+    if (kind === "update" && !progress.allowUpdate(config.agentSpeech.progressUpdates)) {
+      return {
+        content: [
+          {
+            type: "text",
+            text:
+              config.agentSpeech.progressUpdates === "off"
+                ? "Not spoken: the user turned off spoken progress updates. Speak again only for a question or the final summary."
+                : "Not spoken: spoken progress updates start once a task has run for about a minute.",
+          },
+        ],
+      };
+    }
     void queueTTS(text, kind).then((result) => {
       if (result?.isError) {
         lastSpeechError = result.content?.[0]?.text ?? "Speech failed";
@@ -314,6 +383,36 @@ server.registerTool(
     };
   }
 );
+
+let prewarmedFor: string | null = null;
+
+/** Keep the speak tool's guidance and cached acknowledgements in step with settings. */
+function refreshAgentSpeech(config: Config) {
+  const description = speakToolDescription(config);
+  if (description !== speakDescription) {
+    speakDescription = description;
+    speakTool.update({ description });
+  }
+  const fingerprint = voiceFingerprint(config);
+  const key = `${fingerprint}|${config.agentSpeech.speakingStyle}`;
+  if (!config.agentSpeech.instantFeedback || !config.ttsEnabled || !fingerprint || key === prewarmedFor) {
+    return;
+  }
+  prewarmedFor = key;
+  const phrases = Object.values(ACKNOWLEDGEMENTS[config.agentSpeech.speakingStyle])
+    .flat()
+    .map((text) => applyPronunciation(text, config.pronunciation));
+  void prewarmAcknowledgements(phrases, config, AbortSignal.timeout(120_000))
+    .then((cached) => {
+      if (cached) console.error(`[TTS] Cached ${cached} acknowledgement phrases`);
+    })
+    .catch((error) => {
+      prewarmedFor = null;
+      console.error(
+        `[TTS] Could not cache acknowledgements: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
+}
 
 // Register the listen tool
 server.registerTool(
@@ -422,6 +521,8 @@ async function main() {
   }
 
   helper.start();
+  setTimeout(() => refreshAgentSpeech(getEffectiveConfig()), 5_000).unref();
+  setInterval(() => refreshAgentSpeech(getEffectiveConfig()), 15_000).unref();
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

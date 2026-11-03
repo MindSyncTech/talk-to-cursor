@@ -261,6 +261,18 @@ export const DEFAULT_QUESTION_FEEDBACK = {
   sound: "ttc-pending-review-1",
 } as const;
 
+export const agentSpeechSchema = z.object({
+  instantFeedback: z.boolean().default(true),
+  progressUpdates: z.enum(["all", "long", "off"]).default("all"),
+  speakingStyle: z.enum(["casual", "professional"]).default("casual"),
+});
+
+export const DEFAULT_AGENT_SPEECH = {
+  instantFeedback: true,
+  progressUpdates: "all",
+  speakingStyle: "casual",
+} as const;
+
 export const settingsSchema = z
   .object({
     ttsEnabled: z.boolean(),
@@ -278,6 +290,7 @@ export const settingsSchema = z
     voiceInput: voiceInputSettingsSchema,
     completionFeedback: completionFeedbackSchema.default(DEFAULT_COMPLETION_FEEDBACK),
     questionFeedback: questionFeedbackSchema.default(DEFAULT_QUESTION_FEEDBACK),
+    agentSpeech: agentSpeechSchema.default(DEFAULT_AGENT_SPEECH),
     autoListen: z.boolean(),
   })
   .strict();
@@ -292,6 +305,7 @@ export const settingsUpdateSchema = settingsSchema
     voiceInput: voiceInputSettingsSchema.partial(),
     completionFeedback: completionFeedbackSchema.partial(),
     questionFeedback: questionFeedbackSchema.partial(),
+    agentSpeech: agentSpeechSchema.partial(),
   })
   .partial()
   .strict();

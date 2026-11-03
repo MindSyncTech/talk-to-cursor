@@ -45,6 +45,7 @@ import {
 } from "./settings-profiles.js";
 import { checkForUpdates } from "./update-checker.js";
 import { HelperIpcClient } from "./helper-ipc.js";
+import { promptHookInstalled, setPromptHook } from "./prompt-hooks.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -93,6 +94,7 @@ app.get("/api/config", (_req, res) => {
     voiceInput: config.voiceInput,
     completionFeedback: config.completionFeedback,
     questionFeedback: config.questionFeedback,
+    agentSpeech: config.agentSpeech,
     autoListen: config.autoListen,
   });
 });
@@ -136,6 +138,7 @@ app.post("/api/config", (req, res) => {
       voiceInput: saved.voiceInput,
       completionFeedback: saved.completionFeedback,
       questionFeedback: saved.questionFeedback,
+      agentSpeech: saved.agentSpeech,
       autoListen: saved.autoListen,
     },
   });
@@ -162,6 +165,32 @@ app.get("/api/fluidvoice/hotkey", async (_req, res) => {
 
 app.get("/api/background-service/status", (_req, res) => {
   res.json(getBackgroundServiceStatus());
+});
+
+app.get("/api/prompt-hooks", (_req, res) => {
+  res.json({
+    cursor: promptHookInstalled("cursor"),
+    claude: promptHookInstalled("claude"),
+  });
+});
+
+app.post("/api/prompt-hooks", (req, res) => {
+  const host = req.body?.host;
+  const installed = req.body?.installed;
+  if ((host !== "cursor" && host !== "claude") || typeof installed !== "boolean") {
+    res.status(400).json({ error: "Expected { host: 'cursor' | 'claude', installed: boolean }" });
+    return;
+  }
+  try {
+    setPromptHook(host, installed);
+    res.json({ success: true, installed: promptHookInstalled(host) });
+  } catch (error) {
+    res.status(500).json({
+      error: `Could not update the ${host === "cursor" ? "Cursor" : "Claude Code"} hooks file: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    });
+  }
 });
 
 let helperClient: HelperIpcClient | null = null;
@@ -525,6 +554,10 @@ app.post("/api/cloud/settings/download", async (_req, res) => {
         ...config.questionFeedback,
         ...(settings.questionFeedback || {}),
       },
+      agentSpeech: {
+        ...config.agentSpeech,
+        ...(settings.agentSpeech || {}),
+      },
       autoListen:
         settings.autoListen === undefined
           ? config.autoListen
@@ -591,6 +624,7 @@ app.post("/api/cloud/settings/upload", async (_req, res) => {
             },
             completionFeedback: config.completionFeedback,
             questionFeedback: config.questionFeedback,
+            agentSpeech: config.agentSpeech,
             autoListen: config.autoListen,
           },
         }),

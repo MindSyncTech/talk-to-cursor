@@ -5,6 +5,7 @@ the private user-data directory. Messages are single-line JSON objects with a
 ``type`` field. The helper can broadcast to every client or reply to one.
 """
 
+import itertools
 import json
 import os
 import socket
@@ -16,9 +17,12 @@ MAX_MESSAGE_BYTES = 4 * 1024 * 1024
 
 
 class IpcClient:
+    _next_order = itertools.count()
+
     def __init__(self, connection):
         self.connection = connection
         self.role = "unknown"
+        self.order = next(IpcClient._next_order)
         self._send_lock = threading.Lock()
 
     def send(self, message):
@@ -88,6 +92,15 @@ class HelperIpcServer:
             if client.send(message):
                 delivered += 1
         return delivered
+
+    def send_latest(self, message, role):
+        """Send to the most recently connected client with ``role``."""
+        with self._clients_lock:
+            clients = [client for client in self._clients if client.role == role]
+        for client in sorted(clients, key=lambda client: client.order, reverse=True):
+            if client.send(message):
+                return True
+        return False
 
     def has_client(self, role):
         with self._clients_lock:

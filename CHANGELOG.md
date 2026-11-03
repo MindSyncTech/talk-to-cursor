@@ -17,6 +17,15 @@
   the macOS sounds and CC0-licensed from Freesound. The task completion,
   send, and activation sound pickers list them separately from the macOS
   sounds.
+- Added **Instant Feedback**: TalkToCursor speaks a short acknowledgement
+  ("let me take a look") the moment a prompt is sent, chosen by the kind of
+  prompt and cached for your voice. Voice prompts work through the Background
+  Helper; Settings can install a Cursor or Claude Code prompt hook for typed
+  prompts.
+- Added a **Progress Updates** setting (all tasks, longer tasks only, or off)
+  and a **Speaking Style** setting (casual or professional). Both are passed to
+  the agent with the `speak` tool, and TalkToCursor holds back progress updates
+  you've turned off.
 - Added an **Answers Needed** sound: agents pass `"question": true` to `speak`
   when they need your answer to continue, and a sound (Pending review 1 by
   default) plays before or instead of the question. The voice-feedback rule

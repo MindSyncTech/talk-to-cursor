@@ -27,6 +27,8 @@ import {
   DEFAULT_COMPLETION_FEEDBACK,
   DEFAULT_QUESTION_FEEDBACK,
   questionFeedbackSchema,
+  agentSpeechSchema,
+  DEFAULT_AGENT_SPEECH,
 } from "./settings-schema.js";
 import {
   SettingsSyncCoordinator,
@@ -80,6 +82,7 @@ const portableSettingsSchema = z.object({
   }),
   completionFeedback: completionFeedbackSchema.default(DEFAULT_COMPLETION_FEEDBACK),
   questionFeedback: questionFeedbackSchema.default(DEFAULT_QUESTION_FEEDBACK),
+  agentSpeech: agentSpeechSchema.default(DEFAULT_AGENT_SPEECH),
   autoListen: z.boolean(),
 });
 
@@ -225,6 +228,7 @@ export function toPortableSettings(config: Config): PortableSettings {
     },
     completionFeedback: config.completionFeedback,
     questionFeedback: config.questionFeedback,
+    agentSpeech: config.agentSpeech,
     autoListen: config.autoListen,
   });
 }
@@ -265,6 +269,7 @@ export function applyPortableSettings(
     },
     completionFeedback: portable.completionFeedback,
     questionFeedback: portable.questionFeedback,
+    agentSpeech: portable.agentSpeech,
     autoListen: portable.autoListen,
   };
 }
@@ -289,6 +294,7 @@ function toRuntimeConfigOverlay(settings: PortableSettings): ConfigUpdate {
     voiceInput: portable.voiceInput,
     completionFeedback: portable.completionFeedback,
     questionFeedback: portable.questionFeedback,
+    agentSpeech: portable.agentSpeech,
     autoListen: portable.autoListen,
   };
 }

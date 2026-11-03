@@ -539,6 +539,7 @@ def submit_prompt_text(text, command_requested=False):
                 ctrl.press(Key.enter)
                 ctrl.release(Key.enter)
                 play_send_sound()
+                announce_prompt(text)
                 print(f"[voice-input] Submitted {len(text)} characters")
                 broadcast({'type': 'turn.submitted', 'text': text})
             else:
@@ -619,6 +620,7 @@ def send_pending_text(text):
             ctrl.press(Key.enter)
             ctrl.release(Key.enter)
             play_send_sound()
+            announce_prompt(text)
             print(f'[send-it] Heard "{SUBMIT_PHRASE}"; submitted {len(text)} characters')
             broadcast({'type': 'turn.submitted', 'text': text})
             time.sleep(0.2)
@@ -950,6 +952,7 @@ def press_submit_key(
             ctrl.press(Key.enter)
             ctrl.release(Key.enter)
         play_send_sound()
+        announce_prompt('')
         time.sleep(0.5)
         monitoring = True
         managed_submit_pending.clear()
@@ -1330,6 +1333,28 @@ def broadcast(message, role=None):
         helper_ipc.broadcast(message, role=role)
 
 
+PROMPT_DEDUPE_SECONDS = 5.0
+last_prompt_announced_at = None
+prompt_announce_lock = threading.Lock()
+
+
+def announce_prompt(text):
+    """Tell one MCP server a prompt was sent so it can acknowledge it right away.
+
+    A voice submit and Cursor's prompt hook report the same prompt, so the
+    second report within a few seconds is ignored.
+    """
+    global last_prompt_announced_at
+    with prompt_announce_lock:
+        now = time.monotonic()
+        if last_prompt_announced_at is not None and now - last_prompt_announced_at < PROMPT_DEDUPE_SECONDS:
+            return False
+        last_prompt_announced_at = now
+    if helper_ipc is None:
+        return False
+    return helper_ipc.send_latest({'type': 'prompt.received', 'text': text[:2000]}, role='mcp')
+
+
 def on_playback_event(kind, stream_id, interrupted):
     if kind == 'started':
         barge_in_monitor.playback_started()
@@ -1362,6 +1387,9 @@ def handle_ipc_message(client, message):
     elif kind == 'listen':
         print("[voice-input] Listen request received over IPC")
         handle_listen_request()
+    elif kind == 'prompt.submitted':
+        text = message.get('text')
+        announce_prompt(text if isinstance(text, str) else '')
     elif kind == 'tts.start' and helper_audio is not None:
         helper_audio.begin_stream(stream_id)
     elif kind == 'tts.audio' and helper_audio is not None:

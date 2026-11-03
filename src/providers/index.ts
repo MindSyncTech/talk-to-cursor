@@ -2,6 +2,7 @@ import type { Config } from "../config.js";
 import {
   pipelined,
   playPcm,
+  type PcmChunk,
   type PlaybackResult,
   type PlaybackTarget,
 } from "../audio-output.js";
@@ -25,6 +26,16 @@ export function splitForStreaming(text: string): string[] {
   const sentences = segmentSentences(text);
   if (sentences.length <= 1) return [text.trim()].filter(Boolean);
   return [sentences[0], sentences.slice(1).join(" ")];
+}
+
+/** Raw PCM for one utterance, or null for providers that play audio themselves. */
+export function streamWithProvider(
+  text: string,
+  config: Config,
+  signal: AbortSignal,
+): AsyncIterable<PcmChunk> | null {
+  const provider = providers[config.ttsProvider];
+  return provider?.stream ? provider.stream(text, config, signal) : null;
 }
 
 export async function speakWithProvider(

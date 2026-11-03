@@ -21,11 +21,11 @@ const execFileAsync = promisify(execFile);
 const LABEL = "com.mindsynctech.talktocursor.background";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const HELPER_DIR = join(USER_DATA_DIR, "background-helper");
-const RUNTIME_DIR = join(HELPER_DIR, "runtime");
+export const RUNTIME_DIR = join(HELPER_DIR, "runtime");
 const VENV_DIR = join(HELPER_DIR, "venv");
 const LOG_DIR = join(HELPER_DIR, "logs");
 const VERSION_PATH = join(HELPER_DIR, "version");
-const PYTHON_PATH = join(VENV_DIR, "bin", "python");
+export const PYTHON_PATH = join(VENV_DIR, "bin", "python");
 const PLIST_PATH = join(
   homedir(),
   "Library",
@@ -45,6 +45,7 @@ const RUNTIME_FILES = [
   "smart_turn.py",
   "speech_vad.py",
   "pending_send.py",
+  "prompt_hook.py",
   "stt_engine.py",
   "submit_phrase.py",
   "turn_detector.py",
