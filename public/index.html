@@ -2488,6 +2488,12 @@
           <span class="switch-slider"></span>
         </label>
       </div>
+      <div class="form-group" id="wakeChimeSoundRow" style="display: none;">
+        <div class="cloud-voice-picker">
+          <select id="wakeChimeSound" data-sound-options aria-label="Activation chime sound"></select>
+          <button class="btn-secondary" type="button" data-sound-preview="wakeChimeSound"><span aria-hidden="true">&#9654;</span> Preview</button>
+        </div>
+      </div>
 
       <div class="btn-row">
         <button class="btn-primary" id="saveListeningTriggersBtn" type="button">Save Cursor Listening Triggers</button>
@@ -2518,6 +2524,23 @@
           <input type="checkbox" id="submitCommandEnabled" checked>
           <span class="switch-slider"></span>
         </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Send Sound</span>
+          <span class="toggle-desc">Play a sound when TalkToCursor sends your message, after “send it” or Auto-Submit</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="sendSoundEnabled">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="form-group" id="sendSoundRow" style="display: none;">
+        <div class="cloud-voice-picker">
+          <select id="sendSound" data-sound-options aria-label="Send sound"></select>
+          <button class="btn-secondary" type="button" data-sound-preview="sendSound"><span aria-hidden="true">&#9654;</span> Preview</button>
+        </div>
       </div>
 
       <div class="auto-submit-details" id="autoSubmitDetails">
@@ -2893,6 +2916,11 @@
     const wakeSensitivitySlider = document.getElementById('wakeSensitivity');
     const wakeSensitivityValue = document.getElementById('wakeSensitivityValue');
     const wakeChime = document.getElementById('wakeChime');
+    const wakeChimeSoundRow = document.getElementById('wakeChimeSoundRow');
+    const wakeChimeSoundSelect = document.getElementById('wakeChimeSound');
+    const sendSoundEnabled = document.getElementById('sendSoundEnabled');
+    const sendSoundRow = document.getElementById('sendSoundRow');
+    const sendSoundSelect = document.getElementById('sendSound');
     const saveVoiceInputBtn = document.getElementById('saveVoiceInputBtn');
     const toastEl = document.getElementById('toast');
 
@@ -3230,18 +3258,45 @@
 
     completionFeedbackMode.addEventListener('change', saveCompletionFeedback);
     completionSound.addEventListener('change', saveCompletionFeedback);
-    completionSoundPreviewBtn.addEventListener('click', async () => {
-      completionSoundPreviewBtn.disabled = true;
+
+    async function previewSound(sound, button) {
+      if (sound === 'Chime') {
+        const context = new AudioContext();
+        let start = context.currentTime;
+        for (const [frequency, duration] of [[880, 0.09], [1318.5, 0.14]]) {
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.frequency.value = frequency;
+          gain.gain.setValueAtTime(0.25, start);
+          gain.gain.exponentialRampToValueAtTime(0.25 * Math.exp(-18 * duration), start + duration);
+          oscillator.connect(gain).connect(context.destination);
+          oscillator.start(start);
+          oscillator.stop(start + duration);
+          start += duration;
+        }
+        setTimeout(() => context.close(), 500);
+        return;
+      }
+      button.disabled = true;
       try {
         const res = await fetch('/api/completion-sound/preview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sound: completionSound.value }),
+          body: JSON.stringify({ sound }),
         });
         if (!res.ok) showToast('Sound previews need macOS', 'error');
       } finally {
-        completionSoundPreviewBtn.disabled = false;
+        button.disabled = false;
       }
+    }
+
+    completionSoundPreviewBtn.addEventListener('click', () => previewSound(completionSound.value, completionSoundPreviewBtn));
+    document.querySelectorAll('select[data-sound-options]').forEach((select) => {
+      select.add(new Option('Chime (built-in)', 'Chime'));
+      for (const option of completionSound.options) select.add(new Option(option.text, option.value));
+    });
+    document.querySelectorAll('[data-sound-preview]').forEach((button) => {
+      button.addEventListener('click', () => previewSound(document.getElementById(button.dataset.soundPreview).value, button));
     });
 
     // Wire up slider value displays
@@ -3284,6 +3339,18 @@
     submitCommandEnabled.addEventListener('change', () => {
       saveAutoSubmitSettings(submitCommandEnabled.checked ? '“Send it” command turned on' : '“Send it” command turned off');
     });
+
+    function updateSoundRows() {
+      sendSoundRow.style.display = sendSoundEnabled.checked ? 'block' : 'none';
+      wakeChimeSoundRow.style.display = wakeChime.checked ? 'block' : 'none';
+    }
+    sendSoundEnabled.addEventListener('change', () => {
+      updateSoundRows();
+      saveAutoSubmitSettings(sendSoundEnabled.checked ? 'Send sound turned on' : 'Send sound turned off');
+    });
+    sendSoundSelect.addEventListener('change', () => saveAutoSubmitSettings('Send sound saved'));
+    wakeChime.addEventListener('change', updateSoundRows);
+    wakeChimeSoundSelect.addEventListener('change', () => saveListeningTriggers('Activation chime sound saved'));
 
     function updateAutoSubmitMode() {
       const isSmart = autoSubmitMode.value === 'smart';
@@ -3540,6 +3607,7 @@
               wakePhrase: wakePhrase.value,
               wakeSensitivity: parseFloat(wakeSensitivitySlider.value),
               wakeChime: wakeChime.checked,
+              wakeChimeSound: wakeChimeSoundSelect.value,
             },
           }),
         });
@@ -3677,6 +3745,9 @@
           smartTextDelaySlider.value = as.smartTextDelay ?? 0.2;
           smartTextDelayValue.textContent = parseFloat(smartTextDelaySlider.value).toFixed(2) + 's';
           submitCommandEnabled.checked = as.submitCommandEnabled !== false;
+          sendSoundEnabled.checked = as.sendSoundEnabled === true;
+          sendSoundSelect.value = as.sendSound || 'Pop';
+          updateSoundRows();
           updateAutoSubmitMode();
         }
 
@@ -3708,6 +3779,8 @@
           wakeSensitivitySlider.value = vi.wakeSensitivity ?? 0.5;
           wakeSensitivityValue.textContent = parseFloat(wakeSensitivitySlider.value).toFixed(2);
           wakeChime.checked = vi.wakeChime !== false;
+          wakeChimeSoundSelect.value = vi.wakeChimeSound || 'Chime';
+          updateSoundRows();
           updateVoiceInputProvider();
         }
 
@@ -4729,6 +4802,8 @@
         smartTextDelay: parseFloat(smartTextDelaySlider.value),
         submitCommandEnabled: submitCommandEnabled.checked,
         submitPhrase: 'send it',
+        sendSoundEnabled: sendSoundEnabled.checked,
+        sendSound: sendSoundSelect.value,
       };
 
       try {

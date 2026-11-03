@@ -450,6 +450,8 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `autoSubmit.smartMaxSilence` | Safety fallback after uncertain silence | `3.0` |
 | `autoSubmit.smartTextDelay` | Text stability delay after Smart Turn | `0.2` |
 | `autoSubmit.submitCommandEnabled` | Enable the spoken `send it` command | `true` |
+| `autoSubmit.sendSoundEnabled` | Play a sound when a message is sent | `false` |
+| `autoSubmit.sendSound` | Send sound: `Chime` or a macOS sound (`Hero`, `Glass`, `Ping`, `Pop`, `Purr`, `Tink`, `Submarine`, `Bottle`, `Blow`, `Funk`) | `Pop` |
 | `voiceInput.enabled` | Automatic voice input loop | false |
 | `voiceInput.provider` | Voice input provider (`builtin`, `wispr`, `fluidvoice`, or `handy`) | `wispr` |
 | `voiceInput.wisprHotkey` | Wispr Flow recording shortcut | `shift+ctrl` |
@@ -461,6 +463,7 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `voiceInput.wakePhrase` | Phrase that starts voice input | `hey cursor` |
 | `voiceInput.wakeSensitivity` | Wake-phrase detection sensitivity (0-1) | `0.5` |
 | `voiceInput.wakeChime` | Play a sound before dictation starts | `true` |
+| `voiceInput.wakeChimeSound` | Activation chime: `Chime` (built-in) or a macOS sound, as for `sendSound` | `Chime` |
 
 TalkToCursor Cloud voice choices are grouped in the settings UI: Male
 (Daniel, James, Ryan, Michael, Ethan, Lucas, Noah, Marcus, David, Owen) and Female (Olivia, Sophie, Emma, Grace, Chloe, Ava, Mia, Hannah, Lily, Claire).

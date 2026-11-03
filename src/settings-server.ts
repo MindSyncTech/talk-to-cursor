@@ -579,6 +579,7 @@ app.post("/api/cloud/settings/upload", async (_req, res) => {
               wakePhrase: config.voiceInput.wakePhrase,
               wakeSensitivity: config.voiceInput.wakeSensitivity,
               wakeChime: config.voiceInput.wakeChime,
+              wakeChimeSound: config.voiceInput.wakeChimeSound,
               bargeIn: config.voiceInput.bargeIn,
               builtinModel: config.voiceInput.builtinModel,
             },

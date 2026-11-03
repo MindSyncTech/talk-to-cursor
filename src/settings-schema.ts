@@ -135,6 +135,22 @@ export const cloudSettingsSchema = z.object({
   settingsRevision: z.number().int().nonnegative(),
 });
 
+export const COMPLETION_SOUNDS = [
+  "Hero",
+  "Glass",
+  "Ping",
+  "Pop",
+  "Purr",
+  "Tink",
+  "Submarine",
+  "Bottle",
+  "Blow",
+  "Funk",
+] as const;
+
+/** "Chime" is the helper's built-in two-note tone; the rest are macOS sounds. */
+export const CHIME_SOUNDS = ["Chime", ...COMPLETION_SOUNDS] as const;
+
 export const autoSubmitSettingsSchema = z.object({
   enabled: z.boolean(),
   mode: z.enum(["fixed", "smart"]),
@@ -147,6 +163,8 @@ export const autoSubmitSettingsSchema = z.object({
   smartTextDelay: z.number().finite().min(0.1).max(1),
   submitCommandEnabled: z.boolean(),
   submitPhrase: z.literal("send it"),
+  sendSoundEnabled: z.boolean().default(false),
+  sendSound: z.enum(CHIME_SOUNDS).default("Pop"),
 });
 
 export const voiceInputSettingsSchema = z
@@ -177,6 +195,7 @@ export const voiceInputSettingsSchema = z
     ]),
     wakeSensitivity: z.number().finite().min(0).max(1),
     wakeChime: z.boolean(),
+    wakeChimeSound: z.enum(CHIME_SOUNDS).default("Chime"),
     bargeIn: z.boolean().default(true),
     builtinModel: z.enum(["streaming", "parakeet", "cloud"]).default("parakeet"),
     echoCancellation: z.boolean().default(true),
@@ -186,19 +205,6 @@ export const voiceInputSettingsSchema = z
   })
   // Discard retired fields such as ttsDelay from existing config files.
   .strip();
-
-export const COMPLETION_SOUNDS = [
-  "Hero",
-  "Glass",
-  "Ping",
-  "Pop",
-  "Purr",
-  "Tink",
-  "Submarine",
-  "Bottle",
-  "Blow",
-  "Funk",
-] as const;
 
 export const completionFeedbackSchema = z.object({
   mode: z.enum(["speech", "sound", "both"]).default("speech"),

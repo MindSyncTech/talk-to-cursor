@@ -215,6 +215,7 @@ export function toPortableSettings(config: Config): PortableSettings {
       wakePhrase: config.voiceInput.wakePhrase,
       wakeSensitivity: config.voiceInput.wakeSensitivity,
       wakeChime: config.voiceInput.wakeChime,
+      wakeChimeSound: config.voiceInput.wakeChimeSound,
       bargeIn: config.voiceInput.bargeIn,
       builtinModel: config.voiceInput.builtinModel,
     },

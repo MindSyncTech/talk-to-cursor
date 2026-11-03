@@ -88,6 +88,21 @@ describe("settingsUpdateSchema", () => {
     });
   });
 
+  it("accepts send and chime sounds, rejecting unknown ones", () => {
+    expect(
+      settingsUpdateSchema.parse({
+        autoSubmit: { sendSoundEnabled: true, sendSound: "Tink" },
+        voiceInput: { wakeChimeSound: "Glass" },
+      }),
+    ).toEqual({
+      autoSubmit: { sendSoundEnabled: true, sendSound: "Tink" },
+      voiceInput: { wakeChimeSound: "Glass" },
+    });
+    expect(() =>
+      settingsUpdateSchema.parse({ autoSubmit: { sendSound: "../../evil" } }),
+    ).toThrow();
+  });
+
   it("accepts Cloud dictation as a built-in speech model", () => {
     expect(
       settingsUpdateSchema.parse({ voiceInput: { builtinModel: "cloud" } }),

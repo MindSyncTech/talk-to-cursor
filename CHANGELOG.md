@@ -8,6 +8,12 @@
   billing period. If Cloud can't be reached or the minutes run out, that turn
   is transcribed by a local model you've already downloaded.
 - The Cloud Account card shows dictation minutes left alongside characters.
+- Added an optional **Send Sound** that plays when TalkToCursor sends your
+  message, after “send it” or Auto-Submit, with a choice of sounds.
+- The Activation Chime can now use any macOS system sound instead of the
+  built-in two-note chime.
+- If `config.json` has a setting this version doesn't support, only that
+  setting falls back to its default instead of every setting.
 
 ## 1.4.0 — 2026-11-01
 

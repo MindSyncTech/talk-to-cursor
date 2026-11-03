@@ -128,6 +128,8 @@ export const DEFAULT_AUTO_SUBMIT: Config["autoSubmit"] = {
   smartTextDelay: 0.2,
   submitCommandEnabled: true,
   submitPhrase: "send it",
+  sendSoundEnabled: false,
+  sendSound: "Pop",
 };
 
 export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
@@ -143,6 +145,7 @@ export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
   wakePhrase: "hey cursor",
   wakeSensitivity: 0.5,
   wakeChime: true,
+  wakeChimeSound: "Chime",
   bargeIn: true,
   builtinModel: "parakeet",
   echoCancellation: true,

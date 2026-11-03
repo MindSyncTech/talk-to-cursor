@@ -25,6 +25,7 @@ import sys
 import threading
 import subprocess
 import shlex
+import tempfile
 from pathlib import Path
 
 if sys.platform != 'darwin':
@@ -140,6 +141,8 @@ def load_config():
             'smartTextDelay': 0.2,
             'submitCommandEnabled': True,
             'submitPhrase': 'send it',
+            'sendSoundEnabled': False,
+            'sendSound': 'Pop',
         },
         'voiceInput': {
             'enabled': False,
@@ -154,6 +157,7 @@ def load_config():
             'wakePhrase': 'hey cursor',
             'wakeSensitivity': 0.5,
             'wakeChime': True,
+            'wakeChimeSound': 'Chime',
             'bargeIn': True,
             'builtinModel': 'parakeet',
             'echoCancellation': True,
@@ -192,6 +196,15 @@ SMART_MAX_SILENCE = config['autoSubmit']['smartMaxSilence']
 SMART_TEXT_DELAY = config['autoSubmit']['smartTextDelay']
 SUBMIT_COMMAND_ENABLED = config['autoSubmit']['submitCommandEnabled']
 SUBMIT_PHRASE = config['autoSubmit']['submitPhrase']
+SYSTEM_SOUNDS = (
+    'Hero', 'Glass', 'Ping', 'Pop', 'Purr', 'Tink', 'Submarine', 'Bottle', 'Blow', 'Funk',
+)
+SEND_SOUND = (
+    config['autoSubmit']['sendSound']
+    if config['autoSubmit'].get('sendSoundEnabled') is True
+    and config['autoSubmit'].get('sendSound') in ('Chime', *SYSTEM_SOUNDS)
+    else None
+)
 
 VOICE_INPUT_ENABLED = config['voiceInput']['enabled']
 VOICE_INPUT_PROVIDER = config['voiceInput']['provider']
@@ -205,6 +218,11 @@ WAKE_WORD_ENABLED = config['voiceInput']['wakeWordEnabled']
 WAKE_PHRASE = config['voiceInput']['wakePhrase']
 WAKE_SENSITIVITY = config['voiceInput']['wakeSensitivity']
 WAKE_CHIME = config['voiceInput']['wakeChime']
+WAKE_CHIME_SOUND = (
+    config['voiceInput'].get('wakeChimeSound')
+    if config['voiceInput'].get('wakeChimeSound') in SYSTEM_SOUNDS
+    else 'Chime'
+)
 BARGE_IN = config['voiceInput']['bargeIn']
 BUILTIN_MODEL = (
     config['voiceInput']['builtinModel']
@@ -217,7 +235,7 @@ INPUT_GAIN_DB = min(30.0, max(0.0, float(config['voiceInput']['inputGainDb'] or 
 INPUT_CHANNEL = config['voiceInput'].get('inputChannel') or 1
 NOISE_SUPPRESSION = config['voiceInput'].get('noiseSuppression') is not False
 WAKE_CHIME_GUARD_SECONDS = 1.7
-HELPER_CHIME_GUARD_SECONDS = 0.3
+HELPER_CHIME_MAX_GUARD_SECONDS = 0.8
 
 # ─── State ───────────────────────────────────────────────────────────────────
 
@@ -499,6 +517,7 @@ def submit_prompt_text(text, command_requested=False):
                 time.sleep(0.05)
                 ctrl.press(Key.enter)
                 ctrl.release(Key.enter)
+                play_send_sound()
                 print(f"[voice-input] Submitted {len(text)} characters")
                 broadcast({'type': 'turn.submitted', 'text': text})
             else:
@@ -578,6 +597,7 @@ def send_pending_text(text):
         try:
             ctrl.press(Key.enter)
             ctrl.release(Key.enter)
+            play_send_sound()
             print(f'[send-it] Heard "{SUBMIT_PHRASE}"; submitted {len(text)} characters')
             broadcast({'type': 'turn.submitted', 'text': text})
             time.sleep(0.2)
@@ -908,6 +928,7 @@ def press_submit_key(
         else:
             ctrl.press(Key.enter)
             ctrl.release(Key.enter)
+        play_send_sound()
         time.sleep(0.5)
         monitoring = True
         managed_submit_pending.clear()
@@ -1162,25 +1183,75 @@ def chime_pcm():
     return (audio * 32767).astype(np.int16).tobytes()
 
 
-def play_chime():
-    """Play the activation chime; returns seconds to wait before listening."""
+system_sound_cache = {}
+
+
+def system_sound_pcm(name):
+    """A macOS system sound as 24 kHz mono PCM, without its silent tail."""
+    import wave
+
+    import numpy as np
+
+    if name in system_sound_cache:
+        return system_sound_cache[name]
+    pcm = None
+    with tempfile.TemporaryDirectory() as directory:
+        target = os.path.join(directory, 'sound.wav')
+        try:
+            subprocess.run(
+                [
+                    'afconvert', '-f', 'WAVE', '-d', 'LEI16@24000', '-c', '1',
+                    f'/System/Library/Sounds/{name}.aiff', target,
+                ],
+                check=True,
+                capture_output=True,
+                timeout=5,
+            )
+            with wave.open(target, 'rb') as sound:
+                samples = np.frombuffer(sound.readframes(sound.getnframes()), dtype='<i2')
+            audible = np.flatnonzero(np.abs(samples) > 64)
+            if audible.size:
+                pcm = samples[: audible[-1] + 1].astype(np.int16).tobytes()
+        except (OSError, subprocess.SubprocessError, wave.Error):
+            pass
+    system_sound_cache[name] = pcm
+    return pcm
+
+
+def play_sound(name):
+    """Play the built-in chime or a system sound; returns its length if known."""
     if helper_audio is not None:
-        stream_id = f"chime-{time.monotonic_ns()}"
-        helper_audio.begin_stream(stream_id)
-        helper_audio.write(stream_id, chime_pcm())
-        helper_audio.end_stream(stream_id)
-        # The chime lasts 0.23 s; listening starts right after it.
-        return HELPER_CHIME_GUARD_SECONDS
+        pcm = chime_pcm() if name == 'Chime' else system_sound_pcm(name)
+        if pcm:
+            stream_id = f"chime-{time.monotonic_ns()}"
+            helper_audio.begin_stream(stream_id)
+            helper_audio.write(stream_id, pcm)
+            helper_audio.end_stream(stream_id)
+            return len(pcm) / 2 / 24000
     try:
         subprocess.Popen(
-            ['afplay', '/System/Library/Sounds/Glass.aiff'],
+            ['afplay', f"/System/Library/Sounds/{'Glass' if name == 'Chime' else name}.aiff"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
     except OSError:
         pass
-    return WAKE_CHIME_GUARD_SECONDS
+    return None
+
+
+def play_chime():
+    """Play the activation chime; returns seconds to wait before listening."""
+    duration = play_sound(WAKE_CHIME_SOUND)
+    if duration is None:
+        return WAKE_CHIME_GUARD_SECONDS
+    # Listening starts as the chime fades, so a long sound doesn't delay speech.
+    return min(duration + 0.07, HELPER_CHIME_MAX_GUARD_SECONDS)
+
+
+def play_send_sound():
+    if SEND_SOUND is not None:
+        threading.Thread(target=play_sound, args=(SEND_SOUND,), daemon=True).start()
 
 
 def speech_model_still_loading():
@@ -1454,6 +1525,12 @@ def main():
                 provider_shortcut_watch = setup_provider_shortcut_watch()
         except Exception as error:
             print(f'[send-it] Listening for "{SUBMIT_PHRASE}" after dictation is unavailable: {error}')
+    cached_sounds = {WAKE_CHIME_SOUND if WAKE_CHIME else None, SEND_SOUND} & set(SYSTEM_SOUNDS)
+    if helper_audio is not None and cached_sounds:
+        threading.Thread(
+            target=lambda: [system_sound_pcm(name) for name in cached_sounds],
+            daemon=True,
+        ).start()
     if VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin' and BUILTIN_MODEL == 'cloud':
         print(f"[stt] Cloud dictation via {CLOUD_API_URL}")
     elif VOICE_INPUT_ENABLED and VOICE_INPUT_PROVIDER == 'builtin':
@@ -1489,6 +1566,7 @@ def main():
     Min text length: {MIN_TEXT_LENGTH} chars
     Target app:      {TARGET_APP}
     Submit command:  {SUBMIT_PHRASE if SUBMIT_COMMAND_ENABLED else 'disabled'}
+    Send sound:      {SEND_SOUND or 'off'}
   
   Voice Input: {'Enabled' if VOICE_INPUT_ENABLED else 'Disabled'}
     Provider:        {VOICE_INPUT_PROVIDER}
@@ -1503,7 +1581,7 @@ def main():
   Wake Phrase: {'Enabled' if WAKE_WORD_ENABLED else 'Disabled'}
     Phrase:          {WAKE_PHRASE}
     Sensitivity:     {WAKE_SENSITIVITY}
-    Activation chime: {'Enabled' if WAKE_CHIME else 'Disabled'}
+    Activation chime: {WAKE_CHIME_SOUND if WAKE_CHIME else 'Disabled'}
 
   Press Ctrl+C to stop.
 """)
