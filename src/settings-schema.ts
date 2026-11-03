@@ -199,7 +199,7 @@ export const autoSubmitSettingsSchema = z.object({
   submitCommandEnabled: z.boolean(),
   submitPhrase: z.literal("send it"),
   sendSoundEnabled: z.boolean().default(false),
-  sendSound: z.enum(CHIME_SOUNDS).default("Pop"),
+  sendSound: z.enum(CHIME_SOUNDS).default("ttc-message-sent-1"),
 });
 
 export const voiceInputSettingsSchema = z
@@ -243,8 +243,23 @@ export const voiceInputSettingsSchema = z
 
 export const completionFeedbackSchema = z.object({
   mode: z.enum(["speech", "sound", "both"]).default("speech"),
-  sound: z.enum(COMPLETION_SOUNDS).default("Hero"),
+  sound: z.enum(COMPLETION_SOUNDS).default("ttc-success-jingle-1"),
 });
+
+export const questionFeedbackSchema = z.object({
+  mode: z.enum(["speech", "sound", "both"]).default("both"),
+  sound: z.enum(COMPLETION_SOUNDS).default("ttc-pending-review-1"),
+});
+
+export const DEFAULT_COMPLETION_FEEDBACK = {
+  mode: "speech",
+  sound: "ttc-success-jingle-1",
+} as const;
+
+export const DEFAULT_QUESTION_FEEDBACK = {
+  mode: "both",
+  sound: "ttc-pending-review-1",
+} as const;
 
 export const settingsSchema = z
   .object({
@@ -261,7 +276,8 @@ export const settingsSchema = z
     cloud: cloudSettingsSchema,
     autoSubmit: autoSubmitSettingsSchema,
     voiceInput: voiceInputSettingsSchema,
-    completionFeedback: completionFeedbackSchema.default({ mode: "speech", sound: "Hero" }),
+    completionFeedback: completionFeedbackSchema.default(DEFAULT_COMPLETION_FEEDBACK),
+    questionFeedback: questionFeedbackSchema.default(DEFAULT_QUESTION_FEEDBACK),
     autoListen: z.boolean(),
   })
   .strict();
@@ -275,6 +291,7 @@ export const settingsUpdateSchema = settingsSchema
     autoSubmit: autoSubmitSettingsSchema.partial(),
     voiceInput: voiceInputSettingsSchema.partial(),
     completionFeedback: completionFeedbackSchema.partial(),
+    questionFeedback: questionFeedbackSchema.partial(),
   })
   .partial()
   .strict();

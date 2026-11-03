@@ -7,14 +7,24 @@ export type CompletionFeedback = Config["completionFeedback"]["mode"];
 
 const SOUNDS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "sounds");
 
-/** System sounds only exist on macOS, so other platforms always speak. */
+export type SpeechKind = "update" | "completion" | "question";
+
+/** Sounds play through afplay, which only exists on macOS, so other platforms always speak. */
+export function soundFeedbackFor(
+  config: Config,
+  kind: SpeechKind,
+  platform: NodeJS.Platform = process.platform,
+): { mode: CompletionFeedback; sound: string } {
+  if (kind === "update" || platform !== "darwin") return { mode: "speech", sound: "" };
+  return kind === "completion" ? config.completionFeedback : config.questionFeedback;
+}
+
 export function completionFeedbackFor(
   config: Config,
   completion: boolean,
   platform: NodeJS.Platform = process.platform,
 ): CompletionFeedback {
-  if (!completion || platform !== "darwin") return "speech";
-  return config.completionFeedback.mode;
+  return soundFeedbackFor(config, completion ? "completion" : "update", platform).mode;
 }
 
 export function soundPath(sound: string): string {

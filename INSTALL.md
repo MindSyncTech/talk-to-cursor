@@ -265,6 +265,9 @@ with a concise completion summary and `"completion": true`:
 `{ "text": "...", "completion": true }`. Do this even if a task-start update
 was already spoken.
 
+When you need the user's answer or decision before you can continue, pass
+`"question": true` with that speech: `{ "text": "...", "question": true }`.
+
 Immediately after completion speech, call the `listen` tool. It safely does
 nothing when Auto-Listen is disabled. Never call `listen` after task-start or
 milestone speech.
@@ -281,6 +284,7 @@ Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
 Pass the words in the `text` argument: `{ "text": "..." }`.
 For the completion update, also pass `"completion": true`.
+When you need an answer before you can continue, pass `"question": true`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
@@ -296,6 +300,7 @@ Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
 Pass the words in the `text` argument: `{ "text": "..." }`.
 For the completion update, also pass `"completion": true`.
+When you need an answer before you can continue, pass `"question": true`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
@@ -311,6 +316,7 @@ Use the `speak` tool at task start, important milestones,
 when asking a question, and at completion.
 Pass the words in the `text` argument: `{ "text": "..." }`.
 For the completion update, also pass `"completion": true`.
+When you need an answer before you can continue, pass `"question": true`.
 Keep spoken updates to 1-2 sentences.
 Do not read code, paths, logs, or stack traces aloud.
 ```
@@ -425,7 +431,9 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `pauseMediaDuringSpeech` | Pause Apple Music or Spotify during speech on macOS | `false` |
 | `spokenResponseDetail` | Spoken update length (`minimal`, `brief`, or `detailed`) | `brief` |
 | `completionFeedback.mode` | Final summary on macOS (`speech`, `sound`, or `both`) | `speech` |
-| `completionFeedback.sound` | Task completion sound: a macOS sound (`Hero`, `Glass`, `Ping`, `Pop`, `Purr`, `Tink`, `Submarine`, `Bottle`, `Blow`, `Funk`) or a TalkToCursor sound (`ttc-ding-1`, `ttc-message-sent-2`, and others listed in Settings) | `Hero` |
+| `completionFeedback.sound` | Task completion sound: a macOS sound (`Hero`, `Glass`, `Ping`, `Pop`, `Purr`, `Tink`, `Submarine`, `Bottle`, `Blow`, `Funk`) or a TalkToCursor sound (`ttc-ding-1`, `ttc-message-sent-2`, and others listed in Settings) | `ttc-success-jingle-1` |
+| `questionFeedback.mode` | When the agent needs your answer, on macOS (`speech`, `sound`, or `both`) | `both` |
+| `questionFeedback.sound` | Answers-needed sound, from the same list as `completionFeedback.sound` | `ttc-pending-review-1` |
 | `ttsProvider` | Text-to-speech provider (`elevenlabs`, `voicebox`, or `cloud`) | `cloud` |
 | `apiKey` | ElevenLabs API key | required for ElevenLabs |
 | `voiceId` | ElevenLabs voice ID | Rachel |
@@ -451,7 +459,7 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `autoSubmit.smartTextDelay` | Text stability delay after Smart Turn | `0.2` |
 | `autoSubmit.submitCommandEnabled` | Enable the spoken `send it` command | `true` |
 | `autoSubmit.sendSoundEnabled` | Play a sound when a message is sent | `false` |
-| `autoSubmit.sendSound` | Send sound: `Chime` or any sound allowed for `completionFeedback.sound` | `Pop` |
+| `autoSubmit.sendSound` | Send sound: `Chime` or any sound allowed for `completionFeedback.sound` | `ttc-message-sent-1` |
 | `voiceInput.enabled` | Automatic voice input loop | false |
 | `voiceInput.provider` | Voice input provider (`builtin`, `wispr`, `fluidvoice`, or `handy`) | `wispr` |
 | `voiceInput.wisprHotkey` | Wispr Flow recording shortcut | `shift+ctrl` |

@@ -17,6 +17,12 @@
   the macOS sounds and CC0-licensed from Freesound. The task completion,
   send, and activation sound pickers list them separately from the macOS
   sounds.
+- Added an **Answers Needed** sound: agents pass `"question": true` to `speak`
+  when they need your answer to continue, and a sound (Pending review 1 by
+  default) plays before or instead of the question. The voice-feedback rule
+  examples include the new flag.
+- New default sounds: Success jingle 1 for task completion and Message sent 1
+  for the send sound. Saved choices are kept.
 - If `config.json` has a setting this version doesn't support, only that
   setting falls back to its default instead of every setting.
 

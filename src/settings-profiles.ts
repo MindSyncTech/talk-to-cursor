@@ -24,6 +24,9 @@ import {
   voiceInputSettingsSchema,
   voiceSettingsSchema,
   completionFeedbackSchema,
+  DEFAULT_COMPLETION_FEEDBACK,
+  DEFAULT_QUESTION_FEEDBACK,
+  questionFeedbackSchema,
 } from "./settings-schema.js";
 import {
   SettingsSyncCoordinator,
@@ -75,7 +78,8 @@ const portableSettingsSchema = z.object({
     enabled: true,
     entries: [],
   }),
-  completionFeedback: completionFeedbackSchema.default({ mode: "speech", sound: "Hero" }),
+  completionFeedback: completionFeedbackSchema.default(DEFAULT_COMPLETION_FEEDBACK),
+  questionFeedback: questionFeedbackSchema.default(DEFAULT_QUESTION_FEEDBACK),
   autoListen: z.boolean(),
 });
 
@@ -220,6 +224,7 @@ export function toPortableSettings(config: Config): PortableSettings {
       builtinModel: config.voiceInput.builtinModel,
     },
     completionFeedback: config.completionFeedback,
+    questionFeedback: config.questionFeedback,
     autoListen: config.autoListen,
   });
 }
@@ -259,6 +264,7 @@ export function applyPortableSettings(
       noiseSuppression: local.voiceInput.noiseSuppression,
     },
     completionFeedback: portable.completionFeedback,
+    questionFeedback: portable.questionFeedback,
     autoListen: portable.autoListen,
   };
 }
@@ -282,6 +288,7 @@ function toRuntimeConfigOverlay(settings: PortableSettings): ConfigUpdate {
     pronunciation: portable.pronunciation,
     voiceInput: portable.voiceInput,
     completionFeedback: portable.completionFeedback,
+    questionFeedback: portable.questionFeedback,
     autoListen: portable.autoListen,
   };
 }

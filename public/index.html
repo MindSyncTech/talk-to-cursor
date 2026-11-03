@@ -1721,7 +1721,22 @@
             <button class="btn-secondary" id="completionSoundPreviewBtn" type="button"><span aria-hidden="true">&#9654;</span> Preview</button>
           </div>
         </div>
-        <div class="help-text">On macOS, a sound can replace or precede the final spoken summary. "Play a sound only" still plays when Spoken Responses are off. Progress updates and questions are still spoken.</div>
+        <div class="help-text">On macOS, a sound can replace or precede the final spoken summary. "Play a sound only" still plays when Spoken Responses are off. Progress updates are still spoken.</div>
+      </div>
+      <div class="form-group">
+        <label for="questionFeedbackMode">Answers Needed</label>
+        <select id="questionFeedbackMode">
+          <option value="both">Play a sound, then speak the question</option>
+          <option value="speech">Speak the question</option>
+          <option value="sound">Play a sound only</option>
+        </select>
+        <div id="questionSoundRow" style="margin-top: 10px;">
+          <div class="cloud-voice-picker">
+            <select id="questionSound" data-sound-options aria-label="Answers needed sound"></select>
+            <button class="btn-secondary" type="button" data-sound-preview="questionSound"><span aria-hidden="true">&#9654;</span> Preview</button>
+          </div>
+        </div>
+        <div class="help-text">On macOS, plays when the agent needs your answer or decision before it can continue.</div>
       </div>
       <div class="form-group">
         <label for="spokenResponseDetail">Spoken Response Detail</label>
@@ -2757,6 +2772,9 @@
     const pauseMediaDuringSpeech = document.getElementById('pauseMediaDuringSpeech');
     const spokenResponseDetail = document.getElementById('spokenResponseDetail');
     const completionFeedbackMode = document.getElementById('completionFeedbackMode');
+    const questionFeedbackMode = document.getElementById('questionFeedbackMode');
+    const questionSound = document.getElementById('questionSound');
+    const questionSoundRow = document.getElementById('questionSoundRow');
     const completionSoundRow = document.getElementById('completionSoundRow');
     const completionSound = document.getElementById('completionSound');
     const completionSoundPreviewBtn = document.getElementById('completionSoundPreviewBtn');
@@ -3248,6 +3266,30 @@
     completionFeedbackMode.addEventListener('change', saveCompletionFeedback);
     completionSound.addEventListener('change', saveCompletionFeedback);
 
+    function updateQuestionSoundRow() {
+      questionSoundRow.style.display = questionFeedbackMode.value === 'speech' ? 'none' : 'block';
+    }
+
+    async function saveQuestionFeedback() {
+      updateQuestionSoundRow();
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            questionFeedback: { mode: questionFeedbackMode.value, sound: questionSound.value },
+          }),
+        });
+        const data = await res.json();
+        showToast(data.success ? 'Answers-needed feedback saved' : 'Could not save answers-needed feedback', data.success ? 'success' : 'error');
+      } catch (error) {
+        showToast('Could not save answers-needed feedback', 'error');
+      }
+    }
+
+    questionFeedbackMode.addEventListener('change', saveQuestionFeedback);
+    questionSound.addEventListener('change', saveQuestionFeedback);
+
     async function previewSound(sound, button) {
       if (sound === 'Chime') {
         const context = new AudioContext();
@@ -3699,7 +3741,10 @@
         pauseMediaDuringSpeech.checked = data.pauseMediaDuringSpeech === true;
         spokenResponseDetail.value = data.spokenResponseDetail || 'brief';
         completionFeedbackMode.value = data.completionFeedback?.mode || 'speech';
-        completionSound.value = data.completionFeedback?.sound || 'Hero';
+        completionSound.value = data.completionFeedback?.sound || 'ttc-success-jingle-1';
+        questionFeedbackMode.value = data.questionFeedback?.mode || 'both';
+        questionSound.value = data.questionFeedback?.sound || 'ttc-pending-review-1';
+        updateQuestionSoundRow();
         updateCompletionSoundRow();
         ttsProvider.value = data.ttsProvider || 'cloud';
         updateTtsProvider();
@@ -3757,7 +3802,7 @@
           smartTextDelayValue.textContent = parseFloat(smartTextDelaySlider.value).toFixed(2) + 's';
           submitCommandEnabled.checked = as.submitCommandEnabled !== false;
           sendSoundEnabled.checked = as.sendSoundEnabled === true;
-          sendSoundSelect.value = as.sendSound || 'Pop';
+          sendSoundSelect.value = as.sendSound || 'ttc-message-sent-1';
           updateSoundRows();
           updateAutoSubmitMode();
         }

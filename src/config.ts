@@ -11,6 +11,8 @@ import { homedir, platform } from "os";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import {
+  DEFAULT_COMPLETION_FEEDBACK as SCHEMA_COMPLETION_FEEDBACK,
+  DEFAULT_QUESTION_FEEDBACK as SCHEMA_QUESTION_FEEDBACK,
   MANAGED_TTS_DEFAULT_VOICE,
   MANAGED_TTS_MODEL,
   parseSettingsLeniently,
@@ -129,7 +131,7 @@ export const DEFAULT_AUTO_SUBMIT: Config["autoSubmit"] = {
   submitCommandEnabled: true,
   submitPhrase: "send it",
   sendSoundEnabled: false,
-  sendSound: "Pop",
+  sendSound: "ttc-message-sent-1",
 };
 
 export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
@@ -155,8 +157,11 @@ export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
 };
 
 export const DEFAULT_COMPLETION_FEEDBACK: Config["completionFeedback"] = {
-  mode: "speech",
-  sound: "Hero",
+  ...SCHEMA_COMPLETION_FEEDBACK,
+};
+
+export const DEFAULT_QUESTION_FEEDBACK: Config["questionFeedback"] = {
+  ...SCHEMA_QUESTION_FEEDBACK,
 };
 
 export const DEFAULT_CONFIG: Config = {
@@ -174,6 +179,7 @@ export const DEFAULT_CONFIG: Config = {
   autoSubmit: { ...DEFAULT_AUTO_SUBMIT },
   voiceInput: { ...DEFAULT_VOICE_INPUT },
   completionFeedback: { ...DEFAULT_COMPLETION_FEEDBACK },
+  questionFeedback: { ...DEFAULT_QUESTION_FEEDBACK },
   autoListen: true,
 };
 
@@ -232,6 +238,10 @@ export function loadConfig(): Config {
           ...DEFAULT_COMPLETION_FEEDBACK,
           ...(parsed.completionFeedback || {}),
         },
+        questionFeedback: {
+          ...DEFAULT_QUESTION_FEEDBACK,
+          ...(parsed.questionFeedback || {}),
+        },
         autoListen: parsed.autoListen !== undefined ? parsed.autoListen : DEFAULT_CONFIG.autoListen,
       };
       const result = settingsSchema.safeParse(candidate);
@@ -261,6 +271,7 @@ export function loadConfig(): Config {
     autoSubmit: { ...DEFAULT_AUTO_SUBMIT },
     voiceInput: { ...DEFAULT_VOICE_INPUT },
     completionFeedback: { ...DEFAULT_COMPLETION_FEEDBACK },
+    questionFeedback: { ...DEFAULT_QUESTION_FEEDBACK },
     autoListen: DEFAULT_CONFIG.autoListen,
   };
 }
@@ -281,6 +292,10 @@ function mergeConfig(current: Config, config: ConfigUpdate): Config {
     completionFeedback: {
       ...current.completionFeedback,
       ...(config.completionFeedback || {}),
+    },
+    questionFeedback: {
+      ...current.questionFeedback,
+      ...(config.questionFeedback || {}),
     },
   });
 }
@@ -314,6 +329,7 @@ export function getEffectiveConfig(): Config {
     autoSubmit: fileConfig.autoSubmit,
     voiceInput: fileConfig.voiceInput,
     completionFeedback: fileConfig.completionFeedback,
+    questionFeedback: fileConfig.questionFeedback,
     autoListen: fileConfig.autoListen,
   };
 }

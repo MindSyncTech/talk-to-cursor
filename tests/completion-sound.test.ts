@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
 import { describe, expect, it } from "vitest";
-import { completionFeedbackFor, soundPath } from "../src/completion-sound.js";
+import { completionFeedbackFor, soundFeedbackFor, soundPath } from "../src/completion-sound.js";
 import { DEFAULT_CONFIG, type Config } from "../src/config.js";
 import { settingsSchema, settingsUpdateSchema, TTC_SOUNDS } from "../src/settings-schema.js";
 
@@ -27,12 +27,26 @@ describe("completion feedback", () => {
     expect(completionFeedbackFor(withMode("both"), true, "win32")).toBe("speech");
   });
 
-  it("defaults existing configs to spoken completion", () => {
-    const { completionFeedback: _omitted, ...legacy } = DEFAULT_CONFIG;
-    expect(settingsSchema.parse(legacy).completionFeedback).toEqual({
+  it("defaults existing configs to spoken completion and a sound before questions", () => {
+    const { completionFeedback: _c, questionFeedback: _q, ...legacy } = DEFAULT_CONFIG;
+    const parsed = settingsSchema.parse(legacy);
+    expect(parsed.completionFeedback).toEqual({
       mode: "speech",
-      sound: "Hero",
+      sound: "ttc-success-jingle-1",
     });
+    expect(parsed.questionFeedback).toEqual({
+      mode: "both",
+      sound: "ttc-pending-review-1",
+    });
+  });
+
+  it("uses the answers-needed sound only for question speech", () => {
+    expect(soundFeedbackFor(DEFAULT_CONFIG, "question", "darwin")).toEqual({
+      mode: "both",
+      sound: "ttc-pending-review-1",
+    });
+    expect(soundFeedbackFor(DEFAULT_CONFIG, "update", "darwin").mode).toBe("speech");
+    expect(soundFeedbackFor(DEFAULT_CONFIG, "question", "linux").mode).toBe("speech");
   });
 
   it("rejects sounds outside the bundled macOS list", () => {

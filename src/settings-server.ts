@@ -92,6 +92,7 @@ app.get("/api/config", (_req, res) => {
     autoSubmit: config.autoSubmit,
     voiceInput: config.voiceInput,
     completionFeedback: config.completionFeedback,
+    questionFeedback: config.questionFeedback,
     autoListen: config.autoListen,
   });
 });
@@ -134,6 +135,7 @@ app.post("/api/config", (req, res) => {
       autoSubmit: saved.autoSubmit,
       voiceInput: saved.voiceInput,
       completionFeedback: saved.completionFeedback,
+      questionFeedback: saved.questionFeedback,
       autoListen: saved.autoListen,
     },
   });
@@ -519,6 +521,10 @@ app.post("/api/cloud/settings/download", async (_req, res) => {
         ...config.completionFeedback,
         ...(settings.completionFeedback || {}),
       },
+      questionFeedback: {
+        ...config.questionFeedback,
+        ...(settings.questionFeedback || {}),
+      },
       autoListen:
         settings.autoListen === undefined
           ? config.autoListen
@@ -584,6 +590,7 @@ app.post("/api/cloud/settings/upload", async (_req, res) => {
               builtinModel: config.voiceInput.builtinModel,
             },
             completionFeedback: config.completionFeedback,
+            questionFeedback: config.questionFeedback,
             autoListen: config.autoListen,
           },
         }),

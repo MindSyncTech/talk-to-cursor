@@ -143,7 +143,7 @@ def load_config():
             'submitCommandEnabled': True,
             'submitPhrase': 'send it',
             'sendSoundEnabled': False,
-            'sendSound': 'Pop',
+            'sendSound': 'ttc-message-sent-1',
         },
         'voiceInput': {
             'enabled': False,
