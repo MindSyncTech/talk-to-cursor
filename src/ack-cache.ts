@@ -20,6 +20,9 @@ import { applyPronunciation } from "./pronunciation.js";
 export const ACK_CACHE_DIR = join(USER_DATA_DIR, "ack-cache");
 const MAX_CACHED_PHRASES = 300;
 const PREWARM_LOCK_MS = 10 * 60_000;
+// Cloud's speech provider limits requests per minute, so a burst of phrases
+// would crowd out the agent's own speech.
+const PREWARM_SPACING_MS = 6_000;
 
 /** Everything that changes how a phrase sounds; null when audio can't be cached. */
 export function voiceFingerprint(config: Config): string | null {
@@ -83,7 +86,7 @@ export function prewarmCurrentVoice(
   log: (message: string) => void = console.error,
 ): Promise<number> {
   if (!instantFeedbackActive(config)) return Promise.resolve(0);
-  return prewarmAcknowledgements(acknowledgementPhrases(config), config, AbortSignal.timeout(120_000))
+  return prewarmAcknowledgements(acknowledgementPhrases(config), config, AbortSignal.timeout(5 * 60_000))
     .then((cached) => {
       if (cached) log(`[TTS] Cached ${cached} acknowledgement phrases`);
       return cached;
@@ -158,6 +161,7 @@ export async function prewarmAcknowledgements(
   config: Config,
   signal: AbortSignal,
   dir = ACK_CACHE_DIR,
+  spacingMs = PREWARM_SPACING_MS,
 ): Promise<number> {
   const fingerprint = voiceFingerprint(config);
   if (!fingerprint) return 0;
@@ -179,6 +183,7 @@ export async function prewarmAcknowledgements(
   let cached = 0;
   try {
     for (const text of missing) {
+      if (cached > 0) await new Promise((resolve) => setTimeout(resolve, spacingMs));
       if (signal.aborted) break;
       const source = streamWithProvider(text, config, signal);
       if (!source) break;
