@@ -78,6 +78,16 @@ export function acknowledgementFor(text: string, style: Style): string | null {
 
 export const LONG_TASK_MS = 60_000;
 
+const MAX_SEND_SOUND_WAIT_MS = 3_000;
+
+/** Wait for the send sound to finish, then the user's chosen pause, before acknowledging. */
+export function acknowledgementDelayMs(sendSoundMs: number, pauseMs: number): number {
+  const sendSound = Number.isFinite(sendSoundMs)
+    ? Math.min(Math.max(sendSoundMs, 0), MAX_SEND_SOUND_WAIT_MS)
+    : 0;
+  return sendSound + Math.max(pauseMs, 0);
+}
+
 /**
  * Decides which "update" speech plays. The first update of a task is its
  * task-start statement and always plays; later ones are progress updates.

@@ -22,7 +22,8 @@
   prompt and cached for your voice. With TalkToCursor Cloud, these phrases
   don't use the speech allowance. Voice prompts work through the Background
   Helper; Settings can install a Cursor or Claude Code prompt hook for typed
-  prompts.
+  prompts. The acknowledgement waits for the send sound to finish, then for
+  a short, adjustable pause (0.3 seconds by default) so it sounds natural.
 - Added a **Progress Updates** setting (all tasks, longer tasks only, or off)
   and a **Speaking Style** setting (casual or professional). Both are passed to
   the agent with the `speak` tool, and TalkToCursor holds back progress updates

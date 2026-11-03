@@ -329,7 +329,7 @@ Do not read code, paths, logs, or stack traces aloud.
 
 These three settings are under **Speech** in Settings:
 
-- **Instant Feedback** speaks a short acknowledgement ("let me take a look") the moment a prompt is sent, before the agent starts working. The phrase depends on the kind of prompt (a question, a fix, a build) and is cached for your voice, so it plays right away. With TalkToCursor Cloud, these phrases don't use your speech allowance. Prompts sent by voice are acknowledged through the Background Helper (macOS). For typed prompts, click **Install Cursor hook** or **Install Claude Code hook**. This adds a prompt-submit hook to `~/.cursor/hooks.json` or `~/.claude/settings.json` and leaves your other hooks alone.
+- **Instant Feedback** speaks a short acknowledgement ("let me take a look") the moment a prompt is sent, before the agent starts working. The phrase depends on the kind of prompt (a question, a fix, a build) and is cached for your voice, so it plays right away. With TalkToCursor Cloud, these phrases don't use your speech allowance. It plays after the send sound, with a short pause (0.3 seconds by default) you can change under **Instant Feedback Delay**. Prompts sent by voice are acknowledged through the Background Helper (macOS). For typed prompts, click **Install Cursor hook** or **Install Claude Code hook**. This adds a prompt-submit hook to `~/.cursor/hooks.json` or `~/.claude/settings.json` and leaves your other hooks alone.
 - **Progress Updates** can be on for all tasks, only for tasks longer than about a minute, or off. TalkToCursor enforces the choice even if your rule asks for milestone updates. Questions and the final summary are always spoken.
 - **Speaking Style** is Casual or Professional. It sets the tone of acknowledgements and is passed to the agent with the `speak` tool, so changing it doesn't require editing your rules.
 
@@ -450,6 +450,7 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `questionFeedback.sound` | Answers-needed sound, from the same list as `completionFeedback.sound` | `ttc-pending-review-1` |
 | `agentSpeech.instantFeedback` | Speak an acknowledgement as soon as a prompt is sent | `true` |
 | `agentSpeech.progressUpdates` | Spoken progress updates: `all`, `long` (tasks over about a minute), or `off` | `all` |
+| `agentSpeech.instantFeedbackDelayMs` | Pause before the acknowledgement, after the send sound finishes (0–2000 ms) | `300` |
 | `agentSpeech.speakingStyle` | Tone of acknowledgements and agent speech: `casual` or `professional` | `casual` |
 | `ttsProvider` | Text-to-speech provider (`elevenlabs`, `voicebox`, or `cloud`) | `cloud` |
 | `apiKey` | ElevenLabs API key | required for ElevenLabs |

@@ -1279,9 +1279,23 @@ def play_chime():
     return min(duration + 0.07, HELPER_CHIME_MAX_GUARD_SECONDS)
 
 
+SEND_SOUND_FALLBACK_SECONDS = 0.6
+SEND_SOUND_TAIL_SECONDS = 0.05
+send_sound_ends_at = 0.0
+
+
 def play_send_sound():
-    if SEND_SOUND is not None:
-        threading.Thread(target=play_sound, args=(SEND_SOUND,), daemon=True).start()
+    global send_sound_ends_at
+    if SEND_SOUND is None:
+        return
+    pcm = sound_pcm(SEND_SOUND)
+    duration = len(pcm) / 2 / 24000 if pcm else SEND_SOUND_FALLBACK_SECONDS
+    send_sound_ends_at = time.monotonic() + duration + SEND_SOUND_TAIL_SECONDS
+    threading.Thread(target=play_sound, args=(SEND_SOUND,), daemon=True).start()
+
+
+def send_sound_remaining_ms():
+    return max(0, round((send_sound_ends_at - time.monotonic()) * 1000))
 
 
 def speech_model_still_loading():
@@ -1352,7 +1366,11 @@ def announce_prompt(text):
         last_prompt_announced_at = now
     if helper_ipc is None:
         return False
-    return helper_ipc.send_latest({'type': 'prompt.received', 'text': text[:2000]}, role='mcp')
+    # Instant Feedback waits for the send sound so the two never overlap.
+    return helper_ipc.send_latest(
+        {'type': 'prompt.received', 'text': text[:2000], 'afterMs': send_sound_remaining_ms()},
+        role='mcp',
+    )
 
 
 def on_playback_event(kind, stream_id, interrupted):

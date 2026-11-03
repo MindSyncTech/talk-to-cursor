@@ -24,6 +24,7 @@ import { HelperIpcClient, type HelperMessage } from "./helper-ipc.js";
 import { playCompletionSound, soundFeedbackFor, type SpeechKind } from "./completion-sound.js";
 import {
   ACKNOWLEDGEMENTS,
+  acknowledgementDelayMs,
   acknowledgementFor,
   ProgressGate,
   speakToolDescription,
@@ -46,7 +47,10 @@ helper.on("message", (message: HelperMessage) => {
   } else if (message.type === "tts.cancel") {
     interruptSpeech("the user started speaking");
   } else if (message.type === "prompt.received") {
-    acknowledgePrompt(typeof message.text === "string" ? message.text : "");
+    acknowledgePrompt(
+      typeof message.text === "string" ? message.text : "",
+      typeof message.afterMs === "number" ? message.afterMs : 0,
+    );
   }
 });
 helper.on("disconnected", () => {
@@ -57,6 +61,7 @@ helper.on("disconnected", () => {
 interface TTSQueueItem {
   text: string;
   kind: SpeechKind | "ack";
+  delayMs?: number;
   resolve: (value: any) => void;
   reject: (error: any) => void;
 }
@@ -129,7 +134,7 @@ async function processTTSQueue() {
     try {
       const config = getEffectiveConfig();
       if (item.kind === "ack") {
-        await speakAcknowledgement(item.text, config);
+        await speakAcknowledgement(item.text, item.delayMs ?? 0, config);
         item.resolve(null);
         continue;
       }
@@ -246,9 +251,13 @@ async function processTTSQueue() {
   isProcessingQueue = false;
 }
 
-async function speakAcknowledgement(text: string, config: Config) {
+async function speakAcknowledgement(text: string, delayMs: number, config: Config) {
   const controller = new AbortController();
   currentSpeech = controller;
+  if (!(await abortableDelay(delayMs, controller.signal))) {
+    currentSpeech = null;
+    return;
+  }
   writePrivateJson(TTS_STATE_PATH, { timestamp: new Date().toISOString(), speaking: true });
   try {
     const spokenText = applyPronunciation(text, config.pronunciation);
@@ -270,15 +279,38 @@ async function speakAcknowledgement(text: string, config: Config) {
 const progress = new ProgressGate();
 
 /** Speak a short acknowledgement the moment a prompt is sent (Instant Feedback). */
-function acknowledgePrompt(prompt: string) {
+function acknowledgePrompt(prompt: string, sendSoundMs: number) {
   progress.promptReceived();
   const config = getEffectiveConfig();
   if (!config.ttsEnabled || !config.agentSpeech.instantFeedback) return;
   const phrase = acknowledgementFor(prompt, config.agentSpeech.speakingStyle);
   if (!phrase) return;
   interruptSpeech("the user sent a new prompt");
-  ttsQueue.unshift({ text: phrase, kind: "ack", resolve: () => {}, reject: () => {} });
+  ttsQueue.unshift({
+    text: phrase,
+    kind: "ack",
+    delayMs: acknowledgementDelayMs(sendSoundMs, config.agentSpeech.instantFeedbackDelayMs),
+    resolve: () => {},
+    reject: () => {},
+  });
   processTTSQueue();
+}
+
+/** Resolves false if the wait was interrupted. */
+function abortableDelay(ms: number, signal: AbortSignal): Promise<boolean> {
+  if (signal.aborted) return Promise.resolve(false);
+  if (ms <= 0) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve(true);
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 async function waitForSpeechIdle(): Promise<void> {

@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { describe, expect, it } from "vitest";
 import {
+  acknowledgementDelayMs,
   acknowledgementFor,
   ACKNOWLEDGEMENTS,
   classifyPrompt,
@@ -71,11 +72,26 @@ describe("progress gate", () => {
   });
 });
 
+describe("acknowledgementDelayMs", () => {
+  it("waits for the send sound, then the chosen pause", () => {
+    expect(acknowledgementDelayMs(450, 300)).toBe(750);
+    expect(acknowledgementDelayMs(0, 300)).toBe(300);
+    expect(acknowledgementDelayMs(0, 0)).toBe(0);
+  });
+
+  it("ignores invalid or runaway send sound lengths", () => {
+    expect(acknowledgementDelayMs(-50, 300)).toBe(300);
+    expect(acknowledgementDelayMs(Number.NaN, 300)).toBe(300);
+    expect(acknowledgementDelayMs(60_000, 0)).toBe(3_000);
+  });
+});
+
 describe("agent speech settings", () => {
   it("defaults existing configs to instant, casual feedback with all progress updates", () => {
     const { agentSpeech: _omitted, ...legacy } = DEFAULT_CONFIG;
     expect(settingsSchema.parse(legacy).agentSpeech).toEqual({
       instantFeedback: true,
+      instantFeedbackDelayMs: 300,
       progressUpdates: "all",
       speakingStyle: "casual",
     });
@@ -84,7 +100,12 @@ describe("agent speech settings", () => {
   it("describes the chosen behavior to the agent", () => {
     const description = speakToolDescription({
       ...DEFAULT_CONFIG,
-      agentSpeech: { instantFeedback: false, progressUpdates: "off", speakingStyle: "professional" },
+      agentSpeech: {
+        instantFeedback: false,
+        instantFeedbackDelayMs: 0,
+        progressUpdates: "off",
+        speakingStyle: "professional",
+      },
     });
     expect(description).toContain("Don't speak progress updates");
     expect(description).toContain("professional");

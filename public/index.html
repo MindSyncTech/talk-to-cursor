@@ -1795,6 +1795,19 @@
           <div class="help-text">Prompts sent by voice are acknowledged through the Background Helper. Install a prompt hook to acknowledge typed prompts too. The phrase is cached per voice so it plays right away.</div>
         </div>
       </div>
+      <div class="form-group" id="instantFeedbackDelayRow">
+        <label for="instantFeedbackDelay">Instant Feedback Delay</label>
+        <select id="instantFeedbackDelay">
+          <option value="0">None</option>
+          <option value="200">0.2 seconds</option>
+          <option value="300">0.3 seconds</option>
+          <option value="500">0.5 seconds</option>
+          <option value="750">0.75 seconds</option>
+          <option value="1000">1 second</option>
+          <option value="1500">1.5 seconds</option>
+        </select>
+        <div class="help-text">A short pause before the acknowledgement so it doesn’t answer the instant you finish. When the send sound is on, the pause starts after it finishes.</div>
+      </div>
       <div class="form-group">
         <label for="progressUpdates">Progress Updates</label>
         <select id="progressUpdates">
@@ -3387,13 +3400,20 @@
     const promptHookRow = document.getElementById('promptHookRow');
     const progressUpdates = document.getElementById('progressUpdates');
     const speakingStyle = document.getElementById('speakingStyle');
+    const instantFeedbackDelay = document.getElementById('instantFeedbackDelay');
+    const instantFeedbackDelayRow = document.getElementById('instantFeedbackDelayRow');
     const promptHookButtons = {
       cursor: { button: document.getElementById('cursorPromptHookBtn'), label: 'Cursor hook', installed: false },
       claude: { button: document.getElementById('claudePromptHookBtn'), label: 'Claude Code hook', installed: false },
     };
 
-    async function saveAgentSpeech(message) {
+    function updateInstantFeedbackRows() {
       promptHookRow.style.display = instantFeedback.checked ? 'block' : 'none';
+      instantFeedbackDelayRow.style.display = instantFeedback.checked ? '' : 'none';
+    }
+
+    async function saveAgentSpeech(message) {
+      updateInstantFeedbackRows();
       try {
         const res = await fetch('/api/config', {
           method: 'POST',
@@ -3401,6 +3421,7 @@
           body: JSON.stringify({
             agentSpeech: {
               instantFeedback: instantFeedback.checked,
+              instantFeedbackDelayMs: Number(instantFeedbackDelay.value),
               progressUpdates: progressUpdates.value,
               speakingStyle: speakingStyle.value,
             },
@@ -3417,6 +3438,7 @@
       saveAgentSpeech(instantFeedback.checked ? 'Instant feedback on' : 'Instant feedback off'));
     progressUpdates.addEventListener('change', () => saveAgentSpeech('Progress updates saved'));
     speakingStyle.addEventListener('change', () => saveAgentSpeech('Speaking style saved'));
+    instantFeedbackDelay.addEventListener('change', () => saveAgentSpeech('Instant feedback delay saved'));
 
     function renderPromptHooks() {
       for (const hook of Object.values(promptHookButtons)) {
@@ -3917,7 +3939,9 @@
         updateQuestionSoundRow();
         updateCompletionSoundRow();
         instantFeedback.checked = data.agentSpeech?.instantFeedback !== false;
-        promptHookRow.style.display = instantFeedback.checked ? 'block' : 'none';
+        instantFeedbackDelay.value = String(data.agentSpeech?.instantFeedbackDelayMs ?? 300);
+        if (!instantFeedbackDelay.value) instantFeedbackDelay.value = '300';
+        updateInstantFeedbackRows();
         progressUpdates.value = data.agentSpeech?.progressUpdates || 'all';
         speakingStyle.value = data.agentSpeech?.speakingStyle || 'casual';
         loadPromptHooks();

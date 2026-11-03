@@ -273,12 +273,14 @@ export const DEFAULT_QUESTION_FEEDBACK = {
 
 export const agentSpeechSchema = z.object({
   instantFeedback: z.boolean().default(true),
+  instantFeedbackDelayMs: z.number().int().min(0).max(2000).default(300),
   progressUpdates: z.enum(["all", "long", "off"]).default("all"),
   speakingStyle: z.enum(["casual", "professional"]).default("casual"),
 });
 
 export const DEFAULT_AGENT_SPEECH = {
   instantFeedback: true,
+  instantFeedbackDelayMs: 300,
   progressUpdates: "all",
   speakingStyle: "casual",
 } as const;
