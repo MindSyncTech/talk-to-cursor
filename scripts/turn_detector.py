@@ -49,6 +49,8 @@ class TurnDetector:
         preroll_seconds=0.0,
         on_audio=None,
         speech_detector=None,
+        smart_analyzer=None,
+        submit_detector=None,
     ):
         self.audio_source = audio_source
         self.speech_detector = speech_detector
@@ -65,10 +67,10 @@ class TurnDetector:
         self._stop_requested = threading.Event()
         self.sample_rate = sample_rate
         self.chunk_size = chunk_size
-        self.smart_analyzer = None
-        self.submit_detector = None
+        self.smart_analyzer = smart_analyzer if mode == "smart" else None
+        self.submit_detector = submit_detector if submit_command_enabled else None
 
-        if mode == "smart":
+        if mode == "smart" and self.smart_analyzer is None:
             try:
                 from smart_turn import SmartTurnAnalyzer
 
@@ -77,7 +79,7 @@ class TurnDetector:
             except Exception as error:
                 print(f"[smart-turn] Unavailable; using fixed-pause fallback: {error}")
 
-        if submit_command_enabled:
+        if submit_command_enabled and self.submit_detector is None:
             try:
                 from wake_word import StreamingKeywordDetector
 
@@ -121,6 +123,11 @@ class TurnDetector:
         audio_chunks = deque(
             maxlen=max(1, int((8 * self.sample_rate) / self.chunk_size))
         )
+        # Models may be shared across turns, so clear what the last turn left behind.
+        for model in (self.speech_detector, self.submit_detector):
+            reset = getattr(model, "reset", None)
+            if reset is not None:
+                reset()
         speech_detected = False
         silence_started = None
         speech_started = None

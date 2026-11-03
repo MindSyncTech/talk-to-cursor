@@ -750,6 +750,65 @@ def create_speech_detector(sample_rate=16000):
         return None
 
 
+turn_models = {}
+turn_models_lock = threading.Lock()
+
+
+def cached_turn_model(key, factory):
+    """Load a turn model once and reuse it.
+
+    Loading a model while the activation chime plays starves the audio output
+    and makes the chime glitch. Failed loads are retried on the next turn.
+    """
+    with turn_models_lock:
+        model = turn_models.get(key)
+        if model is None:
+            model = factory()
+            if model is not None:
+                turn_models[key] = model
+        return model
+
+
+def load_smart_turn():
+    try:
+        from smart_turn import SmartTurnAnalyzer
+
+        analyzer = SmartTurnAnalyzer(USER_DATA_DIR)
+        print("[smart-turn] Local endpoint detector ready")
+        return analyzer
+    except Exception as error:
+        print(f"[smart-turn] Unavailable; using fixed-pause fallback: {error}")
+        return None
+
+
+def load_submit_detector():
+    try:
+        from wake_word import StreamingKeywordDetector
+
+        detector = StreamingKeywordDetector(
+            USER_DATA_DIR,
+            SUBMIT_PHRASE,
+            0.65,
+            filename="submit-command-keywords.txt",
+        )
+        print(f'[turn-detector] Spoken submit command ready: "{SUBMIT_PHRASE}"')
+        return detector
+    except Exception as error:
+        print(f"[turn-detector] Spoken submit command unavailable: {error}")
+        return None
+
+
+def turn_detector_models():
+    smart = AUTO_SUBMIT_ENABLED and AUTO_SUBMIT_MODE == 'smart'
+    return {
+        'speech_detector': cached_turn_model('vad', create_speech_detector),
+        'smart_analyzer': cached_turn_model('smart', load_smart_turn) if smart else None,
+        'submit_detector': (
+            cached_turn_model('submit', load_submit_detector) if SUBMIT_COMMAND_ENABLED else None
+        ),
+    }
+
+
 def local_fallback_transcriber():
     """A local transcriber for Cloud dictation outages, if a model is already downloaded."""
     from model_download import PARAKEET_STT, STREAMING_STT, is_downloaded
@@ -796,7 +855,7 @@ def trigger_voice_input_loop(detector_start_delay=0.0, preroll_seconds=0.0):
             transcriber = create_builtin_transcriber()
 
         detector = TurnDetector(
-            speech_detector=create_speech_detector(),
+            **turn_detector_models(),
             mode=AUTO_SUBMIT_MODE if AUTO_SUBMIT_ENABLED else "fixed",
             user_data_dir=USER_DATA_DIR,
             silence_threshold=SILENCE_THRESHOLD,
@@ -1598,6 +1657,8 @@ def main():
                 provider_shortcut_watch = setup_provider_shortcut_watch()
         except Exception as error:
             print(f'[send-it] Listening for "{SUBMIT_PHRASE}" after dictation is unavailable: {error}')
+    if VOICE_INPUT_ENABLED:
+        threading.Thread(target=turn_detector_models, daemon=True).start()
     cached_sounds = {WAKE_CHIME_SOUND if WAKE_CHIME else None, SEND_SOUND} - {None, 'Chime'}
     if helper_audio is not None and cached_sounds:
         threading.Thread(

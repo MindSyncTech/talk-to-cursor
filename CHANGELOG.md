@@ -12,6 +12,10 @@
   message, after “send it” or Auto-Submit, with a choice of sounds.
 - The Activation Chime can now use a different sound instead of the built-in
   two-note chime.
+- Fixed a glitch in the activation chime with Auto-Submit on. The Smart Turn,
+  voice activity, and spoken submit command models now load once when the
+  Background Helper starts instead of on every activation, so listening also
+  starts a little sooner.
 - Added 29 TalkToCursor UI sounds (clicks, confirmations, dings, message sent,
   pending review, question/error, and success jingles), loudness-matched to
   the macOS sounds and CC0-licensed from Freesound. The task completion,

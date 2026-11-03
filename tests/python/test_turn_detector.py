@@ -178,3 +178,41 @@ class TurnDetectorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SharedModelTests(unittest.TestCase):
+    def shared_detector(self, **models):
+        return TurnDetector(
+            mode="smart",
+            user_data_dir="/nonexistent",
+            silence_threshold=0.02,
+            fixed_silence=0.1,
+            candidate_silence=0.1,
+            smart_threshold=0.5,
+            smart_max_silence=1.0,
+            submit_command_enabled=True,
+            submit_phrase="send it",
+            **models,
+        )
+
+    def test_uses_provided_models_without_loading(self):
+        analyzer, submit = object(), SimpleNamespace(reset=lambda: None)
+        with patch.dict(sys.modules, {"smart_turn": None, "wake_word": None}):
+            instance = self.shared_detector(smart_analyzer=analyzer, submit_detector=submit)
+        self.assertIs(instance.smart_analyzer, analyzer)
+        self.assertIs(instance.submit_detector, submit)
+
+    def test_resets_shared_models_at_the_start_of_each_turn(self):
+        resets = []
+        vad = SimpleNamespace(reset=lambda: resets.append("vad"), accept=lambda _s: False)
+        submit = SimpleNamespace(reset=lambda: resets.append("submit"), accept=lambda *_a: False)
+        instance = self.shared_detector(
+            speech_detector=vad, smart_analyzer=object(), submit_detector=submit
+        )
+        instance.request_stop()
+        quiet = np.zeros((800, 1), dtype=np.float32)
+        with patch.object(
+            turn_detector.sd, "InputStream", return_value=FakeInputStream([quiet] * 5)
+        ):
+            instance.wait_for_turn_end(verbose=False)
+        self.assertEqual(resets, ["vad", "submit"])
