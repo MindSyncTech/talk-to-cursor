@@ -1,10 +1,64 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_CONFIG } from "../src/config.js";
 import {
   normalizeServiceUrl,
+  parseSettingsLeniently,
   pronunciationSettingsSchema,
   settingsUpdateSchema,
   voiceInputSettingsSchema,
 } from "../src/settings-schema.js";
+
+describe("parseSettingsLeniently", () => {
+  it("keeps valid settings when a newer version wrote unsupported ones", () => {
+    const candidate = {
+      ...structuredClone(DEFAULT_CONFIG),
+      ttsProvider: "elevenlabs",
+      futureSection: { enabled: true },
+      voiceInput: {
+        ...DEFAULT_CONFIG.voiceInput,
+        enabled: true,
+        builtinModel: "future-model",
+      },
+    };
+    const result = parseSettingsLeniently(candidate, DEFAULT_CONFIG);
+    expect(result?.config.ttsProvider).toBe("elevenlabs");
+    expect(result?.config.voiceInput.enabled).toBe(true);
+    expect(result?.config.voiceInput.builtinModel).toBe(
+      DEFAULT_CONFIG.voiceInput.builtinModel,
+    );
+    expect(result?.config).not.toHaveProperty("futureSection");
+    expect(result?.repaired).toEqual(
+      expect.arrayContaining(["voiceInput.builtinModel", "futureSection"]),
+    );
+  });
+
+  it("drops only the invalid pronunciation entry", () => {
+    const entry = {
+      id: "6f1c2d3e-4b5a-4c6d-8e7f-9a0b1c2d3e4f",
+      match: "TTC",
+      speak: "talk to cursor",
+    };
+    const candidate = {
+      ...structuredClone(DEFAULT_CONFIG),
+      pronunciation: {
+        ...DEFAULT_CONFIG.pronunciation,
+        entries: [entry, { ...entry, match: "" }],
+      },
+    };
+    const result = parseSettingsLeniently(candidate, DEFAULT_CONFIG);
+    expect(result?.config.pronunciation.entries).toHaveLength(1);
+    expect(result?.repaired).toEqual(["pronunciation.entries.1"]);
+  });
+
+  it("returns null when there is no default to fall back to", () => {
+    expect(
+      parseSettingsLeniently({ ...structuredClone(DEFAULT_CONFIG), voiceId: "" }, {
+        ...DEFAULT_CONFIG,
+        voiceId: undefined as unknown as string,
+      }),
+    ).toBeNull();
+  });
+});
 
 describe("normalizeServiceUrl", () => {
   it("allows HTTPS and removes trailing slashes", () => {

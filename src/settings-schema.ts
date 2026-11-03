@@ -240,3 +240,67 @@ export const settingsUpdateSchema = settingsSchema
 
 export type Config = z.infer<typeof settingsSchema>;
 export type ConfigUpdate = z.infer<typeof settingsUpdateSchema>;
+
+type Path = (string | number)[];
+
+function valueAt(root: unknown, path: Path): unknown {
+  let value = root;
+  for (const key of path) {
+    if (value === null || typeof value !== "object") return undefined;
+    value = (value as Record<string | number, unknown>)[key];
+  }
+  return value;
+}
+
+function setAt(root: Record<string, unknown>, path: Path, value: unknown): void {
+  const parent = valueAt(root, path.slice(0, -1)) as Record<string | number, unknown>;
+  parent[path[path.length - 1]] = value;
+}
+
+/**
+ * Parse settings, replacing each invalid value with its default and dropping
+ * unrecognized keys, so a config written by a newer version doesn't reset
+ * every setting. Returns null if the settings can't be repaired.
+ */
+export function parseSettingsLeniently(
+  candidate: Record<string, unknown>,
+  defaults: Config,
+): { config: Config; repaired: string[] } | null {
+  const working = structuredClone(candidate);
+  const repaired: string[] = [];
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const result = settingsSchema.safeParse(working);
+    if (result.success) return { config: result.data, repaired };
+    const issue = result.error.issues[0];
+    const path = issue.path;
+    const container = valueAt(working, path);
+    if (issue.code === "unrecognized_keys" && container && typeof container === "object") {
+      for (const key of issue.keys) {
+        delete (container as Record<string, unknown>)[key];
+        repaired.push([...path, key].join("."));
+      }
+      continue;
+    }
+    const arrayIndex = path.findIndex((key) => typeof key === "number");
+    if (arrayIndex > 0) {
+      const array = valueAt(working, path.slice(0, arrayIndex));
+      if (Array.isArray(array)) {
+        array.splice(path[arrayIndex] as number, 1);
+        repaired.push(path.slice(0, arrayIndex + 1).join("."));
+        continue;
+      }
+    }
+    let fixed = false;
+    for (let length = path.length; length > 0; length -= 1) {
+      const fallback = valueAt(defaults, path.slice(0, length));
+      if (fallback !== undefined) {
+        setAt(working, path.slice(0, length), structuredClone(fallback));
+        repaired.push(path.slice(0, length).join("."));
+        fixed = true;
+        break;
+      }
+    }
+    if (!fixed) return null;
+  }
+  return null;
+}

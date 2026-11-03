@@ -13,6 +13,7 @@ import { fileURLToPath } from "url";
 import {
   MANAGED_TTS_DEFAULT_VOICE,
   MANAGED_TTS_MODEL,
+  parseSettingsLeniently,
   settingsSchema,
   type Config,
   type ConfigUpdate,
@@ -232,6 +233,14 @@ export function loadConfig(): Config {
       };
       const result = settingsSchema.safeParse(candidate);
       if (result.success) return result.data;
+      const lenient = parseSettingsLeniently(candidate, DEFAULT_CONFIG);
+      if (lenient) {
+        console.error(
+          "[Config] Ignoring unsupported settings:",
+          lenient.repaired.join(", "),
+        );
+        return lenient.config;
+      }
       console.error(
         "[Config] Invalid settings; using defaults:",
         result.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; "),
