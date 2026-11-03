@@ -122,7 +122,7 @@ export const DEFAULT_CLOUD: Config["cloud"] = {
 
 export const DEFAULT_AUTO_SUBMIT: Config["autoSubmit"] = {
   enabled: false,
-  mode: "fixed",
+  mode: "smart",
   silenceDelay: 3.0,
   minTextLength: 15,
   targetApp: "Cursor",
@@ -132,13 +132,13 @@ export const DEFAULT_AUTO_SUBMIT: Config["autoSubmit"] = {
   smartTextDelay: 0.2,
   submitCommandEnabled: true,
   submitPhrase: "send it",
-  sendSoundEnabled: false,
+  sendSoundEnabled: true,
   sendSound: "ttc-message-sent-1",
 };
 
 export const DEFAULT_VOICE_INPUT: Config["voiceInput"] = {
   enabled: false,
-  provider: "wispr",
+  provider: "builtin",
   silenceThreshold: 0.005,
   silenceDuration: 2.0,
   wisprHotkey: "shift+ctrl",
@@ -192,7 +192,7 @@ export const DEFAULT_CONFIG: Config = {
   replyFeedback: { ...DEFAULT_REPLY_FEEDBACK },
   questionFeedback: { ...DEFAULT_QUESTION_FEEDBACK },
   agentSpeech: { ...DEFAULT_AGENT_SPEECH },
-  autoListen: true,
+  autoListen: false,
 };
 
 let runtimeConfigOverlay: ConfigUpdate | null = null;

@@ -132,7 +132,7 @@ def load_config():
     defaults = {
         'autoSubmit': {
             'enabled': False,
-            'mode': 'fixed',
+            'mode': 'smart',
             'silenceDelay': 3.0,
             'minTextLength': 15,
             'targetApp': 'Cursor',
@@ -142,12 +142,12 @@ def load_config():
             'smartTextDelay': 0.2,
             'submitCommandEnabled': True,
             'submitPhrase': 'send it',
-            'sendSoundEnabled': False,
+            'sendSoundEnabled': True,
             'sendSound': 'ttc-message-sent-1',
         },
         'voiceInput': {
             'enabled': False,
-            'provider': 'wispr',
+            'provider': 'builtin',
             'silenceThreshold': 0.005,
             'silenceDuration': 2.0,
             'wisprHotkey': 'shift+ctrl',

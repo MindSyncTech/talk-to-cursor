@@ -198,7 +198,7 @@ export const autoSubmitSettingsSchema = z.object({
   smartTextDelay: z.number().finite().min(0.1).max(1),
   submitCommandEnabled: z.boolean(),
   submitPhrase: z.literal("send it"),
-  sendSoundEnabled: z.boolean().default(false),
+  sendSoundEnabled: z.boolean().default(true),
   sendSound: z.enum(CHIME_SOUNDS).default("ttc-message-sent-1"),
 });
 

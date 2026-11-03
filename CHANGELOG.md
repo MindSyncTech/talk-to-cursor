@@ -26,6 +26,9 @@
   and a **Speaking Style** setting (casual or professional). Both are passed to
   the agent with the `speak` tool, and TalkToCursor holds back progress updates
   you've turned off.
+- New defaults for new installs: Auto-Listen off, built-in voice input instead
+  of Wispr Flow, and Smart Auto-Submit. Existing saved settings are kept.
+- The send sound is on by default.
 - Added a **Quick Replies** sound, separate from task completion: agents pass
   `"reply": true` for answers, follow-ups, and quick fixes (Ding 1 by default),
   and keep `"completion": true` and the success jingle for finished tasks and

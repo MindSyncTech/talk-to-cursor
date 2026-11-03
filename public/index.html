@@ -3962,7 +3962,7 @@
           const as = data.autoSubmit;
           autoSubmitEnabled.checked = !!as.enabled;
           autoSubmitDetails.classList.toggle('open', !!as.enabled);
-          autoSubmitMode.value = as.mode || 'fixed';
+          autoSubmitMode.value = as.mode || 'smart';
           silenceDelaySlider.value = as.silenceDelay ?? 3.0;
           silenceDelayValue.textContent = parseFloat(silenceDelaySlider.value).toFixed(1) + 's';
           minTextLengthSlider.value = as.minTextLength ?? 15;
@@ -3976,7 +3976,7 @@
           smartTextDelaySlider.value = as.smartTextDelay ?? 0.2;
           smartTextDelayValue.textContent = parseFloat(smartTextDelaySlider.value).toFixed(2) + 's';
           submitCommandEnabled.checked = as.submitCommandEnabled !== false;
-          sendSoundEnabled.checked = as.sendSoundEnabled === true;
+          sendSoundEnabled.checked = as.sendSoundEnabled !== false;
           sendSoundSelect.value = as.sendSound || 'ttc-message-sent-1';
           updateSoundRows();
           updateAutoSubmitMode();
@@ -3985,7 +3985,7 @@
         // Voice input settings
         if (data.voiceInput) {
           const vi = data.voiceInput;
-          voiceInputProvider.value = vi.provider || 'wispr';
+          voiceInputProvider.value = vi.provider || 'builtin';
           builtinModelSelect.value = vi.builtinModel || 'parakeet';
           updateBuiltinModelHelp();
           bargeInToggle.checked = vi.bargeIn !== false;

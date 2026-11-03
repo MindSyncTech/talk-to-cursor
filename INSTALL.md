@@ -466,19 +466,19 @@ Settings and signal files are stored in a stable per-user directory so npm upgra
 | `cloud.apiUrl` | TalkToCursor Cloud service URL | `https://cloud.talktocursor.com` |
 | `cloud.voiceId` | Managed Google Cloud voice ID | `Kore` (Emma) |
 | `cloud.model` | Fixed managed Google Cloud model | `gemini-2.5-flash-tts` |
-| `autoListen` | Auto-listen after tasks | true |
+| `autoListen` | Auto-listen after tasks | false |
 | `autoSubmit.enabled` | Auto-press Enter | false |
-| `autoSubmit.mode` | Turn detection mode (`fixed` or `smart`) | `fixed` |
+| `autoSubmit.mode` | Turn detection mode (`fixed` or `smart`) | `smart` |
 | `autoSubmit.silenceDelay` | Text stability delay for fixed mode | `3.0` |
 | `autoSubmit.smartCandidateSilence` | Quiet audio before a Smart Turn check | `0.8` |
 | `autoSubmit.smartTurnThreshold` | Probability required to end the turn | `0.5` |
 | `autoSubmit.smartMaxSilence` | Safety fallback after uncertain silence | `3.0` |
 | `autoSubmit.smartTextDelay` | Text stability delay after Smart Turn | `0.2` |
 | `autoSubmit.submitCommandEnabled` | Enable the spoken `send it` command | `true` |
-| `autoSubmit.sendSoundEnabled` | Play a sound when a message is sent | `false` |
+| `autoSubmit.sendSoundEnabled` | Play a sound when a message is sent | `true` |
 | `autoSubmit.sendSound` | Send sound: `Chime` or any sound allowed for `completionFeedback.sound` | `ttc-message-sent-1` |
 | `voiceInput.enabled` | Automatic voice input loop | false |
-| `voiceInput.provider` | Voice input provider (`builtin`, `wispr`, `fluidvoice`, or `handy`) | `wispr` |
+| `voiceInput.provider` | Voice input provider (`builtin`, `wispr`, `fluidvoice`, or `handy`) | `builtin` |
 | `voiceInput.wisprHotkey` | Wispr Flow recording shortcut | `shift+ctrl` |
 | `voiceInput.fluidVoiceHotkey` | FluidVoice dictation shortcut | `right_option` |
 | `voiceInput.builtinModel` | Built-in speech model: `parakeet`, `streaming`, or `cloud` (paid Cloud plan) | `parakeet` |

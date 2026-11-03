@@ -33,14 +33,14 @@ describe("portable settings merge", () => {
     const base = settings();
     const local = structuredClone(base);
     const remote = structuredClone(base);
-    local.autoListen = false;
+    local.autoListen = true;
     remote.voiceSettings.speed = 0.9;
 
     const result = mergePortableSettings(base, local, remote);
 
     expect(result.conflictPaths).toEqual([]);
     expect(result.merged).toMatchObject({
-      autoListen: false,
+      autoListen: true,
       voiceSettings: { speed: 0.9 },
     });
   });
@@ -82,13 +82,13 @@ describe("portable settings merge", () => {
     const base = settings();
     const local = structuredClone(base);
     const remote = structuredClone(base);
-    local.autoListen = false;
-    remote.autoListen = false;
+    local.autoListen = true;
+    remote.autoListen = true;
 
     const result = mergePortableSettings(base, local, remote);
 
     expect(result.conflictPaths).toEqual([]);
-    expect(result.merged?.autoListen).toBe(false);
+    expect(result.merged?.autoListen).toBe(true);
   });
 });
 
@@ -123,7 +123,7 @@ describe("settings sync coordinator", () => {
     vi.useFakeTimers();
     const base = settings();
     const local = structuredClone(base);
-    local.autoListen = false;
+    local.autoListen = true;
     const remote = structuredClone(base);
     remote.voiceSettings.speed = 0.9;
     let state: ProfileSyncState = {
@@ -138,7 +138,7 @@ describe("settings sync coordinator", () => {
       .fn()
       .mockRejectedValueOnce(Object.assign(new Error("conflict"), { status: 409 }))
       .mockRejectedValueOnce(Object.assign(new Error("conflict"), { status: 409 }))
-      .mockResolvedValueOnce(profile(4, { ...remote, autoListen: false }));
+      .mockResolvedValueOnce(profile(4, { ...remote, autoListen: true }));
     const applyLocal = vi.fn();
     let fetchedRevision = 1;
     const coordinator = new SettingsSyncCoordinator({
@@ -161,7 +161,7 @@ describe("settings sync coordinator", () => {
     expect(update.mock.calls[2]?.[1]).toBe(3);
     expect(applyLocal).toHaveBeenCalledWith({
       ...remote,
-      autoListen: false,
+      autoListen: true,
     });
     expect(state.revision).toBe(4);
     expect(state.conflict).toBeNull();
@@ -171,9 +171,9 @@ describe("settings sync coordinator", () => {
   it("persists genuinely different overlapping conflicts", async () => {
     const base = settings();
     const local = structuredClone(base);
-    local.autoListen = false;
+    local.autoListen = true;
     const remote = structuredClone(base);
-    remote.autoListen = false;
+    remote.autoListen = true;
     local.spokenResponseDetail = "minimal";
     remote.spokenResponseDetail = "detailed";
     let state: ProfileSyncState = {
@@ -223,7 +223,7 @@ describe("settings sync coordinator", () => {
     async (method, expectedDetail) => {
       const base = settings();
       const local = structuredClone(base);
-      local.autoListen = false;
+      local.autoListen = true;
       local.spokenResponseDetail = "minimal";
       const remote = structuredClone(base);
       remote.voiceSettings.speed = 0.9;
@@ -263,7 +263,7 @@ describe("settings sync coordinator", () => {
       const resolved = await coordinator[method]();
 
       expect(resolved.settings).toMatchObject({
-        autoListen: false,
+        autoListen: true,
         spokenResponseDetail: expectedDetail,
         voiceSettings: { speed: 0.9 },
       });
@@ -305,7 +305,7 @@ describe("settings sync coordinator", () => {
   it("bounds repeated disjoint 409 retries without creating a false conflict", async () => {
     const base = settings();
     const local = structuredClone(base);
-    local.autoListen = false;
+    local.autoListen = true;
     let state: ProfileSyncState = {
       entitled: true,
       activeProfileId: profile(1, base).id,
