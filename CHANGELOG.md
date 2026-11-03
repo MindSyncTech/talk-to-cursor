@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 — 2026-11-03
 
 - Added Cloud dictation: paid Cloud accounts can choose **Cloud: Deepgram
   Nova-3** as the built-in voice input's Speech Model. Audio streams from your
@@ -52,9 +52,6 @@
   for the send sound. Saved choices are kept.
 - If `config.json` has a setting this version doesn't support, only that
   setting falls back to its default instead of every setting.
-
-## 1.4.0 — 2026-11-01
-
 - Added a Unix-socket connection between the MCP server and the Background
   Helper for instant listen, playback, and cancel signals, with the file-signal
   path kept as a fallback.
