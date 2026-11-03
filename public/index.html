@@ -2354,20 +2354,6 @@
           </div>
           <div class="help-text">How long of silence confirms you're done speaking. Increase if it cuts you off mid-sentence.</div>
         </div>
-
-        <div class="slider-group">
-          <div class="slider-label">
-            <label for="noSpeechTimeout">Stop Listening After</label>
-            <span class="slider-value" id="noSpeechTimeoutValue">30s</span>
-          </div>
-          <input type="range" id="noSpeechTimeout" min="5" max="120" step="5" value="30">
-          <div class="slider-range-labels">
-            <span>5s</span>
-            <span>2 min</span>
-          </div>
-          <div class="help-text">If you don't start speaking within this time, listening stops until the next wake word or trigger.</div>
-        </div>
-
         <details class="advanced mic-settings" id="micSettings">
           <summary>Microphone Settings</summary>
           <div class="form-group">
@@ -2512,6 +2498,19 @@
           <input type="checkbox" id="autoListenEnabled">
           <span class="switch-slider"></span>
         </label>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <label for="noSpeechTimeout">Stop Listening After</label>
+          <span class="slider-value" id="noSpeechTimeoutValue">30s</span>
+        </div>
+        <input type="range" id="noSpeechTimeout" min="5" max="120" step="5" value="30">
+        <div class="slider-range-labels">
+          <span>5s</span>
+          <span>2 min</span>
+        </div>
+        <div class="help-text">How long to wait for you to start speaking, after Auto-Listen, the wake phrase, or the hotkey, before listening stops.</div>
       </div>
 
       <div class="toggle-row">
@@ -3892,6 +3891,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             voiceInput: {
+              noSpeechTimeout: Number(noSpeechTimeoutSlider.value),
               manualTriggerHotkey: manualTriggerHotkeyInput.value.trim(),
               wakeWordEnabled: wakeWordEnabled.checked,
               wakePhrase: wakePhrase.value,
@@ -5277,7 +5277,6 @@
         provider: voiceInputProvider.value,
         silenceThreshold: parseFloat(silenceThresholdSlider.value),
         silenceDuration: parseFloat(silenceDurationSlider.value),
-        noSpeechTimeout: Number(noSpeechTimeoutSlider.value),
         wisprHotkey: wisprHotkeyInput.value.trim(),
         fluidVoiceHotkey: fluidVoiceHotkeyInput.value.trim() || 'right_option',
         handyCommand: handyCommandInput.value.trim(),

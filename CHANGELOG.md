@@ -19,9 +19,10 @@
 - Auto-Submit now requires a minimum number of words (2 by default) instead
   of 15 characters, so short questions like “how much HTML?” are sent.
   **Minimum Words** replaces **Min Text Length** in Settings.
-- Added **Stop Listening After** to Voice Input settings: how long to wait for
-  you to start speaking before listening stops (5 seconds to 2 minutes,
-  30 seconds by default).
+- Added **Stop Listening After** to Cursor Listening Triggers: how long to
+  wait for you to start speaking after Auto-Listen, the wake phrase, or the
+  hotkey before listening stops (5 seconds to 2 minutes, 30 seconds by
+  default).
 - Fixed a glitch in the activation chime with Auto-Submit on. The Smart Turn,
   voice activity, and spoken submit command models now load once when the
   Background Helper starts instead of on every activation, so listening also
