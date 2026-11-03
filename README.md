@@ -43,7 +43,7 @@ TalkToCursor handles text-to-speech responses from the connected coding agent. C
 
 For optional speech-to-text and the hands-free conversational loop:
 
-- **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended for easiest setup)** - Polished voice dictation with minimal configuration.
+- **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended for easiest setup)** - AI-cleaned dictation (removes filler words and applies your self-corrections) with minimal configuration.
 - **[FluidVoice](https://fluidvoice.com/) (free and local)** - Open-source on-device dictation for macOS 15 or later.
 - **[Handy](https://github.com/cjpais/Handy) (free, private, and local)** - Open-source transcription using Whisper or Parakeet.
 
@@ -185,7 +185,7 @@ Then open http://localhost:3847 in your browser and:
 
 For the full hands-free conversational loop, choose one of these providers:
 
-- **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended)** — A polished voice-to-text experience with minimal setup.
+- **[Wispr Flow](https://ref.wisprflow.ai/talktocursor) (recommended)** — AI-cleaned dictation that removes filler words and applies your self-corrections before pasting, with minimal setup.
 - **[FluidVoice](https://fluidvoice.com/) (free & local)** — Open-source on-device dictation for macOS 15 or later. Keep its shortcut in toggle mode and enter the same shortcut in TalkToCursor (default Right Option).
 - **[Handy](https://github.com/cjpais/Handy) (free & private)** — Open-source transcription that runs locally using Whisper or Parakeet, must be installed manually.
 - **Built-in (free & private)** — On-device transcription inside the Background Helper. **Parakeet** (the default) is the most accurate and transcribes when you finish (about 480 MB model); **Streaming** transcribes while you speak and is less accurate (about 100 MB). Models download once on first use. Paid [Cloud](https://cloud.talktocursor.com) accounts can choose **Cloud** instead, which streams audio to Deepgram Nova-3 with no download and includes 500 dictation minutes a month.
